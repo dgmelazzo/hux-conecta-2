@@ -1,0 +1,178 @@
+/* ============================================================
+   Conecta CRM — Design Tokens (MASTER.md → CSS Variables)
+   Compatível com shadcn/ui + Tailwind CSS
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Cores Primárias ─────────────────────────────────── */
+    --color-primary:       224 100% 54%;   /* #2563EB — HSL para Tailwind */
+    --color-primary-light: 214 100% 97%;   /* #EFF6FF */
+    --color-primary-dark:  226 71% 40%;    /* #1E40AF */
+
+    /* ── Superfícies ─────────────────────────────────────── */
+    --color-bg-base:    210 40% 98%;       /* #F8FAFC */
+    --color-bg-surface: 0 0% 100%;         /* #FFFFFF */
+    --color-bg-subtle:  210 40% 96%;       /* #F1F5F9 */
+    --color-bg-muted:   214 32% 91%;       /* #E2E8F0 */
+
+    /* ── Texto ───────────────────────────────────────────── */
+    --color-text-primary:   222 47% 11%;   /* #0F172A */
+    --color-text-secondary: 215 16% 47%;   /* #475569 */
+    --color-text-muted:     215 20% 65%;   /* #94A3B8 */
+    --color-text-inverse:   0 0% 100%;     /* #FFFFFF */
+
+    /* ── Semânticas ──────────────────────────────────────── */
+    --color-success:       160 84% 39%;    /* #10B981 */
+    --color-success-light: 152 81% 96%;    /* #ECFDF5 */
+    --color-warning:       38 92% 50%;     /* #F59E0B */
+    --color-warning-light: 48 100% 96%;    /* #FFFBEB */
+    --color-danger:        0 84% 60%;      /* #EF4444 */
+    --color-danger-light:  0 86% 97%;      /* #FEF2F2 */
+    --color-info:          217 91% 60%;    /* #3B82F6 */
+    --color-info-light:    214 100% 97%;   /* #EFF6FF */
+
+    /* ── Pipeline / Kanban ───────────────────────────────── */
+    --color-stage-prospect:    262 83% 58%;  /* #8B5CF6 */
+    --color-stage-qualify:     217 91% 60%;  /* #3B82F6 */
+    --color-stage-proposal:    38 92% 50%;   /* #F59E0B */
+    --color-stage-negotiation: 24 94% 53%;   /* #F97316 */
+    --color-stage-won:         160 84% 39%;  /* #10B981 */
+    --color-stage-lost:        215 20% 65%;  /* #94A3B8 */
+
+    /* ── Tipografia ──────────────────────────────────────── */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    /* ── Espaçamento ─────────────────────────────────────── */
+    --space-1:  0.25rem;   /* 4px  */
+    --space-2:  0.5rem;    /* 8px  */
+    --space-3:  0.75rem;   /* 12px */
+    --space-4:  1rem;      /* 16px */
+    --space-5:  1.25rem;   /* 20px */
+    --space-6:  1.5rem;    /* 24px */
+    --space-8:  2rem;      /* 32px */
+    --space-10: 2.5rem;    /* 40px */
+    --space-12: 3rem;      /* 48px */
+    --space-16: 4rem;      /* 64px */
+
+    /* ── Layout ──────────────────────────────────────────── */
+    --layout-sidebar-width:     240px;
+    --layout-sidebar-collapsed: 64px;
+    --layout-header-height:     60px;
+
+    /* ── Sombras (Soft UI) ───────────────────────────────── */
+    --shadow-sm:    0 1px 2px rgba(0,0,0,0.04), 0 1px 6px rgba(0,0,0,0.04);
+    --shadow-md:    0 4px 6px rgba(0,0,0,0.04), 0 2px 12px rgba(0,0,0,0.06);
+    --shadow-lg:    0 8px 16px rgba(0,0,0,0.06), 0 2px 20px rgba(0,0,0,0.04);
+    --shadow-xl:    0 20px 40px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
+    --shadow-hover: 0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+    --shadow-focus: 0 0 0 3px rgba(37,99,235,0.25);
+
+    /* ── Border Radius ───────────────────────────────────── */
+    --radius-sm:   0.25rem;   /* 4px  */
+    --radius-md:   0.5rem;    /* 8px  */
+    --radius-lg:   0.75rem;   /* 12px */
+    --radius-xl:   1rem;      /* 16px */
+    --radius-2xl:  1.5rem;    /* 24px */
+    --radius-full: 9999px;
+
+    /* ── Animações ───────────────────────────────────────── */
+    --duration-fast:   150ms;
+    --duration-base:   200ms;
+    --duration-slow:   300ms;
+    --ease-default:    cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out:        cubic-bezier(0, 0, 0.2, 1);
+    --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* ── shadcn/ui mapping (mantém compatibilidade) ──────── */
+    --background:       var(--color-bg-base);
+    --foreground:       var(--color-text-primary);
+    --card:             var(--color-bg-surface);
+    --card-foreground:  var(--color-text-primary);
+    --primary:          var(--color-primary);
+    --primary-foreground: var(--color-text-inverse);
+    --secondary:        var(--color-bg-subtle);
+    --secondary-foreground: var(--color-text-primary);
+    --muted:            var(--color-bg-muted);
+    --muted-foreground: var(--color-text-muted);
+    --destructive:      var(--color-danger);
+    --destructive-foreground: var(--color-text-inverse);
+    --border:           var(--color-bg-muted);
+    --input:            var(--color-bg-subtle);
+    --ring:             var(--color-primary);
+    --radius:           var(--radius-md);
+  }
+
+  /* ── Reset base ────────────────────────────────────────── */
+  * {
+    border-color: hsl(var(--color-bg-muted));
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: hsl(var(--color-bg-base));
+    color: hsl(var(--color-text-primary));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── Números tabulares em métricas ─────────────────────── */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Reduced motion ─────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ── Focus visível global ───────────────────────────────── */
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+}
+
+/* ── Utilities customizadas ─────────────────────────────── */
+@layer utilities {
+  .shadow-soft-sm    { box-shadow: var(--shadow-sm); }
+  .shadow-soft-md    { box-shadow: var(--shadow-md); }
+  .shadow-soft-lg    { box-shadow: var(--shadow-lg); }
+  .shadow-soft-xl    { box-shadow: var(--shadow-xl); }
+  .shadow-soft-hover { box-shadow: var(--shadow-hover); }
+  .shadow-focus      { box-shadow: var(--shadow-focus); }
+
+  .transition-soft {
+    transition: all var(--duration-base) var(--ease-default);
+  }
+  .transition-fast {
+    transition: all var(--duration-fast) var(--ease-default);
+  }
+
+  /* Stage colors para Kanban */
+  .stage-prospect    { color: hsl(var(--color-stage-prospect)); }
+  .stage-qualify     { color: hsl(var(--color-stage-qualify)); }
+  .stage-proposal    { color: hsl(var(--color-stage-proposal)); }
+  .stage-negotiation { color: hsl(var(--color-stage-negotiation)); }
+  .stage-won         { color: hsl(var(--color-stage-won)); }
+  .stage-lost        { color: hsl(var(--color-stage-lost)); }
+
+  .bg-stage-prospect    { background-color: hsl(var(--color-stage-prospect) / 0.1); }
+  .bg-stage-qualify     { background-color: hsl(var(--color-stage-qualify) / 0.1); }
+  .bg-stage-proposal    { background-color: hsl(var(--color-stage-proposal) / 0.1); }
+  .bg-stage-negotiation { background-color: hsl(var(--color-stage-negotiation) / 0.1); }
+  .bg-stage-won         { background-color: hsl(var(--color-stage-won) / 0.1); }
+  .bg-stage-lost        { background-color: hsl(var(--color-stage-lost) / 0.1); }
+}
