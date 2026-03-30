@@ -1,150 +1,902 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Conecta CRM — Acesso</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conecta CRM — ACIC-DF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#EEF2FF;background-image:radial-gradient(circle at 20% 20%,#C7D2FE 0%,transparent 50%),radial-gradient(circle at 80% 80%,#BFDBFE 0%,transparent 50%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:16px}
-.card{display:flex;width:100%;max-width:900px;min-height:560px;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
-.left{flex:1;background:linear-gradient(135deg,#1D4ED8 0%,#2563EB 60%,#3B82F6 100%);padding:40px;display:flex;flex-direction:column;position:relative;overflow:hidden}
-.left::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,0.08)}
-.left::after{content:'';position:absolute;bottom:-80px;left:-40px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,0.05)}
-.logo{display:flex;align-items:center;gap:10px;margin-bottom:48px;position:relative;z-index:1}
-.logo-icon{width:40px;height:40px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center}
-.logo-icon svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.logo-text{font-size:18px;font-weight:600;color:#fff}.logo-text span{font-weight:300}
-.left-body{flex:1;position:relative;z-index:1}
-.left-title{font-size:32px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:8px}
-.left-subtitle{font-size:20px;font-weight:300;color:rgba(255,255,255,0.75);margin-bottom:24px}
-.left-desc{font-size:13px;color:rgba(255,255,255,0.65);line-height:1.7;margin-bottom:28px;max-width:300px}
-.features{list-style:none;display:flex;flex-direction:column;gap:8px}
-.features li{font-size:13px;color:rgba(255,255,255,0.85);display:flex;align-items:center;gap:8px}
-.features li::before{content:'';width:6px;height:6px;border-radius:50%;background:#93C5FD;flex-shrink:0}
-.left-footer{font-size:11px;color:rgba(255,255,255,0.35);margin-top:auto;padding-top:24px;position:relative;z-index:1}
-.right{width:420px;background:#fff;padding:48px 40px;display:flex;flex-direction:column;justify-content:center}
-.portal-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:#1D4ED8;text-transform:uppercase;margin-bottom:16px}
-.right-title{font-size:26px;font-weight:700;color:#0F172A;margin-bottom:6px}
-.right-sub{font-size:13px;color:#64748B;margin-bottom:28px;line-height:1.5}
-.tenant-box{display:flex;align-items:center;gap:10px;padding:12px 16px;border:1px solid #E2E8F0;border-radius:10px;margin-bottom:24px}
-.tenant-av{width:36px;height:36px;border-radius:8px;background:#1D4ED8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
-.tenant-name{font-size:13px;font-weight:600;color:#0F172A}
-.tenant-slug{font-size:11px;color:#94A3B8}
-.tenant-arrow{margin-left:auto;color:#CBD5E1}
-.field{margin-bottom:16px}
-.field label{display:block;font-size:12px;font-weight:500;color:#374151;margin-bottom:6px}
-.input-wrap{position:relative}
-.input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94A3B8}
-.input-icon svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.fc{width:100%;padding:10px 12px 10px 38px;border:1px solid #E2E8F0;border-radius:10px;font-size:14px;outline:none;transition:border-color .15s;color:#0F172A;background:#FAFAFA}
-.fc:focus{border-color:#1D4ED8;background:#fff}
-.fc::placeholder{color:#CBD5E1}
-.eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94A3B8;padding:0;display:flex}
-.eye svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.check-label{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748B;cursor:pointer}
-.check-label input{width:14px;height:14px;accent-color:#1D4ED8}
-.forgot{font-size:12px;color:#1D4ED8;text-decoration:none}
-.btn-login{width:100%;padding:13px;background:#1D4ED8;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;margin-bottom:16px}
-.btn-login:hover{background:#1E40AF}
-.btn-login:disabled{background:#93C5FD;cursor:not-allowed}
-.btn-login svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.support{text-align:center;font-size:12px;color:#94A3B8}
-.support a{color:#1D4ED8;text-decoration:none}
-.err-box{background:#FEF2F2;border:1px solid #FECACA;color:#DC2626;padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:16px;display:none}
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:700px){.card{flex-direction:column;max-width:420px}.left{padding:28px;min-height:auto}.left-title{font-size:24px}.left-desc,.features,.left-footer{display:none}.left-subtitle{margin-bottom:0}.logo{margin-bottom:16px}.right{width:100%;padding:28px 24px}}
+:root {
+  --bg:       #0f1117;
+  --bg2:      #161b27;
+  --bg3:      #1e2535;
+  --border:   #2a3347;
+  --border2:  #334060;
+  --text1:    #f0f4ff;
+  --text2:    #8b9dbf;
+  --text3:    #4d5e7a;
+  --accent:   #3b82f6;
+  --accent2:  #60a5fa;
+  --green:    #10b981;
+  --red:      #ef4444;
+  --yellow:   #f59e0b;
+  --radius:   10px;
+  --font:     'DM Sans', sans-serif;
+  --mono:     'DM Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;background:var(--bg);color:var(--text1);font-family:var(--font);font-size:14px;line-height:1.5}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+input,select,textarea,button{font-family:var(--font)}
+a{color:inherit;text-decoration:none}
+
+/* ── LAYOUT ── */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo .mark{width:30px;height:30px;background:var(--accent);border-radius:8px;display:grid;place-items:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0}
+.sidebar-logo .name{font-size:13px;font-weight:600;color:var(--text1);line-height:1.2}
+.sidebar-logo .sub{font-size:11px;color:var(--text3);margin-top:1px}
+.sidebar-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.nav-section{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:14px 8px 6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:1px}
+.nav-item:hover{background:var(--bg3);color:var(--text1)}
+.nav-item.active{background:rgba(59,130,246,.15);color:var(--accent2)}
+.nav-item .icon{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
+.user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer}
+.user-card:hover{background:var(--bg3)}
+.user-avatar{width:28px;height:28px;background:var(--accent);border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.user-info .name{font-size:12px;font-weight:600;color:var(--text1)}
+.user-info .role{font-size:11px;color:var(--text3)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;background:var(--bg2)}
+.topbar h1{font-size:15px;font-weight:600;color:var(--text1);flex:1}
+.content{flex:1;overflow-y:auto;padding:20px}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.card-sm{padding:14px 16px}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-line,var(--accent))}
+.metric-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.metric-value{font-size:24px;font-weight:600;color:var(--text1);line-height:1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--bg3);padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.td-name{color:var(--text1);font-weight:500}
+.td-mono{font-family:var(--mono);font-size:12px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(16,185,129,.12);color:#34d399}
+.badge-red{background:rgba(239,68,68,.12);color:#f87171}
+.badge-yellow{background:rgba(245,158,11,.12);color:#fbbf24}
+.badge-blue{background:rgba(59,130,246,.12);color:#60a5fa}
+.badge-gray{background:rgba(139,157,191,.1);color:var(--text2)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#2563eb}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--bg3);color:var(--text1)}
+.btn-danger{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}.btn-danger:hover{background:rgba(239,68,68,.2)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── FORM ── */
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:12px;font-weight:500;color:var(--text2)}
+.form-input{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text1);font-size:13px;outline:none;transition:border .15s;width:100%}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+select.form-input option{background:var(--bg3)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.form-row{display:flex;gap:12px;align-items:flex-end}
+
+/* ── MODAL ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:100%;max-width:520px;max-height:85vh;overflow-y:auto}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-header h2{font-size:15px;font-weight:600}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.search-input{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--text1);font-size:13px;outline:none;width:240px}
+.search-input:focus{border-color:var(--accent)}
+
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;gap:6px;margin-top:14px;justify-content:flex-end}
+.page-btn{width:30px;height:30px;border-radius:6px;display:grid;place-items:center;cursor:pointer;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--bg3);color:var(--text2);transition:all .15s}
+.page-btn:hover{background:var(--bg2);color:var(--text1)}
+.page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.page-btn:disabled{opacity:.3;cursor:not-allowed}
+.page-info{font-size:12px;color:var(--text3);margin:0 4px}
+
+/* ── EMPTY ── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;color:var(--text3);gap:10px}
+.empty .icon{font-size:36px;opacity:.4}
+.empty p{font-size:13px}
+
+/* ── LOGIN ── */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);padding:20px}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:36px;width:100%;max-width:380px}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.login-logo .mark{width:36px;height:36px;background:var(--accent);border-radius:9px;display:grid;place-items:center;font-size:18px;font-weight:700;color:#fff}
+.login-logo .text h1{font-size:16px;font-weight:700;color:var(--text1)}
+.login-logo .text p{font-size:12px;color:var(--text3)}
+.login-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:10px 12px;font-size:13px;color:#f87171;margin-bottom:14px}
+
+/* ── COBRANÇA MODAL ── */
+.pix-box{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:16px;text-align:center}
+.pix-box img{width:160px;height:160px;border-radius:6px;margin-bottom:10px}
+.pix-copy{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--text2);word-break:break-all;margin-top:8px;cursor:pointer}
+.pix-copy:hover{border-color:var(--accent)}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999}
+.toast{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:11px 14px;font-size:13px;color:var(--text1);display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:slideIn .2s ease}
+.toast.success{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.08)}
+.toast.error{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.08)}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── UTILS ── */
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-2{gap:8px}.gap-3{gap:12px}.mt-1{margin-top:4px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.w-full{width:100%}
+.text-sm{font-size:12px}.text-xs{font-size:11px}.text-muted{color:var(--text3)}.text-accent{color:var(--accent2)}.font-mono{font-family:var(--mono)}
 </style>
 </head>
 <body>
-<div class="card">
-  <div class="left">
-    <div class="logo">
-      <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <div class="logo-text">Conecta <span>CRM</span></div>
-    </div>
-    <div class="left-body">
-      <div class="left-title">Gestao de<br>Associacoes</div>
-      <div class="left-subtitle">simplificada.</div>
-      <div class="left-desc">Plataforma SaaS white-label para associacoes comerciais. Pipeline, cobrancas e relacionamento em um so lugar.</div>
-      <ul class="features">
-        <li>Gestao multi-tenant de associados</li>
-        <li>Cobrancas via PIX, Boleto e Cartao</li>
-        <li>Pipeline visual de prospeccao</li>
-        <li>Regua de cobranca automatica</li>
-        <li>Integracao com Conecta 2.0</li>
-      </ul>
-    </div>
-    <div class="left-footer">HUX Participacoes &middot; v1.0 &middot; 2026</div>
-  </div>
-  <div class="right">
-    <div class="portal-label">Portal de Acesso</div>
-    <div class="right-title">Bem-vindo de volta</div>
-    <div class="right-sub">Entre com suas credenciais para acessar o painel</div>
-    <div class="tenant-box">
-      <div class="tenant-av">AC</div>
-      <div><div class="tenant-name">ACIC-DF</div><div class="tenant-slug">acicdf.crm</div></div>
-      <div class="tenant-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-    </div>
-    <div class="err-box" id="err">Credenciais invalidas.</div>
-    <div class="field">
-      <label>E-mail</label>
-      <div class="input-wrap">
-        <span class="input-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg></span>
-        <input class="fc" type="email" id="em" placeholder="seu@email.com.br" autocomplete="email"/>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef, createContext, useContext } = React;
+
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const API_URL = 'https://api.acicdf.org.br';
+
+// ── API CLIENT ───────────────────────────────────────────────────────────────
+const api = {
+  token: () => localStorage.getItem('crm_token'),
+  headers: () => ({
+    'Content-Type': 'application/json',
+    ...(api.token() ? { Authorization: `Bearer ${api.token()}` } : {}),
+  }),
+  get: async (path, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([,v]) => v !== '' && v != null))
+    ).toString();
+    const r = await fetch(`${API_URL}${path}${qs ? '?' + qs : ''}`, { headers: api.headers() });
+    if (r.status === 401) { localStorage.removeItem('crm_token'); window.location.reload(); }
+    return r.json();
+  },
+  post: async (path, body) => {
+    const r = await fetch(`${API_URL}${path}`, { method: 'POST', headers: api.headers(), body: JSON.stringify(body) });
+    return r.json();
+  },
+  put: async (path, body) => {
+    const r = await fetch(`${API_URL}${path}`, { method: 'PUT', headers: api.headers(), body: JSON.stringify(body) });
+    return r.json();
+  },
+  del: async (path) => {
+    const r = await fetch(`${API_URL}${path}`, { method: 'DELETE', headers: api.headers() });
+    return r.json();
+  },
+};
+
+// ── FORMATTERS ────────────────────────────────────────────────────────────────
+const fDoc = d => { const s = (d||'').replace(/\D/g,''); return s.length===14 ? s.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5') : s.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4'); };
+const fMoeda = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+const fData  = s => s ? new Date(s+'T00:00:00').toLocaleDateString('pt-BR') : '—';
+const ini    = s => (s||'?')[0].toUpperCase();
+
+// ── TOAST CONTEXT ─────────────────────────────────────────────────────────────
+const ToastCtx = createContext(null);
+function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+  const add = (msg, type = 'success') => {
+    const id = Date.now();
+    setToasts(t => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
+  };
+  return (
+    <ToastCtx.Provider value={add}>
+      {children}
+      <div className="toast-wrap">
+        {toasts.map(t => (
+          <div key={t.id} className={`toast ${t.type}`}>
+            <span>{t.type === 'success' ? '✓' : '✕'}</span>
+            {t.msg}
+          </div>
+        ))}
       </div>
-    </div>
-    <div class="field">
-      <label>Senha</label>
-      <div class="input-wrap">
-        <span class="input-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
-        <input class="fc" type="password" id="pw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"/>
-        <button class="eye" onclick="togglePw()" type="button"><svg id="eye-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-      </div>
-    </div>
-    <div class="row">
-      <label class="check-label"><input type="checkbox" id="rem"/> Lembrar acesso</label>
-      <a href="#" class="forgot">Esqueci a senha</a>
-    </div>
-    <button class="btn-login" id="btn" onclick="login()">
-      <span id="btn-txt">Entrar no painel</span>
-      <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-    </button>
-    <div class="support">Problemas de acesso? <a href="mailto:suporte@hux.com.br">Falar com suporte</a></div>
-  </div>
-</div>
-<script>
-const API='https://crm.acicdf.org.br/api';
-const saved=localStorage.getItem('crm_saved_email');
-if(saved){document.getElementById('em').value=saved;document.getElementById('rem').checked=true;}
-function togglePw(){const pw=document.getElementById('pw');const icon=document.getElementById('eye-icon');if(pw.type==='password'){pw.type='text';icon.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';}else{pw.type='password';icon.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';}}
-async function login(){
-  const email=document.getElementById('em').value.trim();
-  const senha=document.getElementById('pw').value;
-  const err=document.getElementById('err');
-  const btn=document.getElementById('btn');
-  if(!email||!senha){err.style.display='block';err.textContent='Preencha e-mail e senha.';return;}
-  err.style.display='none';btn.disabled=true;btn.innerHTML='<div class="spinner"></div>';
-  try{
-    const r=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha})});
-    const d=await r.json();
-    if(d.ok&&d.data&&d.data.token){
-      if(document.getElementById('rem').checked)localStorage.setItem('crm_saved_email',email);
-      else localStorage.removeItem('crm_saved_email');
-      localStorage.setItem('crm_token',d.data.token);
-      localStorage.setItem('crm_user',JSON.stringify(d.data.user));
-      window.location.href='/dashboard';
-    }else{
-      err.style.display='block';err.textContent=d.error||'Credenciais invalidas.';
-      btn.disabled=false;btn.innerHTML='<span id="btn-txt">Entrar no painel</span><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
-    }
-  }catch(e){
-    err.style.display='block';err.textContent='Erro de conexao.';
-    btn.disabled=false;btn.innerHTML='<span id="btn-txt">Entrar no painel</span><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
-  }
+    </ToastCtx.Provider>
+  );
 }
+const useToast = () => useContext(ToastCtx);
+
+// ── STATUS BADGE ──────────────────────────────────────────────────────────────
+function StatusBadge({ status }) {
+  const map = {
+    ativo:        ['badge-green', '● Ativo'],
+    inadimplente: ['badge-red',   '● Inadimplente'],
+    suspenso:     ['badge-yellow','● Suspenso'],
+    cancelado:    ['badge-gray',  '● Cancelado'],
+    prospecto:    ['badge-blue',  '● Prospecto'],
+    pago:         ['badge-green', '✓ Pago'],
+    pendente:     ['badge-yellow','◌ Pendente'],
+    expirado:     ['badge-red',   '✕ Vencido'],
+    cancelado_c:  ['badge-gray',  '— Cancelado'],
+  };
+  const [cls, label] = map[status] || ['badge-gray', status];
+  return <span className={`badge ${cls}`}>{label}</span>;
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function Login({ onLogin }) {
+  const [form, setForm] = useState({ email: '', senha: '' });
+  const [erro, setErro] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!form.email || !form.senha) return setErro('Preencha e-mail e senha.');
+    setLoading(true); setErro('');
+    const res = await api.post('/auth/login', form);
+    setLoading(false);
+    if (res.token) { localStorage.setItem('crm_token', res.token); onLogin(res.user); }
+    else setErro(res.error || 'Erro ao fazer login.');
+  };
+
+  return (
+    <div className="login-wrap">
+      <div className="login-box">
+        <div className="login-logo">
+          <div className="mark">C</div>
+          <div className="text">
+            <h1>Conecta CRM</h1>
+            <p>ACIC-DF</p>
+          </div>
+        </div>
+        {erro && <div className="login-err">{erro}</div>}
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          <div className="form-group">
+            <label className="form-label">E-mail</label>
+            <input className="form-input" type="email" placeholder="seu@email.com.br"
+              value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))}
+              onKeyDown={e => e.key === 'Enter' && submit()} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Senha</label>
+            <input className="form-input" type="password" placeholder="••••••••"
+              value={form.senha} onChange={e => setForm(f => ({...f, senha: e.target.value}))}
+              onKeyDown={e => e.key === 'Enter' && submit()} />
+          </div>
+          <button className="btn btn-primary w-full" style={{marginTop:4,justifyContent:'center'}}
+            onClick={submit} disabled={loading}>
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function Dashboard() {
+  const [m, setM] = useState(null);
+  useEffect(() => { api.get('/dashboard').then(setM); }, []);
+
+  if (!m) return <div className="empty"><div className="icon">⏳</div><p>Carregando métricas...</p></div>;
+
+  const cards = [
+    { label:'Total de Associados', value: m.total_associados,        sub:'cadastrados',      color:'#3b82f6' },
+    { label:'Ativos',              value: m.associados_ativos,        sub:'adimplentes',      color:'#10b981' },
+    { label:'Inadimplentes',       value: m.associados_inadimplentes, sub:'com pendências',   color:'#ef4444' },
+    { label:'Prospectos',          value: m.associados_prospecto,     sub:'em análise',       color:'#f59e0b' },
+    { label:'Receita do Mês',      value: fMoeda(m.receita_mes),      sub:'pagamentos confirmados', color:'#10b981', big:true },
+    { label:'A Receber',           value: fMoeda(m.cobrancas_pendentes), sub:'cobranças pendentes', color:'#3b82f6', big:true },
+    { label:'Em Atraso',           value: fMoeda(m.cobrancas_vencidas),  sub:'cobranças vencidas', color:'#ef4444', big:true },
+  ];
+
+  return (
+    <div>
+      <div className="metric-grid">
+        {cards.map((c,i) => (
+          <div key={i} className="metric-card" style={{'--accent-line': c.color}}>
+            <div className="metric-label">{c.label}</div>
+            <div className="metric-value" style={{fontSize: c.big ? '20px' : '28px'}}>{c.value}</div>
+            <div className="metric-sub">{c.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── ASSOCIADOS ────────────────────────────────────────────────────────────────
+function Associados() {
+  const toast = useToast();
+  const [dados, setDados]     = useState({ data:[], total:0 });
+  const [loading, setLoad]    = useState(false);
+  const [page, setPage]       = useState(1);
+  const [busca, setBusca]     = useState('');
+  const [status, setStatus]   = useState('');
+  const [modal, setModal]     = useState(null); // null | 'novo' | {id}
+  const [detalhe, setDetalhe] = useState(null);
+
+  const carregar = useCallback(async () => {
+    setLoad(true);
+    const res = await api.get('/associados', { busca, status, page, limit: 20 });
+    setDados(res);
+    setLoad(false);
+  }, [busca, status, page]);
+
+  useEffect(() => { carregar(); }, [carregar]);
+
+  const abrirDetalhe = async (id) => {
+    const res = await api.get(`/associados/${id}`);
+    setDetalhe(res);
+  };
+
+  const totalPages = Math.ceil((dados.total || 0) / 20);
+
+  return (
+    <div>
+      <div className="filters">
+        <input className="search-input" placeholder="🔍  Buscar por nome, CNPJ..."
+          value={busca} onChange={e => { setBusca(e.target.value); setPage(1); }} />
+        <select className="form-input" style={{width:'auto'}} value={status}
+          onChange={e => { setStatus(e.target.value); setPage(1); }}>
+          <option value="">Todos os status</option>
+          <option value="ativo">Ativo</option>
+          <option value="inadimplente">Inadimplente</option>
+          <option value="prospecto">Prospecto</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <div style={{flex:1}}/>
+        <button className="btn btn-primary" onClick={() => setModal('novo')}>+ Novo Associado</button>
+      </div>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Associado</th>
+              <th>CNPJ / CPF</th>
+              <th>Contato</th>
+              <th>Plano</th>
+              <th>Status</th>
+              <th>Cadastro</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && (
+              <tr><td colSpan={7}><div className="empty"><p>Carregando...</p></div></td></tr>
+            )}
+            {!loading && dados.data.length === 0 && (
+              <tr><td colSpan={7}><div className="empty"><div className="icon">🏢</div><p>Nenhum associado encontrado.</p></div></td></tr>
+            )}
+            {!loading && dados.data.map(a => (
+              <tr key={a.id} style={{cursor:'pointer'}} onClick={() => abrirDetalhe(a.id)}>
+                <td>
+                  <div className="flex items-center gap-2">
+                    <div style={{width:28,height:28,borderRadius:'50%',background:'var(--bg3)',border:'1px solid var(--border)',display:'grid',placeItems:'center',fontSize:11,fontWeight:700,color:'var(--accent2)',flexShrink:0}}>
+                      {ini(a.nome_fantasia || a.razao_social)}
+                    </div>
+                    <div>
+                      <div className="td-name" style={{fontSize:13}}>{a.nome_fantasia || a.razao_social || '—'}</div>
+                      {a.razao_social && a.nome_fantasia && <div className="text-xs text-muted">{a.razao_social}</div>}
+                    </div>
+                  </div>
+                </td>
+                <td className="td-mono">{fDoc(a.cnpj || a.cpf)}</td>
+                <td className="text-muted">{a.email || '—'}</td>
+                <td>{a.plano_nome ? <span className="badge badge-blue">{a.plano_nome}</span> : <span className="text-muted">—</span>}</td>
+                <td><StatusBadge status={a.status} /></td>
+                <td className="text-muted text-xs">{fData(a.data_associacao)}</td>
+                <td onClick={e => e.stopPropagation()}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setModal({id: a.id, dados: a})}>Editar</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          <span className="page-info">{dados.total} registros</span>
+          <button className="page-btn" disabled={page===1} onClick={() => setPage(p=>p-1)}>‹</button>
+          {Array.from({length: Math.min(totalPages,7)}, (_,i) => i+1).map(p => (
+            <button key={p} className={`page-btn ${p===page?'active':''}`} onClick={() => setPage(p)}>{p}</button>
+          ))}
+          <button className="page-btn" disabled={page===totalPages} onClick={() => setPage(p=>p+1)}>›</button>
+        </div>
+      )}
+
+      {modal && (
+        <ModalAssociado
+          dados={modal !== 'novo' ? modal.dados : null}
+          onClose={() => setModal(null)}
+          onSave={() => { setModal(null); carregar(); toast('Associado salvo com sucesso!'); }}
+        />
+      )}
+      {detalhe && (
+        <DetalheAssociado
+          assoc={detalhe}
+          onClose={() => setDetalhe(null)}
+          onCobranca={() => { setDetalhe(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── MODAL ASSOCIADO ───────────────────────────────────────────────────────────
+function ModalAssociado({ dados, onClose, onSave }) {
+  const [form, setForm] = useState(dados || { tipo_pessoa:'pj', categoria:'empresa', status:'ativo' });
+  const [saving, setSave] = useState(false);
+  const set = (k,v) => setForm(f => ({...f, [k]:v}));
+
+  const salvar = async () => {
+    if (!form.nome_fantasia && !form.razao_social) return alert('Informe o nome/razão social.');
+    setSave(true);
+    const res = dados
+      ? await api.put(`/associados/${dados.id}`, form)
+      : await api.post('/associados', form);
+    setSave(false);
+    if (res.error) return alert(res.error);
+    onSave();
+  };
+
+  const campo = (label, key, type='text', placeholder='') => (
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      <input className="form-input" type={type} placeholder={placeholder}
+        value={form[key]||''} onChange={e => set(key, e.target.value)} />
+    </div>
+  );
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{dados ? 'Editar Associado' : 'Novo Associado'}</h2>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body" style={{display:'flex',flexDirection:'column',gap:12}}>
+          <div className="form-grid">
+            {campo('Nome Fantasia', 'nome_fantasia', 'text', 'Nome comercial')}
+            {campo('Razão Social', 'razao_social', 'text', 'Razão social')}
+          </div>
+          <div className="form-grid">
+            {campo('CNPJ', 'cnpj', 'text', '00.000.000/0001-00')}
+            {campo('CPF', 'cpf', 'text', '000.000.000-00')}
+          </div>
+          <div className="form-grid">
+            {campo('E-mail', 'email', 'email', 'contato@empresa.com.br')}
+            {campo('WhatsApp', 'whatsapp', 'text', '(61) 9 9999-9999')}
+          </div>
+          <div className="form-grid">
+            {campo('Telefone', 'telefone', 'text', '(61) 3333-3333')}
+            {campo('Cidade', 'cidade', 'text', 'Brasília')}
+            <div className="form-group">
+              <label className="form-label">UF</label>
+              <select className="form-input" value={form.uf||''} onChange={e => set('uf',e.target.value)}>
+                <option value="">—</option>
+                {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(u => <option key={u}>{u}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Status</label>
+              <select className="form-input" value={form.status||'ativo'} onChange={e => set('status',e.target.value)}>
+                <option value="ativo">Ativo</option>
+                <option value="inadimplente">Inadimplente</option>
+                <option value="prospecto">Prospecto</option>
+                <option value="suspenso">Suspenso</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </div>
+            {campo('Data Associação', 'data_associacao', 'date')}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary" onClick={salvar} disabled={saving}>
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── DETALHE ASSOCIADO ─────────────────────────────────────────────────────────
+function DetalheAssociado({ assoc, onClose }) {
+  const toast = useToast();
+  const [cobModal, setCobModal] = useState(false);
+  const [cobrancas, setCobs]    = useState([]);
+
+  useEffect(() => {
+    api.get('/cobrancas', { associado_id: assoc.id }).then(res => setCobs(res.data || res || []));
+  }, [assoc.id]);
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" style={{maxWidth:600}} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div>
+            <h2>{assoc.nome_fantasia || assoc.razao_social}</h2>
+            <div className="text-xs text-muted mt-1">{fDoc(assoc.cnpj || assoc.cpf)}</div>
+          </div>
+          <div className="flex gap-2">
+            <StatusBadge status={assoc.status} />
+            <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+          </div>
+        </div>
+        <div className="modal-body">
+          <div className="form-grid" style={{marginBottom:16}}>
+            <div><div className="text-xs text-muted">E-mail</div><div style={{fontSize:13}}>{assoc.email||'—'}</div></div>
+            <div><div className="text-xs text-muted">WhatsApp</div><div style={{fontSize:13}}>{assoc.whatsapp||assoc.telefone||'—'}</div></div>
+            <div><div className="text-xs text-muted">Plano</div><div style={{fontSize:13}}>{assoc.plano_nome||'—'}</div></div>
+            <div><div className="text-xs text-muted">Associado desde</div><div style={{fontSize:13}}>{fData(assoc.data_associacao)}</div></div>
+          </div>
+
+          <div className="flex justify-between items-center" style={{marginBottom:10}}>
+            <div style={{fontSize:12,fontWeight:600,color:'var(--text2)'}}>COBRANÇAS</div>
+            <button className="btn btn-primary btn-sm" onClick={() => setCobModal(true)}>+ Nova Cobrança</button>
+          </div>
+
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Vencimento</th><th>Valor</th><th>Modalidade</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {cobrancas.length === 0 && (
+                  <tr><td colSpan={4}><div className="empty" style={{padding:'20px'}}><p>Nenhuma cobrança.</p></div></td></tr>
+                )}
+                {cobrancas.map(c => (
+                  <tr key={c.id}>
+                    <td className="td-mono">{fData(c.data_vencimento)}</td>
+                    <td style={{color:'var(--text1)',fontWeight:500}}>{fMoeda(c.valor)}</td>
+                    <td><span className="badge badge-gray">{c.modalidade}</span></td>
+                    <td><StatusBadge status={c.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {cobModal && (
+        <ModalCobranca
+          associado={assoc}
+          onClose={() => setCobModal(false)}
+          onSave={cob => {
+            setCobs(prev => [cob, ...prev]);
+            setCobModal(false);
+            toast('Cobrança criada!');
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── MODAL COBRANÇA ────────────────────────────────────────────────────────────
+function ModalCobranca({ associado, onClose, onSave }) {
+  const [form, setForm] = useState({ modalidade:'pix', valor:'', data_vencimento:'', descricao:'' });
+  const [loading, setLoad] = useState(false);
+  const [resultado, setRes] = useState(null);
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  const criar = async () => {
+    if (!form.valor || !form.data_vencimento) return alert('Preencha valor e vencimento.');
+    setLoad(true);
+    const res = await api.post('/cobrancas', { ...form, associado_id: associado.id });
+    setLoad(false);
+    if (res.error) return alert(res.error);
+    setRes(res);
+    onSave(res);
+  };
+
+  if (resultado) return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" style={{maxWidth:400}} onClick={e=>e.stopPropagation()}>
+        <div className="modal-header"><h2>Cobrança Criada ✓</h2><button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button></div>
+        <div className="modal-body">
+          <div className="pix-box">
+            {resultado.pix_qrcode && <img src={`data:image/png;base64,${resultado.pix_qrcode}`} alt="QR Code PIX" />}
+            <div style={{fontWeight:600,color:'var(--text1)'}}>{fMoeda(resultado.valor)}</div>
+            <div className="text-xs text-muted mt-1">Vence em {fData(resultado.data_vencimento)}</div>
+            {resultado.pix_copia_cola && (
+              <div className="pix-copy" onClick={() => { navigator.clipboard.writeText(resultado.pix_copia_cola); }}>
+                {resultado.pix_copia_cola.substring(0,60)}...<br/>
+                <span style={{color:'var(--accent2)',fontSize:10}}>Clique para copiar</span>
+              </div>
+            )}
+            {resultado.gateway_url && (
+              <a href={resultado.gateway_url} target="_blank" className="btn btn-ghost btn-sm" style={{marginTop:10,display:'inline-flex'}}>
+                Ver Boleto ↗
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" style={{maxWidth:400}} onClick={e=>e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Nova Cobrança</h2>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body" style={{display:'flex',flexDirection:'column',gap:12}}>
+          <div style={{background:'var(--bg3)',borderRadius:7,padding:'8px 12px',fontSize:12,color:'var(--text2)'}}>
+            {associado.nome_fantasia || associado.razao_social} · {fDoc(associado.cnpj||associado.cpf)}
+          </div>
+          <div className="form-group">
+            <label className="form-label">Modalidade</label>
+            <select className="form-input" value={form.modalidade} onChange={e=>set('modalidade',e.target.value)}>
+              <option value="pix">PIX</option>
+              <option value="boleto">Boleto</option>
+              <option value="cartao">Cartão</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Valor (R$)</label>
+            <input className="form-input" type="number" step="0.01" placeholder="0,00"
+              value={form.valor} onChange={e=>set('valor',e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Vencimento</label>
+            <input className="form-input" type="date" value={form.data_vencimento} onChange={e=>set('data_vencimento',e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Descrição (opcional)</label>
+            <input className="form-input" type="text" placeholder="Taxa associativa — 2026"
+              value={form.descricao} onChange={e=>set('descricao',e.target.value)} />
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary" onClick={criar} disabled={loading}>
+            {loading ? 'Criando...' : 'Gerar Cobrança'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── COBRANÇAS ─────────────────────────────────────────────────────────────────
+function Cobrancas() {
+  const [dados, setDados] = useState([]);
+  const [loading, setLoad] = useState(false);
+  const [status, setStatus] = useState('');
+
+  const carregar = useCallback(async () => {
+    setLoad(true);
+    const res = await api.get('/cobrancas', { status });
+    setDados(Array.isArray(res) ? res : (res.data||[]));
+    setLoad(false);
+  }, [status]);
+
+  useEffect(() => { carregar(); }, [carregar]);
+
+  return (
+    <div>
+      <div className="filters">
+        <select className="form-input" style={{width:'auto'}} value={status} onChange={e=>setStatus(e.target.value)}>
+          <option value="">Todos os status</option>
+          <option value="pendente">Pendente</option>
+          <option value="pago">Pago</option>
+          <option value="expirado">Vencido</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <div style={{flex:1}}/>
+        <span style={{fontSize:12,color:'var(--text3)'}}>{dados.length} registros</span>
+      </div>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Associado</th><th>Valor</th><th>Modalidade</th><th>Vencimento</th><th>Status</th><th>Gateway ID</th></tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={6}><div className="empty"><p>Carregando...</p></div></td></tr>}
+            {!loading && dados.length === 0 && <tr><td colSpan={6}><div className="empty"><div className="icon">📋</div><p>Nenhuma cobrança.</p></div></td></tr>}
+            {!loading && dados.map(c => (
+              <tr key={c.id}>
+                <td className="td-name">{c.nome_fantasia || c.razao_social || '—'}</td>
+                <td style={{color:'var(--text1)',fontWeight:600}}>{fMoeda(c.valor)}</td>
+                <td><span className="badge badge-gray">{c.modalidade}</span></td>
+                <td className="td-mono">{fData(c.data_vencimento)}</td>
+                <td><StatusBadge status={c.status} /></td>
+                <td className="td-mono text-xs text-muted">{c.gateway_charge_id||'—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── PLANOS ────────────────────────────────────────────────────────────────────
+function Planos() {
+  const toast = useToast();
+  const [planos, setPlanos] = useState([]);
+  const [modal, setModal]   = useState(false);
+  const [form, setForm]     = useState({ nome:'', tipo:'mei', valor:'', periodicidade:'anual', tem_conecta:false });
+  const [saving, setSave]   = useState(false);
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  useEffect(() => { api.get('/planos').then(res => setPlanos(Array.isArray(res)?res:(res.data||[]))); }, []);
+
+  const salvar = async () => {
+    if (!form.nome || !form.valor) return alert('Nome e valor são obrigatórios.');
+    setSave(true);
+    const res = await api.post('/planos', { ...form, valor: parseFloat(form.valor) });
+    setSave(false);
+    if (res.error) return alert(res.error);
+    setPlanos(p => [...p, { ...form, id: res.id, slug_link: res.slug }]);
+    setModal(false);
+    toast('Plano criado!');
+  };
+
+  const tipoLabel = { mei:'MEI', me:'ME', epp:'EPP', isento:'Isento', combo:'Combo', personalizado:'Personalizado' };
+
+  return (
+    <div>
+      <div className="filters">
+        <div style={{flex:1}}/>
+        <button className="btn btn-primary" onClick={() => setModal(true)}>+ Novo Plano</button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:12}}>
+        {planos.map(p => (
+          <div key={p.id} className="card">
+            <div className="flex justify-between items-center" style={{marginBottom:8}}>
+              <span className="badge badge-blue">{tipoLabel[p.tipo]||p.tipo}</span>
+              {p.tem_conecta && <span className="badge badge-green">+ Conecta</span>}
+            </div>
+            <div style={{fontSize:15,fontWeight:600,color:'var(--text1)',marginBottom:2}}>{p.nome}</div>
+            <div style={{fontSize:22,fontWeight:700,color:'var(--accent2)',margin:'8px 0'}}>{fMoeda(p.valor)}<span style={{fontSize:12,color:'var(--text3)',fontWeight:400}}>/{p.periodicidade}</span></div>
+            {p.slug_link && (
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:6,fontFamily:'var(--mono)',wordBreak:'break-all'}}>
+                /inscricao/{p.slug_link}
+              </div>
+            )}
+          </div>
+        ))}
+        {planos.length === 0 && <div className="empty"><div className="icon">📋</div><p>Nenhum plano cadastrado.</p></div>}
+      </div>
+
+      {modal && (
+        <div className="modal-backdrop" onClick={() => setModal(false)}>
+          <div className="modal" style={{maxWidth:440}} onClick={e=>e.stopPropagation()}>
+            <div className="modal-header"><h2>Novo Plano de Taxa</h2><button className="btn btn-ghost btn-sm" onClick={()=>setModal(false)}>✕</button></div>
+            <div className="modal-body" style={{display:'flex',flexDirection:'column',gap:12}}>
+              <div className="form-group"><label className="form-label">Nome</label><input className="form-input" placeholder="Ex: MEI Anual 2026" value={form.nome} onChange={e=>set('nome',e.target.value)}/></div>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label">Tipo</label>
+                  <select className="form-input" value={form.tipo} onChange={e=>set('tipo',e.target.value)}>
+                    {Object.entries(tipoLabel).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Periodicidade</label>
+                  <select className="form-input" value={form.periodicidade} onChange={e=>set('periodicidade',e.target.value)}>
+                    <option value="mensal">Mensal</option>
+                    <option value="trimestral">Trimestral</option>
+                    <option value="semestral">Semestral</option>
+                    <option value="anual">Anual</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-group"><label className="form-label">Valor (R$)</label><input className="form-input" type="number" step="0.01" placeholder="0,00" value={form.valor} onChange={e=>set('valor',e.target.value)}/></div>
+              <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:13,color:'var(--text2)'}}>
+                <input type="checkbox" checked={form.tem_conecta} onChange={e=>set('tem_conecta',e.target.checked)}/>
+                Incluir acesso ao Conecta 2.0 (combo)
+              </label>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={()=>setModal(false)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={salvar} disabled={saving}>{saving?'Salvando...':'Criar Plano'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── LAYOUT PRINCIPAL ──────────────────────────────────────────────────────────
+const PAGES = {
+  dashboard:  { label:'Dashboard',   icon:'⊞', comp: Dashboard },
+  associados: { label:'Associados',  icon:'🏢', comp: Associados },
+  cobrancas:  { label:'Cobranças',   icon:'💳', comp: Cobrancas },
+  planos:     { label:'Planos',      icon:'📋', comp: Planos },
+};
+
+function App() {
+  const [user, setUser]     = useState(() => {
+    const t = localStorage.getItem('crm_token');
+    if (!t) return null;
+    try { return JSON.parse(atob(t.split('.')[1])); } catch { return null; }
+  });
+  const [page, setPage]     = useState('dashboard');
+
+  if (!user) return <Login onLogin={u => { setUser(u); }} />;
+
+  const Page = PAGES[page]?.comp || Dashboard;
+  const pageLabel = PAGES[page]?.label || 'Dashboard';
+
+  const sair = () => { localStorage.removeItem('crm_token'); setUser(null); };
+
+  return (
+    <ToastProvider>
+      <div className="app">
+        <aside className="sidebar">
+          <div className="sidebar-logo">
+            <div className="mark">C</div>
+            <div>
+              <div className="name">Conecta CRM</div>
+              <div className="sub">ACIC-DF</div>
+            </div>
+          </div>
+          <nav className="sidebar-nav">
+            <div className="nav-section">Principal</div>
+            {Object.entries(PAGES).map(([key, p]) => (
+              <div key={key} className={`nav-item ${page===key?'active':''}`} onClick={() => setPage(key)}>
+                <span className="icon">{p.icon}</span>
+                {p.label}
+              </div>
+            ))}
+          </nav>
+          <div className="sidebar-footer">
+            <div className="user-card" onClick={sair} title="Sair">
+              <div className="user-avatar">{ini(user.nome)}</div>
+              <div className="user-info">
+                <div className="name">{user.nome?.split(' ')[0]}</div>
+                <div className="role">{user.role} · Sair</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+        <main className="main">
+          <div className="topbar">
+            <h1>{pageLabel}</h1>
+          </div>
+          <div className="content">
+            <Page />
+          </div>
+        </main>
+      </div>
+    </ToastProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>
