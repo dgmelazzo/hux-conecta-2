@@ -82,6 +82,8 @@ select.fl{height:40px;padding:0 32px 0 12px;background:var(--sf);border:1.5px so
 textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 .mf{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--bd)}
 /* Planos */
+.assoc-tab{padding:6px 14px;border:1px solid var(--bd);border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;background:none;color:var(--t2);transition:all .15s}
+.assoc-tab.on{background:var(--blue);color:#fff;border-color:var(--blue)}
 .pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
 .pl-card{background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;padding:20px;position:relative;transition:all .15s}
 .pl-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(37,99,235,.1)}
@@ -159,6 +161,12 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 
     <!-- Associados -->
     <div class="pg2" id="pa">
+      <div class="assoc-tabs" style="display:flex;gap:4px;margin-bottom:12px">
+        <button class="assoc-tab on" onclick="setCategoria('',this)" id="tab-all">Todos</button>
+        <button class="assoc-tab" onclick="setCategoria('empresa',this)" id="tab-empresa">Empresas</button>
+        <button class="assoc-tab" onclick="setCategoria('colaborador',this)" id="tab-colaborador">Colaboradores</button>
+        <button class="assoc-tab" onclick="setCategoria('dependente',this)" id="tab-dependente">Dependentes</button>
+      </div>
       <div class="sbr">
         <div class="sw2"><input class="si" id="sq" placeholder="Buscar nome, CNPJ, email..." oninput="ds()"><div class="sic"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
         <select class="fl" id="ss" onchange="la()"><option value="">Todos os status</option><option value="ativo">Ativos</option><option value="inadimplente">Inadimplentes</option><option value="prospecto">Prospectos</option><option value="cancelado">Cancelados</option></select>
@@ -209,7 +217,17 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
       <div class="fg"><label class="fl3">Tipo</label><select class="fc" id="ft"><option value="pj">Pessoa Jurídica</option><option value="pf">Pessoa Física</option></select></div>
       <div class="fg"><label class="fl3">Status</label><select class="fc" id="fst"><option value="prospecto">Prospecto</option><option value="ativo">Ativo</option><option value="inadimplente">Inadimplente</option><option value="suspenso">Suspenso</option></select></div>
     </div>
-    <div class="fg"><label class="fl3">Razão Social / Nome *</label><input type="text" class="fc" id="frz" placeholder="Nome da empresa ou pessoa"></div>
+    <div class="fr" id="fg-cat-vinc">
+        <div class="fg"><label class="fl3">Categoria</label><select class="fc" id="fcat" onchange="onCatChange()">
+          <option value="empresa">Empresa</option>
+          <option value="colaborador">Colaborador</option>
+          <option value="dependente">Dependente</option>
+        </select></div>
+        <div class="fg" id="fg-vinc" style="display:none"><label class="fl3" id="lbl-vinc">Vinculado a</label>
+          <select class="fc" id="fvinc"><option value="">Selecione...</option></select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl3">Razão Social / Nome *</label><input type="text" class="fc" id="frz" placeholder="Nome da empresa ou pessoa"></div>
     <div class="fg"><label class="fl3">Nome Fantasia</label><input type="text" class="fc" id="fnf" placeholder="Nome comercial"></div>
     <div class="fr">
       <div class="fg"><label class="fl3">CNPJ / CPF</label><input type="text" class="fc" id="fd" placeholder="00.000.000/0001-00"></div>
@@ -234,15 +252,15 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 <!-- Modal Plano -->
 <div class="mo" id="mpl">
   <div class="mb">
-    <div class="mt2">Novo Plano</div>
+    <div class="mt2" id="pl-title">Novo Plano</div>
     <div class="ms2">Configurar plano de associação</div>
     <div class="fr">
-      <div class="fg"><label class="fl3">Nome *</label><input type="text" class="fc" id="pl-nome" placeholder="Ex: MEI Mensal"></div>
+      <input type="hidden" id="pl-id"><div class="fg"><label class="fl3">Nome *</label><input type="text" class="fc" id="pl-nome" placeholder="Ex: MEI Mensal"></div>
       <div class="fg"><label class="fl3">Tipo</label><select class="fc" id="pl-tipo"><option value="mei">MEI</option><option value="me">ME</option><option value="epp">EPP</option><option value="isento">Isento</option><option value="combo">Combo</option><option value="personalizado">Personalizado</option></select></div>
     </div>
     <div class="fr">
       <div class="fg"><label class="fl3">Valor (R$) *</label><input type="number" class="fc" id="pl-val" step="0.01" placeholder="0,00"></div>
-      <div class="fg"><label class="fl3">Periodicidade</label><select class="fc" id="pl-per"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="semestral">Semestral</option></select></div>
+      <div class="fg"><label class="fl3">Valor Anual (R$)</label><input type="number" class="fc" id="pl-anual" step="0.01" placeholder="0,00"></div><div class="fg"><label class="fl3">Periodicidade</label><select class="fc" id="pl-per"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="semestral">Semestral</option></select></div>
     </div>
     <div class="fg"><label class="fl3">Descrição</label><textarea class="fc" id="pl-desc" placeholder="Detalhes do plano..."></textarea></div>
     <div class="mf">
@@ -316,7 +334,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 <script>
 const A='/api';
 let tk=localStorage.getItem('crm_token'),usr=JSON.parse(localStorage.getItem('crm_user')||'{}');
-let pls=[],assocs=[],estagios=[],acp=1,ccp=1,st3,editId=null;
+let pls=[],_plCache={},assocs=[],estagios=[],acp=1,ccp=1,st3,editId=null;
 if(!tk)location.href='/';
 // Inicializar usuário
 if(usr.nome){
@@ -392,19 +410,28 @@ async function ld(){
 }
 
 // Associados
+let _assocCategoria='',_assocCache={};
+function setCategoria(cat,btn){
+  _assocCategoria=cat;
+  document.querySelectorAll('.assoc-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  la(1);
+}
 async function la(p2=1){
   acp=p2;const q=document.getElementById('sq')?.value||'';const st=document.getElementById('ss')?.value||'';
   document.getElementById('at').innerHTML='<div class="ld"><div class="sp"></div></div>';
-  const d=await api(`/associados?page=${p2}&q=${encodeURIComponent(q)}&status=${st}`);if(!d)return;
+  const catFilt=_assocCategoria||'';const d=await api(`/associados?page=${p2}&q=${encodeURIComponent(q)}&status=${st}&categoria=${catFilt}`);if(!d)return;
   document.getElementById('nb').textContent=d.total;assocs=d.data;
-  if(d.data.length===0){document.getElementById('at').innerHTML='<div class="em">Nenhum associado encontrado.</div>';document.getElementById('apg').style.display='none';return;}
-  document.getElementById('at').innerHTML=`<table><thead><tr><th>Empresa</th><th>Contato</th><th>Status</th><th>Plano</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+  const rows=Array.isArray(d.data)?d.data:(d.data?.data||[]);assocs=rows;_assocCache={};rows.forEach(x=>_assocCache[x.id]=x);
+  if(rows.length===0){document.getElementById('at').innerHTML='<div class="em">Nenhum associado encontrado.</div>';document.getElementById('apg').style.display='none';return;}
+  document.getElementById('at').innerHTML=`<table><thead><tr><th>Empresa</th><th>Categoria</th><th>Contato</th><th>Status</th><th>Plano</th><th>Ações</th></tr></thead><tbody>${rows.map(x=>`<tr>
     <td><strong>${x.razao_social||x.nome_responsavel||'-'}</strong><br><span style="font-size:11px;color:var(--t3)">${x.cnpj||x.cpf||''}</span></td>
+    <td style="font-size:11px">${{'empresa':'Empresa','colaborador':'Colaborador','dependente':'Dependente'}[x.categoria]||'-'}</td>
     <td><span style="font-size:12px">${x.email||'-'}</span><br><span style="font-size:11px;color:var(--t3)">${x.whatsapp||x.telefone||''}</span></td>
     <td>${bs(x.status)}</td>
     <td style="font-size:12px">${x.plano_nome||'-'}</td>
     <td style="white-space:nowrap">
-      <button class="btn-o" onclick='editAssoc(${JSON.stringify(x)})' style="margin-right:4px">Editar</button>
+      <button class="btn-o" onclick="editAssocById(${x.id})" style="margin-right:4px">Editar</button>
       <button class="btn-r" onclick="delAssoc(${x.id},'${(x.razao_social||x.nome_responsavel||'').replace(/'/g,"\\'")}')">Excluir</button>
     </td>
   </tr>`).join('')}</tbody></table>`;
@@ -416,6 +443,57 @@ async function la(p2=1){
 }
 function ds(){clearTimeout(st3);st3=setTimeout(()=>la(1),400);}
 
+async function onCatChange(){
+  const cat=document.getElementById('fcat').value;
+  const ftEl=document.getElementById('ft');
+  if(cat==='empresa'){ftEl.value='pj';}
+  else{ftEl.value='pf';}
+  const fvinc=document.getElementById('fg-vinc');
+  const lbl=document.getElementById('lbl-vinc');
+  const sel=document.getElementById('fvinc');
+  // Oculta/mostra campos conforme categoria
+  const isEmpF=cat==='empresa';
+  ['fnf','fpl','fvc'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.closest('.fg'))el.closest('.fg').style.display=isEmpF?'':'none';
+    if(el&&el.closest('.fr')){
+      const fr=el.closest('.fr');
+      const allHidden=[...fr.querySelectorAll('.fg')].every(fg=>fg.style.display==='none');
+      if(allHidden)fr.style.display='none'; else fr.style.display='';
+    }
+  });
+  const fdLabel=document.getElementById('fd')?.closest('.fg')?.querySelector('label');
+  if(fdLabel)fdLabel.textContent=isEmpF?'CNPJ / CPF':'CPF';
+  const frzLabel=document.getElementById('frz')?.closest('.fg')?.querySelector('label');
+  if(frzLabel)frzLabel.textContent=isEmpF?'Razão Social / Nome *':'Nome completo *';
+  // Oculta/mostra campos conforme categoria
+  ['fnf','fpl','fvc'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.closest('.fg'))el.closest('.fg').style.display=isEmpF?'':'none';
+    if(el&&el.closest('.fr')){
+      const fr=el.closest('.fr');
+      const allHidden=[...fr.querySelectorAll('.fg')].every(fg=>fg.style.display==='none');
+      if(allHidden)fr.style.display='none'; else fr.style.display='';
+    }
+  });
+  if(fdLabel)fdLabel.textContent=isEmpF?'CNPJ / CPF':'CPF';
+  if(cat==='colaborador'){
+    fvinc.style.display='';lbl.textContent='Empresa vinculada';
+    const d=await api('/associados?categoria=empresa&per=100');
+    sel.innerHTML='<option value="">Selecione a empresa...</option>'+(d?.data||[]).map(a=>`<option value="${a.id}">${a.razao_social||a.nome_fantasia||a.nome_responsavel}</option>`).join('');
+  }else if(cat==='dependente'){
+    fvinc.style.display='';lbl.textContent='Colaborador vinculado';
+    const d=await api('/associados?categoria=colaborador&per=100');
+    sel.innerHTML='<option value="">Selecione o colaborador...</option>'+(d?.data||[]).map(a=>`<option value="${a.id}">${a.razao_social||a.nome_responsavel||a.nome_fantasia}</option>`).join('');
+  }else{
+    fvinc.style.display='none';sel.innerHTML='<option value="">Selecione...</option>';
+  }
+}
+async function editAssocById(id){
+  const x=_assocCache[id]||(await api('/associados/'+id));
+  if(!x)return;
+  editAssoc(x);
+}
 function editAssoc(x){
   editId=x.id;
   document.getElementById('ma-title').textContent='Editar Associado';
@@ -430,11 +508,17 @@ function editAssoc(x){
   document.getElementById('fpl').value=x.plano_id||'';
   document.getElementById('fvc').value=x.data_vencimento||'';
   document.getElementById('fobs').value=x.observacoes||'';
+  const fcatEl=document.getElementById('fcat');
+  fcatEl.value=x.categoria||'empresa';
+  fcatEl.disabled=true;
+  onCatChange().then(()=>{if(x.vinculo_id)document.getElementById('fvinc').value=x.vinculo_id;});
   om('ma');
 }
 async function sa(){
   const t=document.getElementById('ft').value;
-  const b={tipo_pessoa:t,razao_social:document.getElementById('frz').value,nome_fantasia:document.getElementById('fnf').value,email:document.getElementById('fe').value,telefone:document.getElementById('ftel').value,whatsapp:document.getElementById('fw').value,status:document.getElementById('fst').value,plano_id:document.getElementById('fpl').value||null,data_vencimento:document.getElementById('fvc').value||null,observacoes:document.getElementById('fobs').value};
+  const cat=document.getElementById('fcat').value;
+  const vincId=document.getElementById('fvinc').value;
+  const b={tipo_pessoa:t,categoria:cat,vinculo_id:vincId?parseInt(vincId):null,razao_social:document.getElementById('frz').value,nome_fantasia:document.getElementById('fnf').value,email:document.getElementById('fe').value,telefone:document.getElementById('ftel').value,whatsapp:document.getElementById('fw').value,status:document.getElementById('fst').value,plano_id:document.getElementById('fpl').value||null,data_vencimento:document.getElementById('fvc').value||null,observacoes:document.getElementById('fobs').value};
   if(t==='pj')b.cnpj=document.getElementById('fd').value;else b.cpf=document.getElementById('fd').value;
   if(!b.razao_social){toast('Informe o nome ou razão social','err');return;}
   const url=editId?`/associados/${editId}`:'/associados';
@@ -453,6 +537,7 @@ async function delAssoc(id,nome){
 // Planos
 async function lp(){
   const d=await api('/planos');if(!d)return;pls=d.data;upSelects();
+  _plCache={};d.data.forEach(p=>_plCache[p.id]=p);
   const tp={mei:'MEI',me:'ME',epp:'EPP',isento:'Isento',combo:'Combo',personalizado:'Personalizado'};
   document.getElementById('pg3').innerHTML=d.data.length===0
     ?'<div class="em">Nenhum plano configurado.</div>'
@@ -462,16 +547,29 @@ async function lp(){
       <div class="pl-val">${money(p.valor)} <span>/${p.periodicidade}</span></div>
       ${p.slug_link?`<div class="pl-link">🔗 /associe-se/${p.slug_link}</div>`:''}
       <div class="pl-acts">
-        <button class="btn-r" onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Excluir</button>
+        <button class="btn-o" onclick="_plCache&&editPlano(_plCache[${p.id}])" style="margin-right:4px">Editar</button><button class="btn-r" onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Excluir</button>
       </div>
     </div>`).join('');
 }
 async function spl(){
   const b={nome:document.getElementById('pl-nome').value,tipo:document.getElementById('pl-tipo').value,valor:document.getElementById('pl-val').value,periodicidade:document.getElementById('pl-per').value,descricao:document.getElementById('pl-desc').value};
   if(!b.nome||!b.valor){toast('Nome e valor obrigatórios','err');return;}
-  const r=await api('/planos',{method:'POST',body:JSON.stringify(b)});
-  if(r?.id){cm('mpl');lp();toast('Plano criado!');}
+  const pid=document.getElementById('pl-id').value;
+  const r=pid
+    ?await api('/planos/'+pid,{method:'PUT',body:JSON.stringify(b)})
+    :await api('/planos',{method:'POST',body:JSON.stringify(b)});
+  if(r?.id||r?.ok){cm('mpl');document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';lp();toast(pid?'Plano atualizado!':'Plano criado!');}
   else toast(r?.error||'Erro','err');
+}
+function editPlano(p){
+  document.getElementById('pl-id').value=p.id||'';
+  document.getElementById('pl-nome').value=p.nome||'';
+  document.getElementById('pl-tipo').value=p.tipo||'custom';
+  document.getElementById('pl-val').value=p.valor_mensal||p.valor||'';
+  document.getElementById('pl-anual').value=p.valor_anual||'';
+  document.getElementById('pl-per').value=p.periodicidade||'mensal';
+  document.getElementById('pl-title').textContent='Editar Plano';
+  om('mpl');
 }
 async function delPlano(id,nome){
   if(!confirm(`Excluir plano "${nome}"?`))return;
@@ -486,7 +584,7 @@ async function lc(p2=1){
   document.getElementById('cob-t').innerHTML='<div class="ld"><div class="sp"></div></div>';
   const d=await api(`/cobrancas?page=${p2}&status=${st}`);if(!d)return;
   if(d.data.length===0){document.getElementById('cob-t').innerHTML='<div class="em">Nenhuma cobrança encontrada.</div>';document.getElementById('cpg').style.display='none';return;}
-  document.getElementById('cob-t').innerHTML=`<table><thead><tr><th>Associado</th><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+  document.getElementById('cob-t').innerHTML=`<table><thead><tr><th>Associado</th><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.map(x=>`<tr>
     <td><strong>${x.razao_social||x.nome_responsavel||'-'}</strong></td>
     <td style="font-size:12px">${x.descricao||'-'}</td>
     <td style="font-weight:600">${money(x.valor)}</td>
@@ -567,7 +665,7 @@ async function lu(){
   if(d.data?.length===0){document.getElementById('usr-t').innerHTML='<div class="em">Nenhum usuário.</div>';return;}
   const roles={superadmin:'role-sa',gestor:'role-g',atendente:'role-a'};
   const rl={superadmin:'Super Admin',gestor:'Gestor',atendente:'Atendente'};
-  document.getElementById('usr-t').innerHTML=`<table><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+  document.getElementById('usr-t').innerHTML=`<table><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.map(x=>`<tr>
     <td><strong>${x.nome}</strong></td>
     <td style="font-size:12px">${x.email}</td>
     <td><span class="role-badge ${roles[x.role]||'role-a'}">${rl[x.role]||x.role}</span></td>

@@ -217,9 +217,10 @@ if ($uri === '/associados' && $method === 'GET') {
     $where = 'tenant_id=? AND (razao_social LIKE ? OR nome_fantasia LIKE ? OR nome_responsavel LIKE ? OR email LIKE ? OR cnpj LIKE ? OR cpf LIKE ?)';
     $params = [$tid,$q,$q,$q,$q,$q,$q];
     if ($st) { $where .= ' AND status=?'; $params[] = $st; }
+    $cat = $_GET['categoria']??''; if ($cat) { $where .= ' AND categoria=?'; $params[] = $cat; }
     $total = one("SELECT COUNT(*) n FROM associados WHERE $where",$params)['n']??0;
     $params[] = $per; $params[] = $off;
-    $rows = many("SELECT id,tipo_pessoa,razao_social,nome_fantasia,nome_responsavel,cpf,cnpj,email,telefone,whatsapp,status,data_vencimento,plano_id,criado_em FROM associados WHERE $where ORDER BY COALESCE(razao_social,nome_responsavel) LIMIT ? OFFSET ?",$params);
+    $rows = many("SELECT id,tipo_pessoa,categoria,vinculo_id,razao_social,nome_fantasia,nome_responsavel,cpf,cnpj,email,telefone,whatsapp,status,data_vencimento,plano_id,criado_em FROM associados WHERE $where ORDER BY COALESCE(razao_social,nome_responsavel) LIMIT ? OFFSET ?",$params);
     ok(['data'=>$rows,'total'=>(int)$total,'page'=>$page,'per'=>$per]);
 }
 
@@ -236,8 +237,10 @@ if ($uri === '/associados' && $method === 'POST') {
     if (!$cpf && !$cnpj) err('CPF ou CNPJ é obrigatório');
     if ($cnpj && one('SELECT id FROM associados WHERE cnpj=? AND tenant_id=?',[$cnpj,$a['tenant_id']])) err('CNPJ já cadastrado');
     if ($cpf  && one('SELECT id FROM associados WHERE cpf=? AND tenant_id=?', [$cpf, $a['tenant_id']])) err('CPF já cadastrado');
-    $id = run('INSERT INTO associados (tenant_id,plano_id,tipo_pessoa,razao_social,nome_fantasia,nome_responsavel,cpf,cnpj,email,telefone,whatsapp,status,criado_por,criado_em) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())',
-        [$a['tenant_id'],$b['plano_id']??null,$b['tipo_pessoa']??'pj',$b['razao_social']??null,$b['nome_fantasia']??null,$b['nome_responsavel']??null,
+    $cat_val = $b['categoria']??'empresa';
+    $vinc_val = isset($b['vinculo_id'])&&$b['vinculo_id'] ? (int)$b['vinculo_id'] : null;
+    $id = run('INSERT INTO associados (tenant_id,plano_id,tipo_pessoa,categoria,vinculo_id,razao_social,nome_fantasia,nome_responsavel,cpf,cnpj,email,telefone,whatsapp,status,criado_por,criado_em) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())',
+        [$a['tenant_id'],$b['plano_id']??null,$b['tipo_pessoa']??'pj',$cat_val,$vinc_val,$b['razao_social']??null,$b['nome_fantasia']??null,$b['nome_responsavel']??null,
          $cpf?:null,$cnpj?:null,trim($b['email']??'')?:null,$b['telefone']??null,preg_replace('/\D/','',$b['whatsapp']??'')?:null,$b['status']??'prospecto',$a['sub']]);
     ok(one('SELECT * FROM associados WHERE id=?',[$id]),201);
 }
