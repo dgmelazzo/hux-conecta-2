@@ -813,3 +813,50 @@ if ($method === 'GET' && $uri === '/usuarios') {
 // 404
 // ============================================================
 json_out(['error' => 'Rota não encontrada', 'path' => $uri, 'method' => $method], 404);
+
+// ============================================================
+// PATCH /usuarios/{id} — ativa/desativa usuário
+// ============================================================
+if ($method === 'PATCH' && preg_match('#^/usuarios/(\d+)$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    if (!isset($b['ativo'])) json_out(['error' => 'Campo ativo obrigatório'], 422);
+
+    pdo()->prepare(
+        'UPDATE usuarios SET ativo = ?, atualizado_em = NOW() WHERE id = ? AND tenant_id = ?'
+    )->execute([(int)$b['ativo'], $m[1], $tid]);
+
+    $stmt = pdo()->prepare('SELECT id, nome, email, role, ativo FROM usuarios WHERE id = ?');
+    $stmt->execute([$m[1]]);
+    json_out($stmt->fetch());
+}
+
+// ============================================================
+// POST /usuarios — alias de /auth/criar-usuario
+// ============================================================
+if ($method === 'POST' && $uri === '/usuarios') {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    required_fields(['nome', 'email', 'role']);
+    $b   = body();
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    if (!in_array($b['role'], ['gestor', 'atendente'])) {
+        json_out(['error' => 'Role inválida. Use: gestor ou atendente'], 422);
+    }
+
+    $chk = pdo()->prepare('SELECT id FROM usuarios WHERE email = ? AND tenant_id = ?');
+    $chk->execute([$b['email'], $tid]);
+    if ($chk->fetch()) json_out(['error' => 'E-mail já cadastrado'], 409);
+
+    $senha = $b['senha'] ?? 'Acic@2026';
+    pdo()->prepare(
+        'INSERT INTO usuarios (tenant_id, nome, email, senha_hash, role, ativo, criado_em)
+         VALUES (?, ?, ?, ?, ?, 1, NOW())'
+    )->execute([$tid, $b['nome'], $b['email'], password_hash($senha, PASSWORD_DEFAULT), $b['role']]);
+
+    json_out(['id' => (int)pdo()->lastInsertId(), 'message' => 'Usuário criado'], 201);
+}
