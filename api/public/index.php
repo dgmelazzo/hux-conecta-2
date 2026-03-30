@@ -248,8 +248,9 @@ if ($uri === '/associados' && $method === 'POST') {
 if (preg_match('#^/associados/(\d+)$#',$uri,$m) && $method==='PUT') {
     $a = auth(); $b = body();
     if (!one('SELECT id FROM associados WHERE id=? AND tenant_id=?',[$m[1],$a['tenant_id']])) err('Não encontrado',404);
-    run('UPDATE associados SET razao_social=COALESCE(?,razao_social),nome_fantasia=COALESCE(?,nome_fantasia),nome_responsavel=COALESCE(?,nome_responsavel),email=COALESCE(?,email),telefone=COALESCE(?,telefone),whatsapp=COALESCE(?,whatsapp),status=COALESCE(?,status),plano_id=COALESCE(?,plano_id) WHERE id=? AND tenant_id=?',
-        [$b['razao_social']??null,$b['nome_fantasia']??null,$b['nome_responsavel']??null,$b['email']??null,$b['telefone']??null,$b['whatsapp']??null,$b['status']??null,$b['plano_id']??null,$m[1],$a['tenant_id']]);
+    $vinc_upd = isset($b['vinculo_id']) && $b['vinculo_id'] ? (int)$b['vinculo_id'] : null;
+    run('UPDATE associados SET razao_social=COALESCE(?,razao_social),nome_fantasia=COALESCE(?,nome_fantasia),nome_responsavel=COALESCE(?,nome_responsavel),email=COALESCE(?,email),telefone=COALESCE(?,telefone),whatsapp=COALESCE(?,whatsapp),status=COALESCE(?,status),plano_id=COALESCE(?,plano_id),vinculo_id=? WHERE id=? AND tenant_id=?',
+        [$b['razao_social']??null,$b['nome_fantasia']??null,$b['nome_responsavel']??null,$b['email']??null,$b['telefone']??null,$b['whatsapp']??null,$b['status']??null,$b['plano_id']??null,$vinc_upd,$m[1],$a['tenant_id']]);
     ok(one('SELECT * FROM associados WHERE id=?',[$m[1]]));
 }
 

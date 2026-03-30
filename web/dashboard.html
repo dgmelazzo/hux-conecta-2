@@ -425,7 +425,7 @@ async function la(p2=1){
   const rows=Array.isArray(d.data)?d.data:(d.data?.data||[]);assocs=rows;_assocCache={};rows.forEach(x=>_assocCache[x.id]=x);
   if(rows.length===0){document.getElementById('at').innerHTML='<div class="em">Nenhum associado encontrado.</div>';document.getElementById('apg').style.display='none';return;}
   document.getElementById('at').innerHTML=`<table><thead><tr><th>Empresa</th><th>Categoria</th><th>Contato</th><th>Status</th><th>Plano</th><th>Ações</th></tr></thead><tbody>${rows.map(x=>`<tr>
-    <td><strong>${x.razao_social||x.nome_responsavel||'-'}</strong><br><span style="font-size:11px;color:var(--t3)">${x.cnpj||x.cpf||''}</span></td>
+    <td><strong>${x.razao_social||x.nome_responsavel||'-'}</strong><br><span style="font-size:11px;color:var(--t3)">${x.cnpj||x.cpf||''}</span>${x.vinculo_id?`<br><span style="font-size:10px;color:var(--blue)">↳ vinculado #${x.vinculo_id}</span>`:''}</td>
     <td style="font-size:11px">${{'empresa':'Empresa','colaborador':'Colaborador','dependente':'Dependente'}[x.categoria]||'-'}</td>
     <td><span style="font-size:12px">${x.email||'-'}</span><br><span style="font-size:11px;color:var(--t3)">${x.whatsapp||x.telefone||''}</span></td>
     <td>${bs(x.status)}</td>
@@ -490,7 +490,9 @@ async function onCatChange(){
   }
 }
 async function editAssocById(id){
-  const x=_assocCache[id]||(await api('/associados/'+id));
+  id=parseInt(id);
+  let x=_assocCache[id];
+  if(!x){const r=await api('/associados/'+id);x=r?.id?r:null;}
   if(!x)return;
   editAssoc(x);
 }
@@ -518,11 +520,11 @@ async function sa(){
   const t=document.getElementById('ft').value;
   const cat=document.getElementById('fcat').value;
   const vincId=document.getElementById('fvinc').value;
-  const b={tipo_pessoa:t,categoria:cat,vinculo_id:vincId?parseInt(vincId):null,razao_social:document.getElementById('frz').value,nome_fantasia:document.getElementById('fnf').value,email:document.getElementById('fe').value,telefone:document.getElementById('ftel').value,whatsapp:document.getElementById('fw').value,status:document.getElementById('fst').value,plano_id:document.getElementById('fpl').value||null,data_vencimento:document.getElementById('fvc').value||null,observacoes:document.getElementById('fobs').value};
+  const b={tipo_pessoa:t,categoria:cat,vinculo_id:vincId?parseInt(vincId):null,nome_responsavel:cat!=='empresa'?document.getElementById('frz').value:null,razao_social:cat==='empresa'?document.getElementById('frz').value:null,nome_fantasia:document.getElementById('fnf').value,email:document.getElementById('fe').value,telefone:document.getElementById('ftel').value,whatsapp:document.getElementById('fw').value,status:document.getElementById('fst').value,plano_id:document.getElementById('fpl').value||null,data_vencimento:document.getElementById('fvc').value||null,observacoes:document.getElementById('fobs').value};
   if(t==='pj')b.cnpj=document.getElementById('fd').value;else b.cpf=document.getElementById('fd').value;
-  if(!b.razao_social){toast('Informe o nome ou razão social','err');return;}
+  if(!b.razao_social&&!b.nome_responsavel){toast('Informe o nome','err');return;}
   const url=editId?`/associados/${editId}`:'/associados';
-  const method=editId?'PATCH':'POST';
+  const method=editId?'PUT':'POST';
   const r=await api(url,{method,body:JSON.stringify(b)});
   if(r?.id){cm('ma');la(acp);toast(editId?'Associado atualizado!':'Associado cadastrado!');}
   else toast(r?.error||'Erro ao salvar','err');
