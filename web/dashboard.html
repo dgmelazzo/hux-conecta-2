@@ -115,26 +115,80 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 .toast.ok{background:#065F46;border-left:4px solid var(--gn)}
 .toast.err{background:#991B1B;border-left:4px solid var(--rd)}
 @keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+/* btn-s (save/primary) */
+.btn-s{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:var(--f);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-s:hover{background:var(--dk)}
+.btn-s:disabled,.btn:disabled,.btn-o:disabled{opacity:.5;cursor:not-allowed}
+/* Hamburger */
+.hb{display:none;background:none;border:none;cursor:pointer;padding:8px;margin-right:8px;flex-shrink:0}
+.hb span{display:block;width:20px;height:2px;background:var(--tx);margin:4px 0;border-radius:2px;transition:all .2s}
+/* Overlay */
+.sb-ov{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99;opacity:0;transition:opacity .2s}
+.sb-ov.on{display:block;opacity:1}
+/* Table scroll */
+.tbl-s{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* Responsive: Tablet */
+@media(max-width:768px){
+  .sb{transform:translateX(-100%);transition:transform .25s ease;z-index:200}
+  .sb.open{transform:translateX(0)}
+  .hb{display:block}
+  .main{margin-left:0}
+  .tb{padding:0 16px}
+  .ct{padding:16px}
+  .kg{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+  .g2{grid-template-columns:1fr}
+  .fr{grid-template-columns:1fr}
+  .mo{padding:0;align-items:flex-end}
+  .mb{border-radius:16px 16px 0 0;max-height:92vh;padding:20px}
+  .kc{padding:14px}
+  .kv{font-size:20px}
+  .sbr{flex-wrap:wrap}
+  .sw2{min-width:100%}
+  select.fl{width:100%}
+  .gw-grid2{grid-template-columns:1fr}
+  .gw-field[style*="grid-column"]{grid-column:span 1!important}
+  .assoc-tabs,.assoc-tab-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:4px}
+  .assoc-tab{white-space:nowrap;flex-shrink:0}
+  .pl-grid{grid-template-columns:1fr 1fr}
+}
+/* Responsive: Mobile */
+@media(max-width:480px){
+  .tb{height:52px}
+  .pt{font-size:14px}.ps{font-size:11px}
+  .ct{padding:12px}
+  .kg{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+  .kc{padding:12px}.kv{font-size:18px}.ki{width:30px;height:30px;margin-bottom:10px}
+  .ki svg{width:14px;height:14px}
+  .btn{padding:6px 12px;font-size:12px}
+  .btn-o{padding:5px 10px;font-size:11px}
+  th{padding:8px 10px;font-size:10px}
+  td{padding:10px;font-size:12px}
+  .mb{padding:16px}
+  .mt2{font-size:16px}
+  .pl-grid{grid-template-columns:1fr}
+  .pag{flex-direction:column;gap:8px;align-items:flex-start}
+}
 </style>
 </head>
 <body>
-<aside class="sb">
+<div class="sb-ov" id="sb-ov" onclick="closeSb()"></div>
+<aside class="sb" id="sb">
   <div class="lg">
     <div class="li"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
     <div><div class="ln">Conecta <span>CRM</span></div></div>
   </div>
   <nav>
     <div class="sc">Principal</div>
-    <button class="ni on" onclick="go('d')"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</button>
-    <button class="ni" onclick="go('a')"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Associados<span class="nb" id="nb">0</span></button>
+    <button class="ni on" data-nav="d" onclick="go('d')"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</button>
+    <button class="ni" data-nav="a" onclick="go('a')"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Associados<span class="nb" id="nb">0</span></button>
     <div class="sc">Financeiro</div>
-    <button class="ni" onclick="go('p')"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Planos e Taxas</button>
-    <button class="ni" onclick="go('c')"><svg class="ic" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Cobranças</button>
-    <div class="sc">Comercial</div>
+    <button class="ni" data-nav="p" onclick="go('p')"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Planos e Taxas</button>
+    <button class="ni" data-nav="c" onclick="go('c')"><svg class="ic" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Cobranças</button>
+    <div class="sc">Comunicação</div>
+    <button class="ni" data-nav="com" onclick="go('com')"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Comunicados</button>
     <div class="sc" id="sec-adm" style="display:none">Administração</div>
-    <button class="ni" onclick="go('gw')">Gateway</button>
-    <button class="ni" onclick="go('com')"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Comunicados</button>
-    <button class="ni" id="ni-usr" onclick="go('u')"><svg class="ic" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Usuários</button>
+    <button class="ni" data-nav="gw" onclick="go('gw')"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>Gateway</button>
+    <button class="ni" id="ni-usr" data-nav="u" onclick="go('u')"><svg class="ic" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Usuários</button>
     <div class="sc">Sistema</div>
     <button class="ni" onclick="logout()"><svg class="ic" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair</button>
   </nav>
@@ -143,8 +197,11 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 
 <main class="main">
   <div class="tb">
-    <div><div class="pt" id="pt">Dashboard</div><div class="ps" id="ps">Visão geral do sistema</div></div>
-    <button class="btn" id="btn-top" onclick="act()">
+    <div style="display:flex;align-items:center">
+      <button class="hb" onclick="openSb()"><span></span><span></span><span></span></button>
+      <div><div class="pt" id="pt">Dashboard</div><div class="ps" id="ps">Visão geral do sistema</div></div>
+    </div>
+    <button class="btn" id="btn-top" onclick="act()" style="display:none">
       <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span id="bl">Novo Associado</span>
     </button>
@@ -152,7 +209,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   <div class="ct">
 
     <!-- Dashboard -->
-    <div class="pg2 on" id="pd">
+    <div class="pg2" id="pd">
       <div class="kg" id="kg"><div class="ld"><div class="sp"></div> Carregando...</div></div>
       <div class="g2">
         <div class="cd"><div class="ch"><span class="cht">Associados Recentes</span><button class="btn-o" onclick="go('a')">Ver todos</button></div><div class="cb" id="ra"><div class="ld"><div class="sp"></div></div></div></div>
@@ -173,7 +230,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
         <select class="fl" id="ss" onchange="la()"><option value="">Todos os status</option><option value="ativo">Ativos</option><option value="inadimplente">Inadimplentes</option><option value="prospecto">Prospectos</option><option value="cancelado">Cancelados</option></select>
       </div>
       <div class="cd">
-        <div class="cb" id="at"><div class="ld"><div class="sp"></div></div></div>
+        <div class="tbl-s"><div class="cb" id="at"><div class="ld"><div class="sp"></div></div></div></div>
         <div class="pag" id="apg" style="display:none"><span id="apg-info"></span><div class="pag-btns" id="apg-btns"></div></div>
       </div>
     </div>
@@ -189,14 +246,9 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
         <select class="fl" id="cst" onchange="lc()"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="pago">Pagas</option><option value="cancelado">Canceladas</option><option value="vencido">Vencidas</option></select>
       </div>
       <div class="cd">
-        <div class="cb" id="cob-t"><div class="ld"><div class="sp"></div></div></div>
+        <div class="tbl-s"><div class="cb" id="cob-t"><div class="ld"><div class="sp"></div></div></div></div>
         <div class="pag" id="cpg" style="display:none"><span id="cpg-info"></span><div class="pag-btns" id="cpg-btns"></div></div>
       </div>
-    </div>
-
-    <!-- Pipeline -->
-    <div class="pg2" id="pk">
-      <div class="kb" id="kb"><div class="ld"><div class="sp"></div></div></div>
     </div>
 
     <!-- Comunicados -->
@@ -210,7 +262,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
       <!-- Tab Templates -->
       <div id="com-tpl">
         <div class="cd">
-          <div class="cb" id="com-tpl-t"><div class="ld"><div class="sp"></div></div></div>
+          <div class="tbl-s"><div class="cb" id="com-tpl-t"><div class="ld"><div class="sp"></div></div></div></div>
         </div>
       </div>
 
@@ -221,7 +273,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
           <select class="fl" id="com-h-status" onchange="lcomEnvios()"><option value="">Todos os status</option><option value="enviado">Enviado</option><option value="falhou">Falhou</option></select>
         </div>
         <div class="cd">
-          <div class="cb" id="com-hist-t"><div class="ld"><div class="sp"></div></div></div>
+          <div class="tbl-s"><div class="cb" id="com-hist-t"><div class="ld"><div class="sp"></div></div></div></div>
         </div>
       </div>
 
@@ -247,7 +299,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <!-- Usuários -->
     <div class="pg2" id="pu">
       <div class="cd">
-        <div class="cb" id="usr-t"><div class="ld"><div class="sp"></div></div></div>
+        <div class="tbl-s"><div class="cb" id="usr-t"><div class="ld"><div class="sp"></div></div></div></div>
       </div>
     </div>
 
@@ -338,28 +390,6 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   </div>
 </div>
 
-<!-- Modal Prospecto -->
-<div class="mo" id="mpr">
-  <div class="mb">
-    <div class="mt2">Novo Prospecto</div>
-    <div class="ms2">Adicionar empresa ao pipeline</div>
-    <div class="fg"><label class="fl3">Empresa *</label><input type="text" class="fc" id="pr-emp" placeholder="Nome da empresa"></div>
-    <div class="fr">
-      <div class="fg"><label class="fl3">E-mail</label><input type="email" class="fc" id="pr-em" placeholder="contato@empresa.com.br"></div>
-      <div class="fg"><label class="fl3">WhatsApp</label><input type="text" class="fc" id="pr-wpp" placeholder="(61) 99999-9999"></div>
-    </div>
-    <div class="fr">
-      <div class="fg"><label class="fl3">Valor Estimado</label><input type="number" class="fc" id="pr-val" step="0.01" placeholder="0,00"></div>
-      <div class="fg"><label class="fl3">Estágio</label><select class="fc" id="pr-est"></select></div>
-    </div>
-    <div class="fg"><label class="fl3">Observações</label><textarea class="fc" id="pr-obs" placeholder="Anotações..."></textarea></div>
-    <div class="mf">
-      <button class="btn-o" onclick="cm('mpr')">Cancelar</button>
-      <button class="btn" onclick="spr()"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal Template Comunicado -->
 <div class="mo" id="mcom">
   <div class="mb" style="max-width:620px">
@@ -406,7 +436,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 <script>
 const A='https://api.acicdf.org.br';
 let tk=localStorage.getItem('crm_token'),usr=JSON.parse(localStorage.getItem('crm_user')||'{}');
-let pls=[],_plCache={},assocs=[],estagios=[],acp=1,ccp=1,st3,editId=null;
+let pls=[],_plCache={},assocs=[],acp=1,ccp=1,st3,editId=null;
 if(!tk)location.href='/';
 // Inicializar usuário
 if(usr.nome){
@@ -433,20 +463,27 @@ function om(i){document.getElementById(i).classList.add('on');}
 function cm(i){document.getElementById(i).classList.remove('on');editId=null;}
 
 // Navegação
-const PM={d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},k:{t:'Pipeline',s:'Prospecção e conversão',b:'Novo Prospecto'},gw:{t:'Gateway',s:'Configuracao de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
+const PM={d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
+// Sidebar mobile
+function openSb(){document.getElementById('sb').classList.add('open');document.getElementById('sb-ov').classList.add('on');}
+function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('sb-ov').classList.remove('on');}
 function go(n){
+  closeSb();
   document.querySelectorAll('.pg2').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
   document.getElementById('p'+n).classList.add('on');
-  document.querySelectorAll('.ni')[['d','a','p','c','k','u'].indexOf(n)+1]?.classList.add('on');
-  const p=PM[n];document.getElementById('pt').textContent=p.t;document.getElementById('ps').textContent=p.s;document.getElementById('bl').textContent=p.b;
-  if(n==='d')ld();if(n==='a')la();if(n==='p')lp();if(n==='c')lc();if(n==='k')lk();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();
+  const navBtn=document.querySelector('.ni[data-nav="'+n+'"]');
+  if(navBtn)navBtn.classList.add('on');
+  const p=PM[n];document.getElementById('pt').textContent=p.t;document.getElementById('ps').textContent=p.s;
+  const btnTop=document.getElementById('btn-top');
+  if(p.b){btnTop.style.display='';document.getElementById('bl').textContent=p.b;}
+  else{btnTop.style.display='none';}
+  if(n==='d')ld();if(n==='a')la();if(n==='p')lp();if(n==='c')lc();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();
 }
 function act(){const on=document.querySelector('.pg2.on')?.id;
-  if(on==='pd'||on==='pa'){editId=null;document.getElementById('ma-title').textContent='Novo Associado';limpaCampos(['frz','fnf','fd','fe','ftel','fw','fobs']);document.getElementById('fst').value='prospecto';document.getElementById('fvc').value='';om('ma');}
-  else if(on==='pp')om('mpl');
+  if(on==='pd'||on==='pa'){editId=null;document.getElementById('ma-title').textContent='Novo Associado';limpaCampos(['frz','fnf','fd','fe','ftel','fw','fobs']);document.getElementById('fst').value='prospecto';document.getElementById('fvc').value='';document.getElementById('fcat').disabled=false;om('ma');}
+  else if(on==='pp'){document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';limpaCampos(['pl-nome','pl-val','pl-anual','pl-desc']);document.getElementById('pl-split-ativo').checked=false;document.getElementById('pl-split-pct-wrap').style.display='none';om('mpl');}
   else if(on==='pc'){carregaAssocs();om('mcob');}
-  else if(on==='pk'){carregaEstagios();om('mpr');}
   else if(on==='pu')om('musr');
 }
 function limpaCampos(ids){ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';})}
@@ -485,7 +522,7 @@ async function ld(){
 let _assocCategoria='',_assocCache={};
 function setCategoria(cat,btn){
   _assocCategoria=cat;
-  document.querySelectorAll('.assoc-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('#pa .assoc-tab').forEach(t=>t.classList.remove('on'));
   btn.classList.add('on');
   la(1);
 }
@@ -594,7 +631,8 @@ async function sa(){
   const vincId=document.getElementById('fvinc').value;
   const b={tipo_pessoa:t,categoria:cat,vinculo_id:vincId?parseInt(vincId):null,nome_responsavel:cat!=='empresa'?document.getElementById('frz').value:null,razao_social:cat==='empresa'?document.getElementById('frz').value:null,nome_fantasia:document.getElementById('fnf').value,email:document.getElementById('fe').value,telefone:document.getElementById('ftel').value,whatsapp:document.getElementById('fw').value,status:document.getElementById('fst').value,plano_id:document.getElementById('fpl').value||null,data_vencimento:document.getElementById('fvc').value||null,observacoes:document.getElementById('fobs').value};
   if(t==='pj')b.cnpj=document.getElementById('fd').value;else b.cpf=document.getElementById('fd').value;
-  if(!b.razao_social&&!b.nome_responsavel){toast('Informe o nome','err');return;}
+  if(!b.razao_social&&!b.nome_responsavel){toast('Informe o nome ou razão social','err');return;}
+  if(b.email&&!b.email.includes('@')){toast('E-mail inválido','err');return;}
   const url=editId?`/associados/${editId}`:'/associados';
   const method=editId?'PUT':'POST';
   const r=await api(url,{method,body:JSON.stringify(b)});
@@ -678,7 +716,9 @@ async function carregaAssocs(){
 }
 async function scob(){
   const b={associado_id:document.getElementById('cob-assoc').value,valor:document.getElementById('cob-val').value,vencimento:document.getElementById('cob-venc').value,descricao:document.getElementById('cob-desc').value||'Taxa associativa'};
-  if(!b.associado_id||!b.valor||!b.vencimento){toast('Preencha todos os campos obrigatórios','err');return;}
+  if(!b.associado_id){toast('Selecione um associado','err');return;}
+  if(!b.valor||parseFloat(b.valor)<=0){toast('Informe um valor válido','err');return;}
+  if(!b.vencimento){toast('Informe a data de vencimento','err');return;}
   const r=await api('/cobrancas',{method:'POST',body:JSON.stringify(b)});
   if(r?.id){cm('mcob');lc();toast('Cobrança gerada!');}
   else toast(r?.error||'Erro','err');
@@ -692,45 +732,6 @@ async function cancelarCob(id){
   if(!confirm('Cancelar esta cobrança?'))return;
   const r=await api(`/cobrancas/${id}/cancelar`,{method:'PATCH'});
   if(r?.id){lc();toast('Cobrança cancelada!');}else toast('Erro','err');
-}
-
-// Pipeline
-async function lk(){
-  const d=await api('/pipeline');if(!d)return;
-  estagios=d.estagios||[];
-  if(!estagios.length){document.getElementById('kb').innerHTML='<div class="em">Nenhum estágio configurado.</div>';return;}
-  document.getElementById('kb').innerHTML=estagios.map(e=>`<div class="kbc">
-    <div class="kbh"><div class="kbht"><div class="kbd" style="background:${e.cor}"></div>${e.nome}</div><div class="kbhc">${e.prospectos?.length||0}</div></div>
-    ${e.prospectos?.length?e.prospectos.map(p=>`<div class="kbcard">
-      <div class="kben">${p.nome_empresa}</div>
-      <div class="kbct">${p.email||p.whatsapp||'Sem contato'}</div>
-      ${p.valor_estimado?`<div class="kbval">${money(p.valor_estimado)}</div>`:''}
-      <div style="display:flex;gap:4px;margin-top:8px">
-        ${estagios.filter(x=>x.id!==e.id).map(x=>`<button class="btn-o" style="font-size:10px;padding:2px 8px" onclick="moverProsp(${p.id},${x.id})">${x.nome}</button>`).join('')}
-        <button class="btn-r" style="font-size:10px;padding:2px 8px" onclick="delProsp(${p.id})">✕</button>
-      </div>
-    </div>`).join(''):'<div style="text-align:center;padding:24px;font-size:12px;color:var(--t3)">Vazio</div>'}
-  </div>`).join('');
-}
-async function carregaEstagios(){
-  if(estagios.length){upEstSelect();return;}
-  const d=await api('/pipeline');if(d?.estagios){estagios=d.estagios;upEstSelect();}
-}
-function upEstSelect(){const s=document.getElementById('pr-est');if(!s)return;s.innerHTML=estagios.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('');}
-async function spr(){
-  const b={nome_empresa:document.getElementById('pr-emp').value,email:document.getElementById('pr-em').value,whatsapp:document.getElementById('pr-wpp').value,valor_estimado:document.getElementById('pr-val').value||0,estagio_id:document.getElementById('pr-est').value,observacoes:document.getElementById('pr-obs').value};
-  if(!b.nome_empresa){toast('Informe o nome da empresa','err');return;}
-  const r=await api('/pipeline/prospectos',{method:'POST',body:JSON.stringify(b)});
-  if(r?.id){cm('mpr');lk();toast('Prospecto adicionado!');}else toast(r?.error||'Erro','err');
-}
-async function moverProsp(id,estId){
-  const r=await api(`/pipeline/prospectos/${id}/mover`,{method:'PATCH',body:JSON.stringify({estagio_id:estId})});
-  if(r?.id){lk();toast('Movido!');}else toast('Erro','err');
-}
-async function delProsp(id){
-  if(!confirm('Remover este prospecto?'))return;
-  const r=await api(`/pipeline/prospectos/${id}`,{method:'DELETE'});
-  if(r?.success){lk();toast('Removido!');}else toast('Erro','err');
 }
 
 // Usuários
@@ -751,7 +752,9 @@ async function lu(){
 }
 async function susr(){
   const b={nome:document.getElementById('u-nome').value,email:document.getElementById('u-email').value,role:document.getElementById('u-role').value,senha:document.getElementById('u-senha').value||'Acic@2026'};
-  if(!b.nome||!b.email){toast('Nome e email obrigatórios','err');return;}
+  if(!b.nome){toast('Informe o nome do usuário','err');return;}
+  if(!b.email||!b.email.includes('@')){toast('Informe um e-mail válido','err');return;}
+  if(b.senha&&b.senha.length<6){toast('A senha deve ter no mínimo 6 caracteres','err');return;}
   const r=await api('/usuarios',{method:'POST',body:JSON.stringify(b)});
   if(r?.id){cm('musr');lu();toast('Usuário criado! Senha: '+(document.getElementById('u-senha').value||'Acic@2026'));}
   else toast(r?.error||'Erro','err');
@@ -859,14 +862,14 @@ function upSelects(){
 }
 
 // Init
-ld();
+go('d');
 </script>
 <style>.gw-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:24px;margin-bottom:16px}.gw-card h3{font-size:14px;font-weight:600;color:#0F172A;margin-bottom:16px}.gw-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.gw-field{display:flex;flex-direction:column;gap:6px}.gw-field label{font-size:12px;font-weight:500;color:#374151}.gw-inp{border:1px solid #E2E8F0;border-radius:8px;padding:9px 12px;font-size:13px;outline:none;width:100%;background:#FAFAFA;color:#0F172A}.gw-inp:focus{border-color:#1D4ED8;background:#fff}.gw-sel{border:1px solid #E2E8F0;border-radius:8px;padding:9px 12px;font-size:13px;width:100%;background:#FAFAFA;color:#0F172A;outline:none}.gw-tog{display:flex;align-items:center;gap:10px;cursor:pointer}.gw-tog input[type=checkbox]{width:36px;height:20px;appearance:none;background:#CBD5E1;border-radius:99px;cursor:pointer;transition:background .2s;position:relative;flex-shrink:0}.gw-tog input[type=checkbox]:checked{background:#1D4ED8}.gw-tog input[type=checkbox]::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s}.gw-tog input[type=checkbox]:checked::after{left:18px}.gw-tog span{font-size:13px;color:#374151}.gw-st{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px}.gw-st.ok{background:#F0FDF4;border:1px solid #BBF7D0;color:#15803D}.gw-st.err{background:#FEF2F2;border:1px solid #FECACA;color:#DC2626}.gw-st.idle{background:#F8FAFC;border:1px solid #E2E8F0;color:#64748B}.sp-prev{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 14px;font-size:12px;color:#1E40AF;margin-top:12px}.wh-box{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12px;color:#475569;word-break:break-all;cursor:pointer}.wh-box:hover{border-color:#1D4ED8}</style>
-<div class="pg2" id="pgw">
+<div class="pg2" id="pgw" style="padding:0 28px 28px">
 <div id="gw-st-bar" class="gw-st idle"><span id="gw-st-txt">Carregando...</span></div>
-<div class="gw-card"><h3>Credenciais Asaas</h3><div class="gw-grid2"><div class="gw-field" style="grid-column:span 2"><label>API Key</label><div style="display:flex;gap:8px"><input class="gw-inp" type="password" id="gw-key" placeholder="$aact_..." style="flex:1"/><button class="btn-o" onclick="var i=document.getElementById('gw-key');i.type=i.type==='password'?'text':'password'" style="padding:9px 12px;font-size:12px;white-space:nowrap">Ver</button></div><div id="gw-key-info" style="font-size:11px;color:#94A3B8;margin-top:4px"></div></div><div class="gw-field"><label>Ambiente</label><select class="gw-sel" id="gw-amb"><option value="sandbox">Sandbox</option><option value="producao">Producao</option></select></div><div class="gw-field"><label>Webhook Token</label><input class="gw-inp" type="text" id="gw-wht" readonly style="background:#F1F5F9"/></div><div class="gw-field" style="grid-column:span 2"><label>URL Webhook</label><div class="wh-box" onclick="navigator.clipboard.writeText('https://api.acicdf.org.br/webhooks/asaas');alert('Copiado')">https://api.acicdf.org.br/webhooks/asaas</div></div></div></div>
-<div class="gw-card"><h3>Split HUX Participacoes</h3><label class="gw-tog"><input type="checkbox" id="gw-sp-ativo" onchange="document.getElementById('gw-sp-fields').style.display=this.checked?'block':'none';gwPreview()"/><span>Ativar split automatico para HUX</span></label><div id="gw-sp-fields" style="display:none;margin-top:16px"><div class="gw-grid2"><div class="gw-field"><label>Percentual HUX %</label><input class="gw-inp" type="number" id="gw-sp-pct" min="0" max="100" step="0.1" placeholder="2.0" oninput="gwPreview()"/></div><div class="gw-field"><label>Wallet ID HUX</label><input class="gw-inp" type="text" id="gw-sp-wallet" placeholder="f8a3b2c1-..."/></div></div><div class="sp-prev" id="sp-prev" style="display:none"></div></div></div>
-<div style="display:flex;gap:10px;margin-top:4px"><button class="btn-o" onclick="gwTestar()">Testar Conexao</button><button class="btn-s" onclick="gwSalvar()">Salvar</button></div>
+<div class="gw-card"><h3>Credenciais Asaas</h3><div class="gw-grid2"><div class="gw-field" style="grid-column:span 2"><label>API Key</label><div style="display:flex;gap:8px"><input class="gw-inp" type="password" id="gw-key" placeholder="$aact_..." style="flex:1"/><button class="btn-o" onclick="var i=document.getElementById('gw-key');i.type=i.type==='password'?'text':'password'" style="padding:9px 12px;font-size:12px;white-space:nowrap">Ver</button></div><div id="gw-key-info" style="font-size:11px;color:#94A3B8;margin-top:4px"></div></div><div class="gw-field"><label>Ambiente</label><select class="gw-sel" id="gw-amb"><option value="sandbox">Sandbox</option><option value="producao">Produção</option></select></div><div class="gw-field"><label>Webhook Token</label><input class="gw-inp" type="text" id="gw-wht" readonly style="background:#F1F5F9"/></div><div class="gw-field" style="grid-column:span 2"><label>URL Webhook</label><div class="wh-box" onclick="navigator.clipboard.writeText('https://api.acicdf.org.br/webhooks/asaas');toast('URL copiada!')">https://api.acicdf.org.br/webhooks/asaas</div></div></div></div>
+<div class="gw-card"><h3>Split HUX Participações</h3><label class="gw-tog"><input type="checkbox" id="gw-sp-ativo" onchange="document.getElementById('gw-sp-fields').style.display=this.checked?'block':'none';gwPreview()"/><span>Ativar split automático para HUX</span></label><div id="gw-sp-fields" style="display:none;margin-top:16px"><div class="gw-grid2"><div class="gw-field"><label>Percentual HUX %</label><input class="gw-inp" type="number" id="gw-sp-pct" min="0" max="100" step="0.1" placeholder="2.0" oninput="gwPreview()"/></div><div class="gw-field"><label>Wallet ID HUX</label><input class="gw-inp" type="text" id="gw-sp-wallet" placeholder="f8a3b2c1-..."/></div></div><div class="sp-prev" id="sp-prev" style="display:none"></div></div></div>
+<div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap"><button class="btn-o" onclick="gwTestar()">Testar Conexão</button><button class="btn-s" onclick="gwSalvar()">Salvar</button></div>
 </div>
 <script>
 async function lgw(){var d=await api('/gateway');var bar=document.getElementById('gw-st-bar');var txt=document.getElementById('gw-st-txt');if(d&&d.id){bar.className='gw-st ok';txt.textContent='Configurado'+(d.testado_em?' - testado em '+new Date(d.testado_em).toLocaleString('pt-BR'):'');document.getElementById('gw-key-info').textContent=d.api_key_salva?'API Key: '+d.api_key_mask:'Sem API Key';document.getElementById('gw-amb').value=d.ambiente||'sandbox';document.getElementById('gw-wht').value=d.webhook_token||'';document.getElementById('gw-sp-ativo').checked=!!d.split_ativo;if(d.split_ativo)document.getElementById('gw-sp-fields').style.display='block';document.getElementById('gw-sp-pct').value=d.split_percentual||'';document.getElementById('gw-sp-wallet').value=d.split_wallet_id||'';gwPreview();}else{bar.className='gw-st idle';txt.textContent='Gateway nao configurado.';}}
