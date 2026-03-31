@@ -1491,6 +1491,48 @@ if ($method === 'POST' && preg_match('#^/inscricoes/(\d+)/converter$#', $uri, $m
 }
 
 // ============================================================
+// TESTE DE E-MAIL
+// ============================================================
+if ($method === 'POST' && $uri === '/test/email') {
+    $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $to = $p['email'] ?? '';
+    if (!$to) json_out(['error' => 'E-mail do usuário não encontrado no token'], 422);
+
+    // Busca config do tenant para remetente
+    $stmtCfg = pdo()->prepare('SELECT valor FROM tenant_configs WHERE tenant_id = ? AND chave = "email_remetente" LIMIT 1');
+    $stmtCfg->execute([$tid]);
+    $from = $stmtCfg->fetchColumn() ?: 'noreply@acicdf.org.br';
+
+    $stmtNome = pdo()->prepare('SELECT valor FROM tenant_configs WHERE tenant_id = ? AND chave = "email_remetente_nome" LIMIT 1');
+    $stmtNome->execute([$tid]);
+    $fromName = $stmtNome->fetchColumn() ?: 'Conecta CRM';
+
+    $subject = 'Teste de E-mail — Conecta CRM';
+    $body = '<html><body style="font-family:Arial,sans-serif;padding:20px">'
+          . '<h2 style="color:#1B2B6B">Conecta CRM — Teste de E-mail</h2>'
+          . '<p>Este é um e-mail de teste enviado pelo Conecta CRM.</p>'
+          . '<p>Se você recebeu esta mensagem, o envio de e-mails está funcionando corretamente.</p>'
+          . '<p style="color:#6B7280;font-size:12px;margin-top:24px">Enviado em ' . date('d/m/Y H:i:s') . '</p>'
+          . '</body></html>';
+
+    $headers  = "From: $fromName <$from>\r\n";
+    $headers .= "Reply-To: $from\r\n";
+    $headers .= "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+
+    $sent = @mail($to, $subject, $body, $headers);
+
+    if ($sent) {
+        json_out(['message' => 'E-mail de teste enviado para ' . $to, 'enviado_para' => $to]);
+    } else {
+        json_out(['error' => 'Falha ao enviar e-mail. Verifique a configuração do servidor de e-mail.'], 500);
+    }
+}
+
+// ============================================================
 // 404
 // ============================================================
-json_out(['error' => 'Rota não encontrado', 'path' => $uri, 'method' => $method], 404);
+json_out(['error' => 'Rota não encontrada', 'path' => $uri, 'method' => $method], 404);

@@ -98,18 +98,6 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 .pl-val span{font-size:12px;font-weight:400;color:var(--t3)}
 .pl-link{font-size:11px;color:var(--t3);margin-top:10px;font-family:monospace}
 .pl-acts{display:flex;gap:6px;margin-top:14px;padding-top:14px;border-top:1px solid var(--bd)}
-/* Pipeline Kanban */
-.kb{display:flex;gap:16px;overflow-x:auto;padding-bottom:16px;min-height:400px}
-.kbc{min-width:240px;max-width:240px;background:var(--bg);border-radius:12px;padding:12px;flex-shrink:0}
-.kbh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.kbht{font-size:12px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:6px}
-.kbhc{font-size:11px;font-weight:600;color:var(--t3);background:#fff;padding:2px 8px;border-radius:99px}
-.kbd{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.kbcard{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .15s}
-.kbcard:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);transform:translateY(-1px)}
-.kben{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:4px}
-.kbct{font-size:11px;color:var(--t3)}
-.kbval{font-size:12px;font-weight:600;color:var(--gn);margin-top:6px}
 /* Usuarios */
 .role-badge{display:inline-flex;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
 .role-sa{background:#F5F3FF;color:#5B21B6}
@@ -343,6 +331,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
             <div class="fg"><label class="fl3">Z-API Token</label><input type="password" class="fc" id="cfg-zapi-token" placeholder="token"></div>
           </div>
           <div class="mf" style="border-top:none;padding-top:8px">
+            <button class="btn-o" id="btn-test-email" onclick="testarEmail()">Enviar E-mail Teste</button>
             <button class="btn" onclick="salvarCfgCom()"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar Configurações</button>
           </div>
         </div>
@@ -355,6 +344,13 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
       <div class="gw-card"><h3>Credenciais Asaas</h3><div class="gw-grid2"><div class="gw-field" style="grid-column:span 2"><label>API Key</label><div style="display:flex;gap:8px"><input class="gw-inp" type="password" id="gw-key" placeholder="$aact_..." style="flex:1"/><button class="btn-o" onclick="var i=document.getElementById('gw-key');i.type=i.type==='password'?'text':'password'" style="padding:9px 12px;font-size:12px;white-space:nowrap">Ver</button></div><div id="gw-key-info" style="font-size:11px;color:#94A3B8;margin-top:4px"></div></div><div class="gw-field"><label>Ambiente</label><select class="gw-sel" id="gw-amb"><option value="sandbox">Sandbox</option><option value="producao">Produção</option></select></div><div class="gw-field"><label>Webhook Token</label><input class="gw-inp" type="text" id="gw-wht" readonly style="background:#F1F5F9"/></div><div class="gw-field" style="grid-column:span 2"><label>URL Webhook</label><div class="wh-box" onclick="navigator.clipboard.writeText('https://api.acicdf.org.br/webhooks/asaas');toast('URL copiada!')">https://api.acicdf.org.br/webhooks/asaas</div></div></div></div>
       <div class="gw-card"><h3>Split HUX Participações</h3><label class="gw-tog"><input type="checkbox" id="gw-sp-ativo" onchange="document.getElementById('gw-sp-fields').style.display=this.checked?'block':'none';gwPreview()"/><span>Ativar split automático para HUX</span></label><div id="gw-sp-fields" style="display:none;margin-top:16px"><div class="gw-grid2"><div class="gw-field"><label>Percentual HUX %</label><input class="gw-inp" type="number" id="gw-sp-pct" min="0" max="100" step="0.1" placeholder="2.0" oninput="gwPreview()"/></div><div class="gw-field"><label>Wallet ID HUX</label><input class="gw-inp" type="text" id="gw-sp-wallet" placeholder="f8a3b2c1-..."/></div></div><div class="sp-prev" id="sp-prev" style="display:none"></div></div></div>
       <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap"><button class="btn-o" onclick="gwTestar()">Testar Conexão</button><button class="btn-s" onclick="gwSalvar()">Salvar</button></div>
+      <div class="gw-card" style="margin-top:16px;background:var(--lt);border-color:var(--bd)">
+        <h3 style="color:var(--blue)">Configurar Webhook no Asaas</h3>
+        <p style="font-size:13px;color:var(--t2);margin-bottom:12px">No painel Asaas, acesse <strong>Configurações > Integrações > Notificações via webhook</strong> e configure:</p>
+        <div class="gw-field" style="margin-bottom:10px"><label>URL do Webhook</label><div class="wh-box" onclick="navigator.clipboard.writeText('https://api.acicdf.org.br/webhooks/asaas');toast('URL copiada!')">https://api.acicdf.org.br/webhooks/asaas</div></div>
+        <div class="gw-field"><label>Token de Autenticação</label><div class="wh-box" id="gw-wht-copy" onclick="var t=this.textContent;navigator.clipboard.writeText(t);toast('Token copiado!')">-</div></div>
+        <p style="font-size:11px;color:var(--t3);margin-top:10px">Ative os eventos: PAYMENT_RECEIVED, PAYMENT_CONFIRMED, PAYMENT_OVERDUE, PAYMENT_DELETED, PAYMENT_REFUNDED</p>
+      </div>
     </div>
 
     <!-- Usuários -->
@@ -609,7 +605,7 @@ function svgi(ic){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 async function ld(){
   document.getElementById('kg').innerHTML='<div class="ld"><div class="sp"></div> Carregando...</div>';
   const d=await api('/dashboard');if(!d)return;
-  document.getElementById('kg').innerHTML=d.kpis.map(k=>`<div class="kc"><div class="ki ${CL[k.color]||'b'}">${svgi(k.icon)}</div><div class="kv">${k.value}</div><div class="kl">${k.label}</div></div>`).join('');
+  document.getElementById('kg').innerHTML=d.kpis.map(k=>`<div class="kc" style="cursor:pointer" onclick="kpiClick('${k.label}')"><div class="ki ${CL[k.color]||'b'}">${svgi(k.icon)}</div><div class="kv">${k.value}</div><div class="kl">${k.label}</div></div>`).join('');
   // Associados recentes
   const a=await api('/associados?limit=5');
   if(a?.data){
@@ -1098,8 +1094,25 @@ function upSelects(){
   s.innerHTML='<option value="">Sem plano</option>'+pls.map(p=>`<option value="${p.id}">${p.nome} — ${money(p.valor)}</option>`).join('');
 }
 
+// KPI click navigation
+function kpiClick(label){
+  if(label.includes('Associado')||label.includes('Ativo')||label.includes('Inadimplente')||label.includes('Prospecto'))go('a');
+  else if(label.includes('Receita')||label.includes('Receber')||label.includes('Atraso'))go('c');
+  else if(label.includes('Inscrições'))go('insc');
+}
+
+// Teste de Email
+async function testarEmail(){
+  var btn=document.getElementById('btn-test-email');
+  btn.disabled=true;btn.textContent='Enviando...';
+  var r=await api('/test/email',{method:'POST',body:'{}'});
+  btn.disabled=false;btn.textContent='Enviar E-mail Teste';
+  if(r?.message)toast(r.message);
+  else toast(r?.error||'Erro ao enviar e-mail','err');
+}
+
 // Gateway
-async function lgw(){var d=await api('/gateway');var bar=document.getElementById('gw-st-bar');var txt=document.getElementById('gw-st-txt');if(d&&d.id){bar.className='gw-st ok';txt.textContent='Configurado'+(d.testado_em?' - testado em '+new Date(d.testado_em).toLocaleString('pt-BR'):'');document.getElementById('gw-key-info').textContent=d.api_key_salva?'API Key: '+d.api_key_mask:'Sem API Key';document.getElementById('gw-amb').value=d.ambiente||'sandbox';document.getElementById('gw-wht').value=d.webhook_token||'';document.getElementById('gw-sp-ativo').checked=!!d.split_ativo;if(d.split_ativo)document.getElementById('gw-sp-fields').style.display='block';document.getElementById('gw-sp-pct').value=d.split_percentual||'';document.getElementById('gw-sp-wallet').value=d.split_wallet_id||'';gwPreview();}else{bar.className='gw-st idle';txt.textContent='Gateway nao configurado.';}}
+async function lgw(){var d=await api('/gateway');var bar=document.getElementById('gw-st-bar');var txt=document.getElementById('gw-st-txt');if(d&&d.id){bar.className='gw-st ok';txt.textContent='Configurado'+(d.testado_em?' - testado em '+new Date(d.testado_em).toLocaleString('pt-BR'):'');document.getElementById('gw-key-info').textContent=d.api_key_salva?'API Key: '+d.api_key_mask:'Sem API Key';document.getElementById('gw-amb').value=d.ambiente||'sandbox';document.getElementById('gw-wht').value=d.webhook_token||'';var whtCopy=document.getElementById('gw-wht-copy');if(whtCopy)whtCopy.textContent=d.webhook_token||'-';document.getElementById('gw-sp-ativo').checked=!!d.split_ativo;if(d.split_ativo)document.getElementById('gw-sp-fields').style.display='block';document.getElementById('gw-sp-pct').value=d.split_percentual||'';document.getElementById('gw-sp-wallet').value=d.split_wallet_id||'';gwPreview();}else{bar.className='gw-st idle';txt.textContent='Gateway nao configurado.';}}
 function gwPreview(){var pct=parseFloat(document.getElementById('gw-sp-pct').value)||0;var prev=document.getElementById('sp-prev');if(!pct){prev.style.display='none';return;}var base=89.90;var hux=(base*pct/100).toFixed(2);var assoc=(base-parseFloat(hux)).toFixed(2);prev.style.display='block';prev.innerHTML='Exemplo R$89,90 - HUX R$'+hux+' ACIC R$'+assoc;}
 async function gwTestar(){var btn=document.querySelector('[onclick="gwTestar()"]');if(btn){btn.disabled=true;btn.textContent='Testando...';}var r=await api('/gateway/testar',{method:'POST',body:JSON.stringify({})});if(btn){btn.disabled=false;btn.textContent='Testar Conexao';}var bar=document.getElementById('gw-st-bar');var txt=document.getElementById('gw-st-txt');if(r&&r.sucesso){bar.className='gw-st ok';txt.textContent='OK - '+r.conta_nome;toast('Conexao confirmada!');}else{bar.className='gw-st err';txt.textContent='Erro: '+(r&&r.erro?r.erro:'falha');toast('Erro','err');}}
 async function gwSalvar(){var key=document.getElementById('gw-key').value.trim();var btn=document.querySelector('[onclick="gwSalvar()"]');if(btn){btn.disabled=true;btn.textContent='Salvando...';}var body={ambiente:document.getElementById('gw-amb').value,split_ativo:document.getElementById('gw-sp-ativo').checked?1:0,split_percentual:parseFloat(document.getElementById('gw-sp-pct').value)||0,split_wallet_id:document.getElementById('gw-sp-wallet').value.trim()||null};if(key)body.api_key=key;else body.manter_key=1;var r=await api('/gateway',{method:'POST',body:JSON.stringify(body)});if(btn){btn.disabled=false;btn.textContent='Salvar';}if(r&&r.id!=null){if(r.webhook_token)document.getElementById('gw-wht').value=r.webhook_token;toast('Configuracao salva!');lgw();}else toast(r&&r.error?r.error:'Erro ao salvar','err');}
