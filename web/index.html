@@ -19,8 +19,8 @@
   --text1:    #f0f4ff;
   --text2:    #8b9dbf;
   --text3:    #4d5e7a;
-  --accent:   #3b82f6;
-  --accent2:  #60a5fa;
+  --accent:   #E8701A;
+  --accent2:  #F0923E;
   --green:    #10b981;
   --red:      #ef4444;
   --yellow:   #f59e0b;
@@ -47,7 +47,7 @@ a{color:inherit;text-decoration:none}
 .nav-section{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:14px 8px 6px}
 .nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:1px}
 .nav-item:hover{background:var(--bg3);color:var(--text1)}
-.nav-item.active{background:rgba(59,130,246,.15);color:var(--accent2)}
+.nav-item.active{background:rgba(232,112,26,.15);color:var(--accent2)}
 .nav-item .icon{font-size:15px;width:18px;text-align:center;flex-shrink:0}
 .sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
 .user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer}
@@ -90,7 +90,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
-.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#2563eb}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#C85D15}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--bg3);color:var(--text1)}
 .btn-danger{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}.btn-danger:hover{background:rgba(239,68,68,.2)}
 .btn-sm{padding:5px 10px;font-size:12px}
@@ -263,7 +263,7 @@ function Login({ onLogin }) {
     <div className="login-wrap">
       <div className="login-box">
         <div className="login-logo">
-          <div className="mark">C</div>
+          <img src="/assets/logo-conecta-crm.png" alt="Conecta CRM" style={{height:'36px',borderRadius:'9px'}} />
           <div className="text">
             <h1>Conecta CRM</h1>
             <p>ACIC-DF</p>
@@ -858,7 +858,7 @@ function App() {
       <div className="app">
         <aside className="sidebar">
           <div className="sidebar-logo">
-            <div className="mark">C</div>
+            <img src="/assets/logo-conecta-crm.png" alt="Conecta CRM" style={{height:'28px',borderRadius:'6px'}} />
             <div>
               <div className="name">Conecta CRM</div>
               <div className="sub">ACIC-DF</div>
