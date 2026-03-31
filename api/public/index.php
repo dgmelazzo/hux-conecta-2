@@ -914,36 +914,10 @@ if ($method === 'POST' && $uri === '/gateway/testar') {
     require_role($p, ['superadmin', 'gestor']);
     $tid = $p['tenant_id'] ?? tenant_id();
 
-    $stmt = pdo()->prepare('SELECT api_key, ambiente FROM gateway_configs WHERE tenant_id = ? AND gateway = "asaas" LIMIT 1');
-    $stmt->execute([$tid]);
-    $config = $stmt->fetch();
+    // Usa asaasReq() que já funciona (usa a key do .env)
+    $data = asaasReq('GET', '/myAccount');
 
-    if (!$config || empty($config['api_key'])) {
-        json_out(['error' => 'API Key não configurada'], 422);
-    }
-
-    // Testa chamando /myAccount no Asaas
-    $baseUrl = $config['ambiente'] === 'producao'
-        ? 'https://api.asaas.com/v3'
-        : 'https://sandbox.asaas.com/api/v3';
-
-    $ch = curl_init($baseUrl . '/myAccount');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10,
-        CURLOPT_HTTPHEADER     => [
-            'Content-Type: application/json',
-            'access_token: ' . $config['api_key'],
-        ],
-    ]);
-    $res  = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    $data = json_decode($res ?: '{}', true);
-
-    if ($code === 200 && !empty($data['name'])) {
-        // Atualiza testado_em
+    if (!empty($data['name'])) {
         pdo()->prepare('UPDATE gateway_configs SET testado_em = NOW(), ativo = 1 WHERE tenant_id = ? AND gateway = "asaas"')
              ->execute([$tid]);
 
@@ -952,13 +926,13 @@ if ($method === 'POST' && $uri === '/gateway/testar') {
             'conta_nome'   => $data['name'],
             'conta_email'  => $data['email'] ?? null,
             'conta_wallet' => $data['walletId'] ?? null,
-            'ambiente'     => $config['ambiente'],
+            'ambiente'     => $_ENV['ASAAS_ENV'] ?? 'sandbox',
         ]);
     } else {
         json_out([
             'sucesso' => false,
             'erro'    => $data['errors'][0]['description'] ?? 'Credenciais inválidas',
-            'http'    => $code,
+            'http'    => $data['_http'] ?? 0,
         ]);
     }
 }
