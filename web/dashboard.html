@@ -297,7 +297,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <!-- Inscrições -->
     <div class="pg2" id="pinsc">
       <div class="sbr">
-        <select class="fl" id="insc-st" onchange="linsc()"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="convertido">Convertidas</option><option value="rejeitado">Rejeitadas</option></select>
+        <select class="fl" id="insc-st" onchange="linsc()"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="aprovado">Aprovadas</option><option value="aguardando_pagamento">Aguardando Pgto</option><option value="pago">Pagas</option><option value="reprovado">Reprovadas</option></select>
       </div>
       <div class="cd">
         <div class="tbl-s"><div class="cb" id="insc-t"><div class="ld"><div class="sp"></div></div></div></div>
@@ -366,6 +366,35 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 
   </div>
 </main>
+
+<!-- Modal Detalhe Inscrição -->
+<div class="mo" id="minsc" onclick="if(event.target===this)cm('minsc')">
+  <div class="mb" style="max-width:540px">
+    <button class="mc" onclick="cm('minsc')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="mt2" id="insc-d-nome">Inscrição</div>
+    <div class="ms2" id="insc-d-status">-</div>
+    <div id="insc-d-dados" style="margin-bottom:20px"></div>
+    <div class="mf" id="insc-d-actions"></div>
+  </div>
+</div>
+
+<!-- Modal Converter em Cobrança -->
+<div class="mo" id="mconv" onclick="if(event.target===this)cm('mconv')">
+  <div class="mb" style="max-width:460px">
+    <button class="mc" onclick="cm('mconv')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="mt2">Converter em Cobrança</div>
+    <div class="ms2">Gerar cobrança e enviar link de pagamento</div>
+    <div id="conv-plan" style="background:var(--lt);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:20px"></div>
+    <div class="fg"><label class="fl">Modalidade de Pagamento</label>
+      <select class="fc" id="conv-mod"><option value="pix">PIX</option><option value="boleto">Boleto</option></select>
+    </div>
+    <div class="mf">
+      <button class="btn-o" onclick="cm('mconv')">Cancelar</button>
+      <button class="btn" id="conv-btn" onclick="converterInsc()">Gerar Cobrança</button>
+    </div>
+    <div class="msg" id="conv-msg" style="display:none"></div>
+  </div>
+</div>
 
 <!-- Modal Detalhe Associado -->
 <div class="mo" id="mdet">
@@ -572,7 +601,7 @@ function limpaCampos(ids){ids.forEach(id=>{const el=document.getElementById(id);
 // Ícones SVG
 const IC={users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>','user-check':'<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/>','alert-circle':'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','dollar-sign':'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>','trending-up':'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>'};
 const CL={blue:'b',green:'g',red:'r',yellow:'y',purple:'p'};
-function bs(s){return`<span class="bx ${{ativo:'bg',inadimplente:'br',suspenso:'by',cancelado:'bgr',prospecto:'bb',pendente:'by',pago:'bg',vencido:'br',convertido:'bg',rejeitado:'br'}[s]||'bgr'}">${{ativo:'Ativo',inadimplente:'Inadimplente',suspenso:'Suspenso',cancelado:'Cancelado',prospecto:'Prospecto',pendente:'Pendente',pago:'Pago',vencido:'Vencido',convertido:'Convertido',rejeitado:'Rejeitado'}[s]||s}</span>`;}
+function bs(s){return`<span class="bx ${{ativo:'bg',inadimplente:'br',suspenso:'by',cancelado:'bgr',prospecto:'bb',pendente:'by',pago:'bg',vencido:'br',convertido:'bg',rejeitado:'br',aprovado:'bb',reprovado:'br',aguardando_pagamento:'by'}[s]||'bgr'}">${{ativo:'Ativo',inadimplente:'Inadimplente',suspenso:'Suspenso',cancelado:'Cancelado',prospecto:'Prospecto',pendente:'Pendente',pago:'Pago',vencido:'Vencido',convertido:'Convertido',rejeitado:'Rejeitado',aprovado:'Aprovado',reprovado:'Reprovado',aguardando_pagamento:'Aguardando Pgto'}[s]||s}</span>`;}
 function money(v){return'R$ '+parseFloat(v||0).toFixed(2).replace('.',',');}
 function svgi(ic){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[ic]||''}</svg>`;}
 
@@ -943,14 +972,95 @@ async function linsc(){
   const badge=document.getElementById('nb-insc');
   if(d.total>0&&!st){const pend=(d.data||[]).filter(x=>x.status==='pendente').length;if(pend>0){badge.textContent=pend;badge.style.display='';}else{badge.style.display='none';}}
   if(!d.data||d.data.length===0){document.getElementById('insc-t').innerHTML='<div class="em">Nenhuma inscrição encontrada.</div>';return;}
-  document.getElementById('insc-t').innerHTML=`<table><thead><tr><th>Data</th><th>Contato</th><th>Empresa</th><th>Plano</th><th>E-mail</th><th>Status</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+  document.getElementById('insc-t').innerHTML=`<table><thead><tr><th>Data</th><th>Contato</th><th>Empresa</th><th>Plano</th><th>E-mail</th><th>Status</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
     <td style="font-size:12px;color:var(--t3)">${x.criado_em?new Date(x.criado_em).toLocaleString('pt-BR'):'-'}</td>
     <td><strong>${x.nome_contato||'-'}</strong></td>
     <td style="font-size:12px">${x.nome_empresa||'-'}</td>
-    <td style="font-size:12px">${x.plano_nome||'-'}</td>
+    <td style="font-size:12px">${x.plano_nome||'-'} ${x.plano_valor?'('+money(x.plano_valor)+')':''}</td>
     <td style="font-size:12px">${x.email||'-'}</td>
     <td>${bs(x.status)}</td>
+    <td style="white-space:nowrap">
+      <button class="btn-o" onclick="verInsc(${x.id})" style="margin-right:4px">Ver</button>
+      ${x.status==='pendente'?`<button class="btn-o" style="margin-right:4px;border-color:var(--or);color:var(--or)" onclick="abrirConversao(${x.id})">Cobrar</button><button class="btn-r" onclick="reprovarInsc(${x.id})">Reprovar</button>`:''}
+      ${x.status==='aprovado'?`<button class="btn-o" style="border-color:var(--or);color:var(--or)" onclick="abrirConversao(${x.id})">Cobrar</button>`:''}
+    </td>
   </tr>`).join('')}</tbody></table>`;
+}
+
+// Inscrição — ações
+let _convInscId=null;
+async function verInsc(id){
+  om('minsc');
+  document.getElementById('insc-d-dados').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  document.getElementById('insc-d-actions').innerHTML='';
+  const d=await api('/inscricoes/'+id);
+  if(!d||!d.id){cm('minsc');toast('Erro ao carregar','err');return;}
+  document.getElementById('insc-d-nome').textContent=d.nome_contato||d.nome_empresa||'Inscrição #'+d.id;
+  document.getElementById('insc-d-status').innerHTML='Status: '+bs(d.status);
+  document.getElementById('insc-d-dados').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;font-size:13px;color:var(--t2)">
+    <div><span style="font-weight:600;color:var(--tx)">Empresa:</span> ${d.nome_empresa||'-'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">CNPJ:</span> ${d.cnpj||'-'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">Contato:</span> ${d.nome_contato||'-'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">E-mail:</span> ${d.email||'-'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">WhatsApp:</span> ${d.whatsapp||'-'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">Plano:</span> ${d.plano_nome||'-'} ${d.plano_valor?'('+money(d.plano_valor)+'/'+d.plano_periodicidade+')':''}</div>
+    <div><span style="font-weight:600;color:var(--tx)">Data:</span> ${d.criado_em?new Date(d.criado_em).toLocaleString('pt-BR'):'-'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">IP:</span> ${d.ip_origem||'-'}</div>
+  </div>`;
+  let acts='';
+  if(d.status==='pendente'){
+    acts=`<button class="btn-o" onclick="cm('minsc');aprovarInsc(${d.id})" style="margin-right:8px">Aprovar</button>
+          <button class="btn-r" onclick="cm('minsc');reprovarInsc(${d.id})" style="margin-right:8px">Reprovar</button>
+          <button class="btn" onclick="cm('minsc');abrirConversao(${d.id})">Converter em Cobrança</button>`;
+  } else if(d.status==='aprovado'){
+    acts=`<button class="btn" onclick="cm('minsc');abrirConversao(${d.id})">Converter em Cobrança</button>`;
+  }
+  document.getElementById('insc-d-actions').innerHTML=acts;
+}
+async function aprovarInsc(id){
+  if(!confirm('Aprovar esta inscrição? Um associado prospecto será criado.'))return;
+  const r=await api('/inscricoes/'+id+'/aprovar',{method:'POST',body:'{}'});
+  if(r?.message){toast('Inscrição aprovada!');linsc();}
+  else toast(r?.error||'Erro','err');
+}
+async function reprovarInsc(id){
+  if(!confirm('Reprovar esta inscrição?'))return;
+  const r=await api('/inscricoes/'+id+'/reprovar',{method:'POST',body:'{}'});
+  if(r?.message){toast('Inscrição reprovada');linsc();}
+  else toast(r?.error||'Erro','err');
+}
+async function abrirConversao(id){
+  _convInscId=id;
+  const d=await api('/inscricoes/'+id);
+  if(!d||!d.id)return;
+  document.getElementById('conv-plan').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">
+    <div><strong>${d.plano_nome||'Plano'}</strong><br><span style="font-size:12px;color:var(--t3)">${d.nome_empresa||d.nome_contato}</span></div>
+    <div style="font-size:18px;font-weight:700;color:var(--or)">${d.plano_valor?money(d.plano_valor):'-'}</div>
+  </div>`;
+  document.getElementById('conv-msg').style.display='none';
+  document.getElementById('conv-btn').disabled=false;
+  document.getElementById('conv-btn').textContent='Gerar Cobrança';
+  om('mconv');
+}
+async function converterInsc(){
+  if(!_convInscId)return;
+  const btn=document.getElementById('conv-btn');
+  const msg=document.getElementById('conv-msg');
+  btn.disabled=true;btn.innerHTML='<div class="sp" style="width:14px;height:14px;border-width:2px"></div> Gerando...';
+  const mod=document.getElementById('conv-mod').value;
+  const r=await api('/inscricoes/'+_convInscId+'/converter',{method:'POST',body:JSON.stringify({modalidade:mod})});
+  if(r?.cobranca_id){
+    msg.className='msg ok';
+    let html='<strong>Cobrança gerada!</strong><br>Valor: '+money(r.valor)+' — Vence: '+r.vencimento;
+    if(r.gateway_url)html+='<br><a href="'+r.gateway_url+'" target="_blank" style="color:var(--or);font-weight:600">Abrir link de pagamento</a>';
+    if(r.pix_copia_cola)html+='<br><br><strong>PIX Copia e Cola:</strong><br><code style="font-size:11px;word-break:break-all">'+r.pix_copia_cola+'</code>';
+    msg.innerHTML=html;msg.style.display='block';
+    btn.style.display='none';
+    linsc();
+  }else{
+    msg.className='msg err';msg.textContent=r?.error||'Erro ao gerar cobrança';msg.style.display='block';
+    btn.disabled=false;btn.textContent='Gerar Cobrança';
+  }
 }
 
 // Detalhe Associado

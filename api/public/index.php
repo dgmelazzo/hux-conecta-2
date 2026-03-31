@@ -832,9 +832,9 @@ if ($method === 'POST' && $uri === '/webhooks/asaas') {
              WHERE gateway_charge_id = ?'
         )->execute([$novoStatus, json_encode($event['payment'] ?? []), $pid]);
 
-        // Se pago: marca associado como ativo e atualiza data_vencimento
+        // Se pago: marca associado como ativo, atualiza vencimento, e atualiza inscrição
         if ($novoStatus === 'pago') {
-            $stmtC = pdo()->prepare('SELECT associado_id FROM cobrancas WHERE gateway_charge_id = ?');
+            $stmtC = pdo()->prepare('SELECT id, associado_id FROM cobrancas WHERE gateway_charge_id = ?');
             $stmtC->execute([$pid]);
             $row = $stmtC->fetch();
             if ($row) {
@@ -843,6 +843,10 @@ if ($method === 'POST' && $uri === '/webhooks/asaas') {
                     'UPDATE associados SET status = "ativo", data_vencimento = ?, atualizado_em = NOW()
                      WHERE id = ?'
                 )->execute([$venc, $row['associado_id']]);
+                // Atualiza inscrição vinculada para "pago"
+                pdo()->prepare(
+                    'UPDATE inscricoes_publicas SET status = "pago" WHERE cobranca_id = ? AND status = "aguardando_pagamento"'
+                )->execute([$row['id']]);
             }
         }
     }
@@ -1333,6 +1337,156 @@ if ($method === 'GET' && $uri === '/inscricoes') {
         'page'  => $page,
         'limit' => $limit,
         'pages' => (int)ceil($total / $limit),
+    ]);
+}
+
+// GET /inscricoes/{id} — detalhe de uma inscrição
+if ($method === 'GET' && preg_match('#^/inscricoes/(\d+)$#', $uri, $m)) {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $stmt = pdo()->prepare(
+        'SELECT i.*, p.nome AS plano_nome, p.valor AS plano_valor, p.periodicidade AS plano_periodicidade
+         FROM inscricoes_publicas i
+         LEFT JOIN planos p ON p.id = i.plano_id
+         WHERE i.id = ? AND i.tenant_id = ?'
+    );
+    $stmt->execute([$m[1], $tid]);
+    $row = $stmt->fetch();
+    if (!$row) json_out(['error' => 'Inscrição não encontrada'], 404);
+    json_out($row);
+}
+
+// POST /inscricoes/{id}/aprovar — cria associado prospecto + aprova inscrição
+if ($method === 'POST' && preg_match('#^/inscricoes/(\d+)/aprovar$#', $uri, $m)) {
+    $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare('SELECT * FROM inscricoes_publicas WHERE id = ? AND tenant_id = ? AND status = "pendente"');
+    $stmt->execute([$m[1], $tid]);
+    $insc = $stmt->fetch();
+    if (!$insc) json_out(['error' => 'Inscrição não encontrada ou já processada'], 404);
+
+    // Cria associado prospecto
+    $doc = $insc['cnpj'] ? preg_replace('/\D/', '', $insc['cnpj']) : null;
+    pdo()->prepare(
+        'INSERT INTO associados (tenant_id, tipo_pessoa, nome_fantasia, razao_social, cnpj, email, whatsapp, status, plano_id, criado_por, criado_em)
+         VALUES (?, ?, ?, ?, ?, ?, ?, "prospecto", ?, ?, NOW())'
+    )->execute([$tid, $doc && strlen($doc) === 14 ? 'pj' : 'pf', $insc['nome_empresa'], $insc['nome_empresa'], $doc, $insc['email'], $insc['whatsapp'], $insc['plano_id'], $p['sub']]);
+    $assocId = (int)pdo()->lastInsertId();
+
+    // Atualiza inscrição
+    pdo()->prepare('UPDATE inscricoes_publicas SET status = "aprovado", prospecto_id = ?, convertido_em = NOW() WHERE id = ?')
+         ->execute([$assocId, $m[1]]);
+
+    json_out(['message' => 'Inscrição aprovada', 'associado_id' => $assocId]);
+}
+
+// POST /inscricoes/{id}/reprovar — reprova inscrição
+if ($method === 'POST' && preg_match('#^/inscricoes/(\d+)/reprovar$#', $uri, $m)) {
+    $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare('SELECT id FROM inscricoes_publicas WHERE id = ? AND tenant_id = ? AND status IN ("pendente","aprovado")');
+    $stmt->execute([$m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Inscrição não encontrada ou já processada'], 404);
+
+    pdo()->prepare('UPDATE inscricoes_publicas SET status = "reprovado" WHERE id = ?')->execute([$m[1]]);
+    json_out(['message' => 'Inscrição reprovada']);
+}
+
+// POST /inscricoes/{id}/converter — cria associado + cobrança + atualiza inscrição
+if ($method === 'POST' && preg_match('#^/inscricoes/(\d+)/converter$#', $uri, $m)) {
+    $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    $stmt = pdo()->prepare(
+        'SELECT i.*, p.nome AS plano_nome, p.valor AS plano_valor
+         FROM inscricoes_publicas i
+         LEFT JOIN planos p ON p.id = i.plano_id
+         WHERE i.id = ? AND i.tenant_id = ? AND i.status IN ("pendente","aprovado")'
+    );
+    $stmt->execute([$m[1], $tid]);
+    $insc = $stmt->fetch();
+    if (!$insc) json_out(['error' => 'Inscrição não encontrada ou já processada'], 404);
+
+    // 1. Cria ou reutiliza associado
+    $assocId = $insc['prospecto_id'] ? (int)$insc['prospecto_id'] : null;
+    if (!$assocId) {
+        $doc = $insc['cnpj'] ? preg_replace('/\D/', '', $insc['cnpj']) : null;
+        pdo()->prepare(
+            'INSERT INTO associados (tenant_id, tipo_pessoa, nome_fantasia, razao_social, cnpj, email, whatsapp, status, plano_id, criado_por, criado_em)
+             VALUES (?, ?, ?, ?, ?, ?, ?, "prospecto", ?, ?, NOW())'
+        )->execute([$tid, $doc && strlen($doc) === 14 ? 'pj' : 'pf', $insc['nome_empresa'], $insc['nome_empresa'], $doc, $insc['email'], $insc['whatsapp'], $insc['plano_id'], $p['sub']]);
+        $assocId = (int)pdo()->lastInsertId();
+    }
+
+    // 2. Busca associado completo para Asaas
+    $stmtA = pdo()->prepare('SELECT * FROM associados WHERE id = ? LIMIT 1');
+    $stmtA->execute([$assocId]);
+    $assoc = $stmtA->fetch();
+
+    // 3. Garante customer no Asaas
+    $customerId = asaasEnsureCustomer($assoc);
+
+    // 4. Cria cobrança
+    $mod = $b['modalidade'] ?? 'pix';
+    $modalMap = ['pix' => 'PIX', 'boleto' => 'BOLETO'];
+    $billingType = $modalMap[$mod] ?? 'PIX';
+    $valor = (float)$insc['plano_valor'];
+    $venc = date('Y-m-d', strtotime('+7 days'));
+
+    $chargeData = [
+        'customer'    => $customerId,
+        'billingType' => $billingType,
+        'value'       => $valor,
+        'dueDate'     => $venc,
+        'description' => 'Inscrição — ' . ($insc['plano_nome'] ?? 'Plano'),
+    ];
+
+    // Split (gateway global)
+    $stmtGW = pdo()->prepare('SELECT split_ativo, split_percentual, split_wallet_id FROM gateway_configs WHERE tenant_id = ? AND gateway = "asaas" LIMIT 1');
+    $stmtGW->execute([$tid]);
+    $gw = $stmtGW->fetch();
+    if ($gw && $gw['split_ativo'] && $gw['split_percentual'] > 0 && !empty($gw['split_wallet_id'])) {
+        $chargeData['split'] = [['walletId' => $gw['split_wallet_id'], 'fixedValue' => round($valor * (float)$gw['split_percentual'] / 100, 2)]];
+    }
+
+    $asaasResp = asaasReq('POST', '/payments', $chargeData);
+    if (empty($asaasResp['id'])) json_out(['error' => 'Erro no Asaas', 'detail' => $asaasResp], 502);
+
+    // PIX QR code
+    $gatewayUrl = $pixQrcode = $pixCopiaCola = null;
+    if ($mod === 'pix') {
+        $pixData = asaasReq('GET', '/payments/' . $asaasResp['id'] . '/pixQrCode');
+        $pixQrcode    = $pixData['encodedImage'] ?? null;
+        $pixCopiaCola = $pixData['payload']      ?? null;
+    }
+    $gatewayUrl = $asaasResp['bankSlipUrl'] ?? $asaasResp['invoiceUrl'] ?? null;
+
+    // 5. Salva cobrança no banco
+    pdo()->prepare(
+        'INSERT INTO cobrancas (tenant_id, associado_id, plano_id, gateway, gateway_charge_id, gateway_url, valor, modalidade, data_vencimento, status, descricao, criado_por, criado_em)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW())'
+    )->execute([$tid, $assocId, $insc['plano_id'], 'asaas', $asaasResp['id'], $gatewayUrl, $valor, $mod, $venc, 'pendente', 'Inscrição — ' . ($insc['plano_nome'] ?? 'Plano'), $p['sub']]);
+    $cobId = (int)pdo()->lastInsertId();
+
+    // 6. Atualiza inscrição
+    pdo()->prepare('UPDATE inscricoes_publicas SET status = "aguardando_pagamento", prospecto_id = ?, cobranca_id = ?, convertido_em = NOW() WHERE id = ?')
+         ->execute([$assocId, $cobId, $m[1]]);
+
+    json_out([
+        'message'         => 'Cobrança gerada com sucesso',
+        'associado_id'    => $assocId,
+        'cobranca_id'     => $cobId,
+        'gateway_url'     => $gatewayUrl,
+        'pix_qrcode'      => $pixQrcode,
+        'pix_copia_cola'  => $pixCopiaCola,
+        'valor'           => $valor,
+        'vencimento'      => $venc,
     ]);
 }
 
