@@ -153,6 +153,20 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   .assoc-tabs,.assoc-tab-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:4px}
   .assoc-tab{white-space:nowrap;flex-shrink:0}
   .pl-grid{grid-template-columns:1fr 1fr}
+  /* Associados: hide Categoria(2), Contato(3), Plano(5) — keep Empresa(1), Status(4), Ações(6) */
+  #at table th:nth-child(2),#at table td:nth-child(2),
+  #at table th:nth-child(3),#at table td:nth-child(3),
+  #at table th:nth-child(5),#at table td:nth-child(5){display:none}
+  /* Cobranças: hide Descrição(2) — keep Associado(1), Valor(3), Vencimento(4), Status(5), Ações(6) */
+  #cob-t table th:nth-child(2),#cob-t table td:nth-child(2){display:none}
+  /* Usuários: hide Último login cols if present — keep Nome(1), E-mail(2), Papel(3), Status(4), Ações(5) */
+  /* Comunicados templates: hide Gatilho(2) */
+  #com-tpl-t table th:nth-child(2),#com-tpl-t table td:nth-child(2){display:none}
+  /* Inscrições: hide Empresa(3), E-mail(5) */
+  #insc-t table th:nth-child(3),#insc-t table td:nth-child(3),
+  #insc-t table th:nth-child(5),#insc-t table td:nth-child(5){display:none}
+  /* Detail modal cobrancas responsive */
+  #det-dados>div{grid-template-columns:1fr!important}
 }
 /* Responsive: Mobile */
 @media(max-width:480px){
@@ -170,6 +184,8 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   .mt2{font-size:16px}
   .pl-grid{grid-template-columns:1fr}
   .pag{flex-direction:column;gap:8px;align-items:flex-start}
+  /* Cobranças: also hide Vencimento(4) on small screens */
+  #cob-t table th:nth-child(4),#cob-t table td:nth-child(4){display:none}
 }
 </style>
 </head>
@@ -189,6 +205,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <button class="ni" data-nav="c" onclick="go('c')"><svg class="ic" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Cobranças</button>
     <div class="sc">Comunicação</div>
     <button class="ni" data-nav="com" onclick="go('com')"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Comunicados</button>
+    <button class="ni" data-nav="insc" onclick="go('insc')"><svg class="ic" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Inscrições<span class="nb" id="nb-insc" style="display:none">0</span></button>
     <div class="sc" id="sec-adm" style="display:none">Administração</div>
     <button class="ni" data-nav="gw" onclick="go('gw')"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>Gateway</button>
     <button class="ni" id="ni-usr" data-nav="u" onclick="go('u')"><svg class="ic" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Usuários</button>
@@ -254,6 +271,16 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
       </div>
     </div>
 
+    <!-- Inscrições -->
+    <div class="pg2" id="pinsc">
+      <div class="sbr">
+        <select class="fl" id="insc-st" onchange="linsc()"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="convertido">Convertidas</option><option value="rejeitado">Rejeitadas</option></select>
+      </div>
+      <div class="cd">
+        <div class="tbl-s"><div class="cb" id="insc-t"><div class="ld"><div class="sp"></div></div></div></div>
+      </div>
+    </div>
+
     <!-- Comunicados -->
     <div class="pg2" id="pcom">
       <div class="assoc-tabs" style="display:flex;gap:4px;margin-bottom:16px">
@@ -308,6 +335,19 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 
   </div>
 </main>
+
+<!-- Modal Detalhe Associado -->
+<div class="mo" id="mdet">
+  <div class="mb" style="max-width:640px">
+    <button class="mc" onclick="cm('mdet')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="mt2" id="det-nome">Associado</div>
+    <div class="ms2" id="det-info">-</div>
+    <div id="det-dados" style="margin-bottom:20px"></div>
+    <div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:12px">Histórico de Cobranças</div>
+    <div class="tbl-s" id="det-cob"><div class="ld"><div class="sp"></div></div></div>
+    <div class="mf"><button class="btn" onclick="actCobDet()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova Cobrança</button></div>
+  </div>
+</div>
 
 <!-- Modal Associado -->
 <div class="mo" id="ma">
@@ -473,7 +513,7 @@ function cm(i){document.getElementById(i).classList.remove('on');editId=null;}
 document.addEventListener('click',function(e){if(e.target.classList.contains('mo')&&e.target.classList.contains('on')){e.target.classList.remove('on');editId=null;}});
 
 // Navegação
-const PM={d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
+const PM={d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
 // Sidebar mobile
 function openSb(){document.getElementById('sb').classList.add('open');document.getElementById('sb-ov').classList.add('on');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('sb-ov').classList.remove('on');}
@@ -488,7 +528,7 @@ function go(n){
   const btnTop=document.getElementById('btn-top');
   if(p.b){btnTop.style.display='';document.getElementById('bl').textContent=p.b;}
   else{btnTop.style.display='none';}
-  if(n==='d')ld();if(n==='a')la();if(n==='p')lp();if(n==='c')lc();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();
+  if(n==='d')ld();if(n==='a')la();if(n==='p')lp();if(n==='c')lc();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();if(n==='insc')linsc();
 }
 function act(){const on=document.querySelector('.pg2.on')?.id;
   if(on==='pd'||on==='pa'){editId=null;document.getElementById('ma-title').textContent='Novo Associado';limpaCampos(['frz','fnf','fd','fe','ftel','fw','fobs']);document.getElementById('fst').value='prospecto';document.getElementById('fvc').value='';document.getElementById('fcat').disabled=false;om('ma');}
@@ -501,7 +541,7 @@ function limpaCampos(ids){ids.forEach(id=>{const el=document.getElementById(id);
 // Ícones SVG
 const IC={users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>','user-check':'<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/>','alert-circle':'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','dollar-sign':'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>','trending-up':'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>'};
 const CL={blue:'b',green:'g',red:'r',yellow:'y',purple:'p'};
-function bs(s){return`<span class="bx ${{ativo:'bg',inadimplente:'br',suspenso:'by',cancelado:'bgr',prospecto:'bb',pendente:'by',pago:'bg',vencido:'br'}[s]||'bgr'}">${{ativo:'Ativo',inadimplente:'Inadimplente',suspenso:'Suspenso',cancelado:'Cancelado',prospecto:'Prospecto',pendente:'Pendente',pago:'Pago',vencido:'Vencido'}[s]||s}</span>`;}
+function bs(s){return`<span class="bx ${{ativo:'bg',inadimplente:'br',suspenso:'by',cancelado:'bgr',prospecto:'bb',pendente:'by',pago:'bg',vencido:'br',convertido:'bg',rejeitado:'br'}[s]||'bgr'}">${{ativo:'Ativo',inadimplente:'Inadimplente',suspenso:'Suspenso',cancelado:'Cancelado',prospecto:'Prospecto',pendente:'Pendente',pago:'Pago',vencido:'Vencido',convertido:'Convertido',rejeitado:'Rejeitado'}[s]||s}</span>`;}
 function money(v){return'R$ '+parseFloat(v||0).toFixed(2).replace('.',',');}
 function svgi(ic){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[ic]||''}</svg>`;}
 
@@ -526,6 +566,8 @@ async function ld(){
       ?'<div class="em">Nenhum plano configurado.</div>'
       :`<table><thead><tr><th>Plano</th><th>Valor</th><th>Período</th></tr></thead><tbody>${p.data.map(x=>`<tr><td><strong>${x.nome}</strong></td><td style="color:var(--gn);font-weight:600">${money(x.valor)}</td><td style="font-size:12px;color:var(--t3)">${x.periodicidade}</td></tr>`).join('')}</tbody></table>`;
   }
+  const insc=await api('/inscricoes?status=pendente');
+  if(insc?.data){const nb2=document.getElementById('nb-insc');if(insc.total>0){nb2.textContent=insc.total;nb2.style.display='';}else{nb2.style.display='none';}}
 }
 
 // Associados
@@ -550,6 +592,7 @@ async function la(p2=1){
     <td>${bs(x.status)}</td>
     <td style="font-size:12px">${x.plano_nome||'-'}</td>
     <td style="white-space:nowrap">
+      <button class="btn-o" onclick="verDetalhe(${x.id})" style="margin-right:4px">Ver</button>
       <button class="btn-o" onclick="editAssocById(${x.id})" style="margin-right:4px">Editar</button>
       <button class="btn-r" onclick="delAssoc(${x.id},'${(x.razao_social||x.nome_responsavel||'').replace(/'/g,"\\'")}')">Excluir</button>
     </td>
@@ -864,6 +907,53 @@ async function salvarCfgCom(){
   if(ok)toast(ok+' configuração(ões) salva(s)!');
   else toast('Nenhuma alteração','err');
 }
+
+// Inscrições
+async function linsc(){
+  document.getElementById('insc-t').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  const st=document.getElementById('insc-st')?.value||'';
+  const d=await api('/inscricoes'+(st?'?status='+st:''));if(!d)return;
+  const badge=document.getElementById('nb-insc');
+  if(d.total>0&&!st){const pend=(d.data||[]).filter(x=>x.status==='pendente').length;if(pend>0){badge.textContent=pend;badge.style.display='';}else{badge.style.display='none';}}
+  if(!d.data||d.data.length===0){document.getElementById('insc-t').innerHTML='<div class="em">Nenhuma inscrição encontrada.</div>';return;}
+  document.getElementById('insc-t').innerHTML=`<table><thead><tr><th>Data</th><th>Contato</th><th>Empresa</th><th>Plano</th><th>E-mail</th><th>Status</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+    <td style="font-size:12px;color:var(--t3)">${x.criado_em?new Date(x.criado_em).toLocaleString('pt-BR'):'-'}</td>
+    <td><strong>${x.nome_contato||'-'}</strong></td>
+    <td style="font-size:12px">${x.nome_empresa||'-'}</td>
+    <td style="font-size:12px">${x.plano_nome||'-'}</td>
+    <td style="font-size:12px">${x.email||'-'}</td>
+    <td>${bs(x.status)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+// Detalhe Associado
+let _detId=null;
+async function verDetalhe(id){
+  _detId=id;om('mdet');
+  document.getElementById('det-dados').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  document.getElementById('det-cob').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  const a=await api('/associados/'+id);
+  if(!a||!a.id){cm('mdet');toast('Erro ao carregar associado','err');return;}
+  document.getElementById('det-nome').textContent=a.razao_social||a.nome_fantasia||a.nome_responsavel||'-';
+  document.getElementById('det-info').textContent=[a.cnpj||a.cpf,a.email,a.whatsapp].filter(Boolean).join(' · ')||'-';
+  document.getElementById('det-dados').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;font-size:13px;color:var(--t2)">
+    <div><span style="font-weight:600;color:var(--tx)">Status:</span> ${bs(a.status)}</div>
+    <div><span style="font-weight:600;color:var(--tx)">Plano:</span> ${a.plano_nome||'Nenhum'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">Cidade:</span> ${a.cidade||'-'}/${a.uf||'-'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">Vencimento:</span> ${a.data_vencimento||'-'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">Telefone:</span> ${a.telefone||'-'}</div>
+    <div><span style="font-weight:600;color:var(--tx)">Associado desde:</span> ${a.data_associacao||'-'}</div>
+  </div>`;
+  const c=await api('/associados/'+id+'/cobrancas');
+  if(!c||!c.data||c.data.length===0){document.getElementById('det-cob').innerHTML='<div class="em" style="padding:24px">Nenhuma cobrança registrada.</div>';return;}
+  document.getElementById('det-cob').innerHTML=`<table><thead><tr><th>Vencimento</th><th>Valor</th><th>Tipo</th><th>Status</th></tr></thead><tbody>${c.data.map(x=>`<tr>
+    <td style="font-size:12px">${x.data_vencimento||'-'}</td>
+    <td style="font-weight:600">${money(x.valor)}</td>
+    <td style="font-size:12px">${(x.modalidade||'-').toUpperCase()}</td>
+    <td>${bs(x.status)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+function actCobDet(){if(!_detId)return;cm('mdet');document.getElementById('cob-assoc').value=_detId;carregaAssocs();om('mcob');}
 
 // Selects
 function upSelects(){

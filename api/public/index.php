@@ -432,17 +432,67 @@ if ($method === 'PUT' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     json_out(['message' => 'Associado atualizado']);
 }
 
+// GET /associados/{id}/cobrancas — cobranças de um associado
+if ($method === 'GET' && preg_match('#^/associados/(\d+)/cobrancas$#', $uri, $m)) {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    // Verifica se associado existe e pertence ao tenant
+    $stmtA = pdo()->prepare('SELECT id FROM associados WHERE id = ? AND tenant_id = ? LIMIT 1');
+    $stmtA->execute([$m[1], $tid]);
+    if (!$stmtA->fetch()) json_out(['error' => 'Associado não encontrado'], 404);
+
+    $where  = 'c.associado_id = ? AND c.tenant_id = ?';
+    $params = [$m[1], $tid];
+
+    if (!empty($_GET['status'])) { $where .= ' AND c.status = ?'; $params[] = $_GET['status']; }
+
+    $stmt = pdo()->prepare(
+        "SELECT c.*, p.nome AS plano_nome
+         FROM cobrancas c
+         LEFT JOIN planos p ON p.id = c.plano_id
+         WHERE $where
+         ORDER BY c.data_vencimento DESC"
+    );
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+    json_out(['data' => $rows, 'total' => count($rows)]);
+}
+
 // ============================================================
 // PLANOS
 // ============================================================
 
-// GET /planos
+// GET /planos (dual-mode: public if no auth, full if authenticated)
 if ($method === 'GET' && $uri === '/planos') {
-    $p   = auth_required();
-    $tid = $p['tenant_id'] ?? tenant_id();
-    $stmt = pdo()->prepare('SELECT * FROM planos WHERE tenant_id = ? AND ativo = 1 ORDER BY valor ASC');
-    $stmt->execute([$tid]);
-    $rows = $stmt->fetchAll(); json_out(["data" => $rows, "total" => count($rows)]);
+    $h = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $authenticated = false;
+    $p = null;
+    if (preg_match('/^Bearer\s+(.+)$/i', $h, $mAuth)) {
+        $p = jwt_decode($mAuth[1]);
+        if ($p) $authenticated = true;
+    }
+
+    if ($authenticated) {
+        // Authenticated: show all active plans
+        $tid = $p['tenant_id'] ?? tenant_id();
+        $stmt = pdo()->prepare('SELECT * FROM planos WHERE tenant_id = ? AND ativo = 1 ORDER BY valor ASC');
+        $stmt->execute([$tid]);
+        $rows = $stmt->fetchAll();
+    } else {
+        // Public: only plans with tem_link_publico=1, safe columns only
+        $tid = tenant_id();
+        $stmt = pdo()->prepare(
+            'SELECT id, nome, tipo, descricao, valor, periodicidade, slug_link, tem_conecta
+             FROM planos
+             WHERE tenant_id = ? AND ativo = 1 AND tem_link_publico = 1
+             ORDER BY valor ASC'
+        );
+        $stmt->execute([$tid]);
+        $rows = $stmt->fetchAll();
+    }
+
+    json_out(["data" => $rows, "total" => count($rows)]);
 }
 
 // POST /planos
@@ -763,6 +813,7 @@ if ($method === 'GET' && $uri === '/dashboard') {
     $receitaMes = (float)$q('SELECT COALESCE(SUM(valor_pago),0) FROM cobrancas WHERE tenant_id=? AND status="pago" AND MONTH(data_pagamento)=MONTH(NOW()) AND YEAR(data_pagamento)=YEAR(NOW())', [$tid]);
     $pendentes  = (float)$q('SELECT COALESCE(SUM(valor),0) FROM cobrancas WHERE tenant_id=? AND status="pendente"', [$tid]);
     $vencidas   = (float)$q('SELECT COALESCE(SUM(valor),0) FROM cobrancas WHERE tenant_id=? AND status="expirado"', [$tid]);
+    $inscPend   = (int)$q('SELECT COUNT(*) FROM inscricoes_publicas WHERE tenant_id=? AND status="pendente"', [$tid]);
     $fM = fn($v) => 'R$ ' . number_format($v, 2, ',', '.');
 
     json_out([
@@ -774,6 +825,7 @@ if ($method === 'GET' && $uri === '/dashboard') {
             ['icon'=>'dollar-sign',  'label'=>'Receita do Mes',   'value'=>$fM($receitaMes), 'color'=>'green'],
             ['icon'=>'trending-up',  'label'=>'A Receber',        'value'=>$fM($pendentes),  'color'=>'blue'],
             ['icon'=>'alert-circle', 'label'=>'Em Atraso',        'value'=>$fM($vencidas),   'color'=>'red'],
+            ['icon'=>'inbox',        'label'=>'Inscrições Pendentes', 'value'=>$inscPend, 'color'=>'orange'],
         ],
         'total_associados'         => $total,
         'associados_ativos'        => $ativos,
@@ -781,6 +833,7 @@ if ($method === 'GET' && $uri === '/dashboard') {
         'receita_mes'              => $receitaMes,
         'cobrancas_pendentes'      => $pendentes,
         'cobrancas_vencidas'       => $vencidas,
+        'inscricoes_pendentes'     => $inscPend,
     ]);
 }
 
@@ -1113,6 +1166,96 @@ if ($method === 'POST' && $uri === '/tenant/config') {
         )->execute([$tid, $b['chave'], $b['valor']]);
         json_out(['message' => 'Configuração criada', 'id' => (int)pdo()->lastInsertId()], 201);
     }
+}
+
+// ============================================================
+// INSCRIÇÕES PÚBLICAS
+// ============================================================
+
+// POST /inscricoes — inscrição pública (sem auth)
+if ($method === 'POST' && $uri === '/inscricoes') {
+    required_fields(['plano_id', 'nome_contato', 'email']);
+    $b   = body();
+    $tid = tenant_id();
+
+    // Valida que o plano existe, está ativo e é público
+    $stmtP = pdo()->prepare(
+        'SELECT id, nome, valor, periodicidade FROM planos
+         WHERE id = ? AND tenant_id = ? AND ativo = 1 AND tem_link_publico = 1 LIMIT 1'
+    );
+    $stmtP->execute([$b['plano_id'], $tid]);
+    $plano = $stmtP->fetch();
+    if (!$plano) json_out(['error' => 'Plano não encontrado ou não disponível para inscrição pública'], 404);
+
+    // Rate-limit: máx 3 inscrições por email nas últimas 24h
+    $stmtRL = pdo()->prepare(
+        'SELECT COUNT(*) FROM inscricoes_publicas
+         WHERE email = ? AND tenant_id = ? AND criado_em >= NOW() - INTERVAL 24 HOUR'
+    );
+    $stmtRL->execute([$b['email'], $tid]);
+    if ((int)$stmtRL->fetchColumn() >= 3) {
+        json_out(['error' => 'Limite de inscrições atingido. Tente novamente em 24 horas.'], 429);
+    }
+
+    pdo()->prepare(
+        'INSERT INTO inscricoes_publicas
+         (tenant_id, plano_id, nome_contato, email, telefone, documento, mensagem, status, criado_em)
+         VALUES (?, ?, ?, ?, ?, ?, ?, "pendente", NOW())'
+    )->execute([
+        $tid,
+        $b['plano_id'],
+        $b['nome_contato'],
+        $b['email'],
+        $b['telefone']  ?? null,
+        $b['documento'] ?? null,
+        $b['mensagem']  ?? null,
+    ]);
+
+    json_out([
+        'message'    => 'Inscrição recebida com sucesso',
+        'id'         => (int)pdo()->lastInsertId(),
+        'plano_nome' => $plano['nome'],
+    ], 201);
+}
+
+// GET /inscricoes — lista inscrições (auth, gestor only)
+if ($method === 'GET' && $uri === '/inscricoes') {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $where  = 'i.tenant_id = ?';
+    $params = [$tid];
+
+    if (!empty($_GET['status']))   { $where .= ' AND i.status = ?';   $params[] = $_GET['status']; }
+    if (!empty($_GET['plano_id'])) { $where .= ' AND i.plano_id = ?'; $params[] = $_GET['plano_id']; }
+
+    $page  = max(1, (int)($_GET['page'] ?? 1));
+    $limit = min(100, (int)($_GET['limit'] ?? 20));
+    $off   = ($page - 1) * $limit;
+
+    $stmtT = pdo()->prepare("SELECT COUNT(*) FROM inscricoes_publicas i WHERE $where");
+    $stmtT->execute($params);
+    $total = (int)$stmtT->fetchColumn();
+
+    $stmt = pdo()->prepare(
+        "SELECT i.*, p.nome AS plano_nome, p.valor AS plano_valor
+         FROM inscricoes_publicas i
+         LEFT JOIN planos p ON p.id = i.plano_id
+         WHERE $where
+         ORDER BY i.criado_em DESC
+         LIMIT $limit OFFSET $off"
+    );
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+
+    json_out([
+        'data'  => $rows,
+        'total' => $total,
+        'page'  => $page,
+        'limit' => $limit,
+        'pages' => (int)ceil($total / $limit),
+    ]);
 }
 
 // ============================================================
