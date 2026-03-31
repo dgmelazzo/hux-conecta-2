@@ -981,6 +981,141 @@ if ($method === 'POST' && $uri === '/gateway/testar') {
 }
 
 // ============================================================
+// COMUNICADOS — Templates e Envios
+// ============================================================
+
+// GET /comunicados/templates — lista todos os templates do tenant
+if ($method === 'GET' && $uri === '/comunicados/templates') {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare(
+        'SELECT id, nome, gatilho, assunto_email, corpo_email, corpo_whatsapp,
+                canal, ativo, criado_em, atualizado_em
+         FROM comunicado_templates
+         WHERE tenant_id = ?
+         ORDER BY gatilho, nome'
+    );
+    $stmt->execute([$tid]);
+    $rows = $stmt->fetchAll();
+    json_out(['data' => $rows, 'total' => count($rows)]);
+}
+
+// GET /comunicados/templates/{id} — detalhe de um template
+if ($method === 'GET' && preg_match('#^/comunicados/templates/(\d+)$#', $uri, $m)) {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare(
+        'SELECT * FROM comunicado_templates WHERE id = ? AND tenant_id = ?'
+    );
+    $stmt->execute([$m[1], $tid]);
+    $row = $stmt->fetch();
+    if (!$row) json_out(['error' => 'Template não encontrado'], 404);
+    json_out($row);
+}
+
+// PUT /comunicados/templates/{id} — edita template
+if ($method === 'PUT' && preg_match('#^/comunicados/templates/(\d+)$#', $uri, $m)) {
+    $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    // Verifica se o template existe e pertence ao tenant
+    $stmt = pdo()->prepare('SELECT id FROM comunicado_templates WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Template não encontrado'], 404);
+
+    $allowed = ['assunto_email', 'corpo_email', 'corpo_whatsapp', 'ativo'];
+    $set = []; $vals = [];
+    foreach ($allowed as $f) {
+        if (array_key_exists($f, $b)) { $set[] = "$f = ?"; $vals[] = $b[$f]; }
+    }
+    if (!$set) json_out(['error' => 'Nenhum campo para atualizar'], 422);
+
+    $set[] = 'atualizado_em = NOW()';
+    $vals[] = $m[1]; $vals[] = $tid;
+    pdo()->prepare(
+        'UPDATE comunicado_templates SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?'
+    )->execute($vals);
+
+    json_out(['message' => 'Template atualizado']);
+}
+
+// GET /comunicados/envios — histórico de envios
+if ($method === 'GET' && $uri === '/comunicados/envios') {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $where  = 'e.tenant_id = ?';
+    $params = [$tid];
+
+    if (!empty($_GET['associado_id'])) { $where .= ' AND e.associado_id = ?'; $params[] = $_GET['associado_id']; }
+    if (!empty($_GET['canal']))        { $where .= ' AND e.canal = ?';        $params[] = $_GET['canal']; }
+    if (!empty($_GET['gatilho']))       { $where .= ' AND e.gatilho = ?';      $params[] = $_GET['gatilho']; }
+
+    $limit = min(200, max(1, (int)($_GET['limit'] ?? 50)));
+
+    $stmt = pdo()->prepare(
+        "SELECT e.*, a.nome_fantasia, a.razao_social
+         FROM comunicado_envios e
+         LEFT JOIN associados a ON a.id = e.associado_id
+         WHERE $where
+         ORDER BY e.criado_em DESC
+         LIMIT $limit"
+    );
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+    json_out(['data' => $rows, 'total' => count($rows)]);
+}
+
+// ============================================================
+// TENANT CONFIG
+// ============================================================
+
+// GET /tenant/config — retorna configurações do tenant (exceto senhas)
+if ($method === 'GET' && $uri === '/tenant/config') {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare(
+        'SELECT id, chave, valor, criado_em, atualizado_em
+         FROM tenant_configs
+         WHERE tenant_id = ? AND chave NOT LIKE "%senha%" AND chave NOT LIKE "%password%" AND chave NOT LIKE "%secret%"
+         ORDER BY chave'
+    );
+    $stmt->execute([$tid]);
+    $rows = $stmt->fetchAll();
+    json_out(['data' => $rows, 'total' => count($rows)]);
+}
+
+// POST /tenant/config — salva ou atualiza uma chave de configuração
+if ($method === 'POST' && $uri === '/tenant/config') {
+    $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    required_fields(['chave', 'valor']);
+    $b = body();
+
+    $stmt = pdo()->prepare('SELECT id FROM tenant_configs WHERE tenant_id = ? AND chave = ? LIMIT 1');
+    $stmt->execute([$tid, $b['chave']]);
+    $existing = $stmt->fetch();
+
+    if ($existing) {
+        pdo()->prepare(
+            'UPDATE tenant_configs SET valor = ?, atualizado_em = NOW() WHERE id = ?'
+        )->execute([$b['valor'], $existing['id']]);
+        json_out(['message' => 'Configuração atualizada', 'id' => (int)$existing['id']]);
+    } else {
+        pdo()->prepare(
+            'INSERT INTO tenant_configs (tenant_id, chave, valor, criado_em) VALUES (?, ?, ?, NOW())'
+        )->execute([$tid, $b['chave'], $b['valor']]);
+        json_out(['message' => 'Configuração criada', 'id' => (int)pdo()->lastInsertId()], 201);
+    }
+}
+
+// ============================================================
 // 404
 // ============================================================
-json_out(['error' => 'Rota não encontrada', 'path' => $uri, 'method' => $method], 404);
+json_out(['error' => 'Rota não encontrado', 'path' => $uri, 'method' => $method], 404);
