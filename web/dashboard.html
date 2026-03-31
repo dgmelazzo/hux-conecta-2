@@ -71,8 +71,11 @@ select.fl{height:40px;padding:0 32px 0 12px;background:var(--sf);border:1.5px so
 .pag-btn.on{border-color:var(--blue);background:var(--blue);color:#fff}
 .mo{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:1000;align-items:center;justify-content:center;padding:24px}
 .mo.on{display:flex}
-.mb{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-.mt2{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:4px}
+.mb{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative}
+.mc{position:absolute;top:12px;right:12px;z-index:10;width:32px;height:32px;border-radius:8px;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mc:hover{background:var(--bd)}
+.mc svg{width:16px;height:16px;stroke:var(--t2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mt2{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:4px;padding-right:40px}
 .ms2{font-size:13px;color:var(--t3);margin-bottom:24px}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .fg{margin-bottom:16px}
@@ -138,8 +141,8 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   .kg{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
   .g2{grid-template-columns:1fr}
   .fr{grid-template-columns:1fr}
-  .mo{padding:0;align-items:flex-end}
-  .mb{border-radius:16px 16px 0 0;max-height:92vh;padding:20px}
+  .mo{padding:0 12px;align-items:flex-end}
+  .mb{border-radius:16px 16px 0 0;max-height:92vh;padding:20px 16px;width:100%;max-width:100%;margin:0}
   .kc{padding:14px}
   .kv{font-size:20px}
   .sbr{flex-wrap:wrap}
@@ -309,6 +312,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 <!-- Modal Associado -->
 <div class="mo" id="ma">
   <div class="mb">
+    <button class="mc" onclick="cm('ma')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="mt2" id="ma-title">Novo Associado</div>
     <div class="ms2">Cadastrar empresa ou pessoa física no sistema</div>
     <div class="fr">
@@ -350,6 +354,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 <!-- Modal Plano -->
 <div class="mo" id="mpl">
   <div class="mb">
+    <button class="mc" onclick="cm('mpl')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="mt2" id="pl-title">Novo Plano</div>
     <div class="ms2">Configurar plano de associação</div>
     <div class="fr">
@@ -374,6 +379,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 <!-- Modal Cobrança -->
 <div class="mo" id="mcob">
   <div class="mb">
+    <button class="mc" onclick="cm('mcob')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="mt2">Nova Cobrança</div>
     <div class="ms2">Gerar cobrança para um associado</div>
     <div class="fg"><label class="fl3">Associado *</label><select class="fc" id="cob-assoc"><option value="">Selecionar...</option></select></div>
@@ -393,6 +399,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 <!-- Modal Template Comunicado -->
 <div class="mo" id="mcom">
   <div class="mb" style="max-width:620px">
+    <button class="mc" onclick="cm('mcom')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="mt2" id="com-m-title">Editar Template</div>
     <div class="ms2" id="com-m-sub">Ajuste o conteúdo do comunicado</div>
     <input type="hidden" id="com-tpl-id">
@@ -416,6 +423,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 <!-- Modal Usuário -->
 <div class="mo" id="musr">
   <div class="mb">
+    <button class="mc" onclick="cm('musr')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="mt2">Novo Usuário</div>
     <div class="ms2">Criar acesso ao sistema</div>
     <div class="fr">
@@ -461,6 +469,8 @@ function logout(){localStorage.clear();location.href='/';}
 function toast(msg,type='ok'){const t=document.createElement('div');t.className='toast '+(type==='ok'?'ok':'err');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
 function om(i){document.getElementById(i).classList.add('on');}
 function cm(i){document.getElementById(i).classList.remove('on');editId=null;}
+// Close modal on overlay click
+document.addEventListener('click',function(e){if(e.target.classList.contains('mo')&&e.target.classList.contains('on')){e.target.classList.remove('on');editId=null;}});
 
 // Navegação
 const PM={d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
