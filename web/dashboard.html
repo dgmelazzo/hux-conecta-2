@@ -133,6 +133,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <div class="sc">Comercial</div>
     <div class="sc" id="sec-adm" style="display:none">Administração</div>
     <button class="ni" onclick="go('gw')">Gateway</button>
+    <button class="ni" onclick="go('com')"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Comunicados</button>
     <button class="ni" id="ni-usr" onclick="go('u')"><svg class="ic" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Usuários</button>
     <div class="sc">Sistema</div>
     <button class="ni" onclick="logout()"><svg class="ic" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair</button>
@@ -196,6 +197,51 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <!-- Pipeline -->
     <div class="pg2" id="pk">
       <div class="kb" id="kb"><div class="ld"><div class="sp"></div></div></div>
+    </div>
+
+    <!-- Comunicados -->
+    <div class="pg2" id="pcom">
+      <div class="assoc-tabs" style="display:flex;gap:4px;margin-bottom:16px">
+        <button class="assoc-tab on" onclick="comTab('tpl',this)">Templates</button>
+        <button class="assoc-tab" onclick="comTab('hist',this)">Histórico</button>
+        <button class="assoc-tab" onclick="comTab('cfg',this)">Configurações</button>
+      </div>
+
+      <!-- Tab Templates -->
+      <div id="com-tpl">
+        <div class="cd">
+          <div class="cb" id="com-tpl-t"><div class="ld"><div class="sp"></div></div></div>
+        </div>
+      </div>
+
+      <!-- Tab Histórico -->
+      <div id="com-hist" style="display:none">
+        <div class="sbr">
+          <select class="fl" id="com-h-canal" onchange="lcomEnvios()"><option value="">Todos os canais</option><option value="email">E-mail</option><option value="whatsapp">WhatsApp</option></select>
+          <select class="fl" id="com-h-status" onchange="lcomEnvios()"><option value="">Todos os status</option><option value="enviado">Enviado</option><option value="falhou">Falhou</option></select>
+        </div>
+        <div class="cd">
+          <div class="cb" id="com-hist-t"><div class="ld"><div class="sp"></div></div></div>
+        </div>
+      </div>
+
+      <!-- Tab Configurações -->
+      <div id="com-cfg" style="display:none">
+        <div class="cd" style="padding:24px">
+          <h3 style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:16px">Configurações de Envio</h3>
+          <div class="fr">
+            <div class="fg"><label class="fl3">E-mail Remetente</label><input type="email" class="fc" id="cfg-email-rem" placeholder="noreply@acicdf.org.br"></div>
+            <div class="fg"><label class="fl3">Nome Remetente</label><input type="text" class="fc" id="cfg-email-nome" placeholder="ACIC-DF"></div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl3">Z-API Instance</label><input type="text" class="fc" id="cfg-zapi-inst" placeholder="instance_id"></div>
+            <div class="fg"><label class="fl3">Z-API Token</label><input type="password" class="fc" id="cfg-zapi-token" placeholder="token"></div>
+          </div>
+          <div class="mf" style="border-top:none;padding-top:8px">
+            <button class="btn" onclick="salvarCfgCom()"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar Configurações</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Usuários -->
@@ -314,6 +360,29 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   </div>
 </div>
 
+<!-- Modal Template Comunicado -->
+<div class="mo" id="mcom">
+  <div class="mb" style="max-width:620px">
+    <div class="mt2" id="com-m-title">Editar Template</div>
+    <div class="ms2" id="com-m-sub">Ajuste o conteúdo do comunicado</div>
+    <input type="hidden" id="com-tpl-id">
+    <div class="fg"><label class="fl3">Assunto do E-mail</label><input type="text" class="fc" id="com-assunto" placeholder="Assunto do e-mail"></div>
+    <div class="fg"><label class="fl3">Corpo do E-mail (HTML)</label><textarea class="fc" id="com-corpo-email" placeholder="Corpo do e-mail..." style="height:160px"></textarea></div>
+    <div class="fg"><label class="fl3">Corpo WhatsApp</label><textarea class="fc" id="com-corpo-wpp" placeholder="Mensagem WhatsApp..." style="height:100px"></textarea></div>
+    <div class="fr">
+      <div class="fg"><label class="fl3">Canal</label><select class="fc" id="com-canal"><option value="email">E-mail</option><option value="whatsapp">WhatsApp</option><option value="ambos">Ambos</option></select></div>
+      <div class="fg"><label class="fl3">Ativo</label><select class="fc" id="com-ativo"><option value="1">Sim</option><option value="0">Não</option></select></div>
+    </div>
+    <div style="background:var(--lt);border:1px solid #BFDBFE;border-radius:8px;padding:12px 14px;font-size:12px;color:#1E40AF;margin-top:8px">
+      <strong>Variáveis disponíveis:</strong> <code>{{nome_fantasia}}</code>, <code>{{valor}}</code>, <code>{{data_vencimento}}</code>, <code>{{link_boleto}}</code>
+    </div>
+    <div class="mf">
+      <button class="btn-o" onclick="cm('mcom')">Cancelar</button>
+      <button class="btn" onclick="salvarTpl()"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Usuário -->
 <div class="mo" id="musr">
   <div class="mb">
@@ -364,14 +433,14 @@ function om(i){document.getElementById(i).classList.add('on');}
 function cm(i){document.getElementById(i).classList.remove('on');editId=null;}
 
 // Navegação
-const PM={d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},k:{t:'Pipeline',s:'Prospecção e conversão',b:'Novo Prospecto'},gw:{t:'Gateway',s:'Configuracao de pagamentos',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
+const PM={d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},k:{t:'Pipeline',s:'Prospecção e conversão',b:'Novo Prospecto'},gw:{t:'Gateway',s:'Configuracao de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
 function go(n){
   document.querySelectorAll('.pg2').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
   document.getElementById('p'+n).classList.add('on');
   document.querySelectorAll('.ni')[['d','a','p','c','k','u'].indexOf(n)+1]?.classList.add('on');
   const p=PM[n];document.getElementById('pt').textContent=p.t;document.getElementById('ps').textContent=p.s;document.getElementById('bl').textContent=p.b;
-  if(n==='d')ld();if(n==='a')la();if(n==='p')lp();if(n==='c')lc();if(n==='k')lk();if(n==='u')lu();if(n==='gw')lgw();
+  if(n==='d')ld();if(n==='a')la();if(n==='p')lp();if(n==='c')lc();if(n==='k')lk();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();
 }
 function act(){const on=document.querySelector('.pg2.on')?.id;
   if(on==='pd'||on==='pa'){editId=null;document.getElementById('ma-title').textContent='Novo Associado';limpaCampos(['frz','fnf','fd','fe','ftel','fw','fobs']);document.getElementById('fst').value='prospecto';document.getElementById('fvc').value='';om('ma');}
@@ -691,6 +760,96 @@ async function toggleUsr(id,ativo,nome){
   if(!confirm(`${ativo?'Desativar':'Ativar'} o usuário "${nome}"?`))return;
   const r=await api(`/usuarios/${id}`,{method:'PATCH',body:JSON.stringify({ativo:ativo?0:1})});
   if(r?.id){lu();toast(`Usuário ${ativo?'desativado':'ativado'}!`);}else toast('Erro','err');
+}
+
+// Comunicados
+let _comTab='tpl';
+function comTab(tab,btn){
+  _comTab=tab;
+  document.querySelectorAll('#pcom .assoc-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  ['com-tpl','com-hist','com-cfg'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('com-'+tab).style.display='';
+  if(tab==='tpl')lcomTpl();
+  if(tab==='hist')lcomEnvios();
+  if(tab==='cfg')lcomCfg();
+}
+async function lcomTpl(){
+  document.getElementById('com-tpl-t').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  const d=await api('/comunicados/templates');if(!d)return;
+  if(!d.data||d.data.length===0){document.getElementById('com-tpl-t').innerHTML='<div class="em">Nenhum template encontrado.</div>';return;}
+  document.getElementById('com-tpl-t').innerHTML=`<table><thead><tr><th>Nome</th><th>Gatilho</th><th>Canal</th><th>Status</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+    <td><strong>${x.nome||'-'}</strong></td>
+    <td><span class="bx bb" style="font-size:10px">${x.gatilho||'-'}</span></td>
+    <td>${canalBadges(x.canal)}</td>
+    <td>${x.ativo?'<span class="bx bg">Ativo</span>':'<span class="bx bgr">Inativo</span>'}</td>
+    <td><button class="btn-o" onclick="editTpl(${x.id})">Editar</button></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+function canalBadges(c){
+  if(c==='ambos')return'<span class="bx bb" style="margin-right:4px">email</span><span class="bx bg">whatsapp</span>';
+  if(c==='whatsapp')return'<span class="bx bg">whatsapp</span>';
+  return'<span class="bx bb">email</span>';
+}
+async function editTpl(id){
+  const d=await api('/comunicados/templates/'+id);if(!d||!d.id)return;
+  document.getElementById('com-tpl-id').value=d.id;
+  document.getElementById('com-m-title').textContent='Editar: '+d.nome;
+  document.getElementById('com-m-sub').textContent='Gatilho: '+(d.gatilho||'-');
+  document.getElementById('com-assunto').value=d.assunto_email||'';
+  document.getElementById('com-corpo-email').value=d.corpo_email||'';
+  document.getElementById('com-corpo-wpp').value=d.corpo_whatsapp||'';
+  document.getElementById('com-canal').value=d.canal||'email';
+  document.getElementById('com-ativo').value=d.ativo?'1':'0';
+  om('mcom');
+}
+async function salvarTpl(){
+  const id=document.getElementById('com-tpl-id').value;
+  if(!id)return;
+  const b={
+    assunto_email:document.getElementById('com-assunto').value,
+    corpo_email:document.getElementById('com-corpo-email').value,
+    corpo_whatsapp:document.getElementById('com-corpo-wpp').value,
+    ativo:parseInt(document.getElementById('com-ativo').value)
+  };
+  const r=await api('/comunicados/templates/'+id,{method:'PUT',body:JSON.stringify(b)});
+  if(r?.message){cm('mcom');lcomTpl();toast('Template atualizado!');}
+  else toast(r?.error||'Erro ao salvar','err');
+}
+async function lcomEnvios(){
+  document.getElementById('com-hist-t').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  const canal=document.getElementById('com-h-canal')?.value||'';
+  const gatilho=document.getElementById('com-h-status')?.value||'';
+  let url='/comunicados/envios?limit=50';
+  if(canal)url+='&canal='+canal;
+  if(gatilho)url+='&gatilho='+gatilho;
+  const d=await api(url);if(!d)return;
+  if(!d.data||d.data.length===0){document.getElementById('com-hist-t').innerHTML='<div class="em">Nenhum envio registrado.</div>';return;}
+  document.getElementById('com-hist-t').innerHTML=`<table><thead><tr><th>Data</th><th>Associado</th><th>Canal</th><th>Gatilho</th><th>Status</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+    <td style="font-size:12px;color:var(--t3)">${x.criado_em?new Date(x.criado_em).toLocaleString('pt-BR'):'-'}</td>
+    <td><strong>${x.nome_fantasia||x.razao_social||'-'}</strong></td>
+    <td>${canalBadges(x.canal)}</td>
+    <td><span class="bx bb" style="font-size:10px">${x.gatilho||'-'}</span></td>
+    <td>${x.status==='enviado'?'<span class="bx bg">Enviado</span>':'<span class="bx br">Falhou</span>'}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+const _cfgKeys=['email_remetente','email_remetente_nome','zapi_instance','zapi_token'];
+const _cfgFields={email_remetente:'cfg-email-rem',email_remetente_nome:'cfg-email-nome',zapi_instance:'cfg-zapi-inst',zapi_token:'cfg-zapi-token'};
+async function lcomCfg(){
+  const d=await api('/tenant/config');if(!d||!d.data)return;
+  const map={};d.data.forEach(x=>map[x.chave]=x.valor);
+  _cfgKeys.forEach(k=>{const el=document.getElementById(_cfgFields[k]);if(el)el.value=map[k]||'';});
+}
+async function salvarCfgCom(){
+  let ok=0;
+  for(const k of _cfgKeys){
+    const val=document.getElementById(_cfgFields[k])?.value||'';
+    if(!val)continue;
+    const r=await api('/tenant/config',{method:'POST',body:JSON.stringify({chave:k,valor:val})});
+    if(r?.message||r?.id)ok++;
+  }
+  if(ok)toast(ok+' configuração(ões) salva(s)!');
+  else toast('Nenhuma alteração','err');
 }
 
 // Selects
