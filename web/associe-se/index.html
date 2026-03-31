@@ -115,7 +115,8 @@ async function init(){
   try{
     const r=await fetch(API+'/planos');
     const d=await r.json();
-    planos=(d.data!==undefined?d.data:d)||[];
+    planos=d.data?.data||d.data||d||[];
+    if(!Array.isArray(planos))planos=[];
     if(!planos.length){document.getElementById('plans').innerHTML='<div class="ld">Nenhum plano disponível no momento.</div>';return;}
     render();
     // Check slug
