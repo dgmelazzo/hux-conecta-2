@@ -90,7 +90,7 @@ function jwt_encode(array $payload): string {
     $secret  = $_ENV['JWT_SECRET'] ?? 'conecta_crm_secret_change_me_32c';
     $header  = base64url_enc(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
     $payload['iat'] = time();
-    $payload['exp'] = time() + 86400 * 30;
+    $payload['exp'] = time() + 86400 * 7;
     $body    = base64url_enc(json_encode($payload));
     $sig     = base64url_enc(hash_hmac('sha256', "$header.$body", $secret, true));
     return "$header.$body.$sig";
@@ -442,7 +442,7 @@ if ($method === 'GET' && $uri === '/planos') {
     $tid = $p['tenant_id'] ?? tenant_id();
     $stmt = pdo()->prepare('SELECT * FROM planos WHERE tenant_id = ? AND ativo = 1 ORDER BY valor ASC');
     $stmt->execute([$tid]);
-    $rows = $stmt->fetchAll(); json_out(['data' => $rows, 'total' => count($rows)]);
+    $rows = $stmt->fetchAll(); json_out(["data" => $rows, "total" => count($rows)]);
 }
 
 // POST /planos
@@ -499,7 +499,7 @@ if ($method === 'GET' && $uri === '/cobrancas') {
          LIMIT 200"
     );
     $stmt->execute($params);
-    $rows = $stmt->fetchAll(); json_out(['data' => $rows, 'total' => count($rows)]);
+    $rows = $stmt->fetchAll(); json_out(["data" => $rows, "total" => count($rows)]);
 }
 
 // POST /cobrancas — cria cobrança via Asaas
@@ -806,57 +806,164 @@ if ($method === 'GET' && $uri === '/usuarios') {
          FROM usuarios WHERE tenant_id = ? ORDER BY nome'
     );
     $stmt->execute([$tid]);
-    $rows = $stmt->fetchAll(); json_out(['data' => $rows, 'total' => count($rows)]);
+    $rows = $stmt->fetchAll(); json_out(["data" => $rows, "total" => count($rows)]);
+}
+
+
+// ============================================================
+// GATEWAY CONFIG
+// ============================================================
+
+// GET /gateway — retorna config atual do tenant
+if ($method === 'GET' && $uri === '/gateway') {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare(
+        'SELECT id, gateway, ambiente, ativo, split_ativo, split_percentual,
+                split_wallet_id, testado_em, criado_em
+         FROM gateway_configs WHERE tenant_id = ? AND gateway = "asaas" LIMIT 1'
+    );
+    $stmt->execute([$tid]);
+    $config = $stmt->fetch();
+
+    // Nunca retorna api_key completa — só máscara
+    if ($config) {
+        $stmtKey = pdo()->prepare('SELECT api_key FROM gateway_configs WHERE id = ?');
+        $stmtKey->execute([$config['id']]);
+        $row = $stmtKey->fetch();
+        $key = $row['api_key'] ?? '';
+        $config['api_key_mask'] = $key ? substr($key, 0, 8) . str_repeat('*', 20) : null;
+        $config['api_key_salva'] = !empty($key);
+    }
+
+    json_out($config ?: ['configurado' => false]);
+}
+
+// POST /gateway — salva ou atualiza config
+if ($method === 'POST' && $uri === '/gateway') {
+    $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    // Valida campos obrigatórios
+    if (empty($b['api_key']) && empty($b['manter_key'])) {
+        json_out(['error' => 'API Key é obrigatória'], 422);
+    }
+
+    $stmt = pdo()->prepare('SELECT id, api_key FROM gateway_configs WHERE tenant_id = ? AND gateway = "asaas" LIMIT 1');
+    $stmt->execute([$tid]);
+    $existing = $stmt->fetch();
+
+    $apiKey = !empty($b['manter_key']) && $existing
+        ? $existing['api_key']
+        : ($b['api_key'] ?? '');
+
+    $webhookToken = $b['webhook_token'] ?? ($existing['webhook_token'] ?? bin2hex(random_bytes(16)));
+
+    if ($existing) {
+        pdo()->prepare(
+            'UPDATE gateway_configs SET
+                api_key = ?, webhook_token = ?, ambiente = ?,
+                split_ativo = ?, split_percentual = ?, split_wallet_id = ?,
+                atualizado_em = NOW()
+             WHERE id = ?'
+        )->execute([
+            $apiKey,
+            $webhookToken,
+            $b['ambiente']         ?? 'sandbox',
+            (int)($b['split_ativo']     ?? 0),
+            (float)($b['split_percentual'] ?? 0),
+            $b['split_wallet_id']  ?? null,
+            $existing['id'],
+        ]);
+        $configId = $existing['id'];
+    } else {
+        pdo()->prepare(
+            'INSERT INTO gateway_configs
+             (tenant_id, gateway, api_key, webhook_token, ambiente,
+              split_ativo, split_percentual, split_wallet_id, ativo, criado_em)
+             VALUES (?, "asaas", ?, ?, ?, ?, ?, ?, 1, NOW())'
+        )->execute([
+            $tid, $apiKey, $webhookToken,
+            $b['ambiente']            ?? 'sandbox',
+            (int)($b['split_ativo']        ?? 0),
+            (float)($b['split_percentual']    ?? 0),
+            $b['split_wallet_id']     ?? null,
+        ]);
+        $configId = (int)pdo()->lastInsertId();
+    }
+
+    // Atualiza .env com a nova key
+    $envFile = __DIR__ . '/../../.env';
+    if (file_exists($envFile)) {
+        $env = file_get_contents($envFile);
+        $env = preg_replace('/^ASAAS_API_KEY=.*/m', 'ASAAS_API_KEY=' . $apiKey, $env);
+        $env = preg_replace('/^ASAAS_ENV=.*/m', 'ASAAS_ENV=' . ($b['ambiente'] === 'producao' ? 'production' : 'sandbox'), $env);
+        $env = preg_replace('/^ASAAS_WEBHOOK_TOKEN=.*/m', 'ASAAS_WEBHOOK_TOKEN=' . $webhookToken, $env);
+        file_put_contents($envFile, $env);
+    }
+
+    json_out(['message' => 'Configuração salva', 'id' => $configId, 'webhook_token' => $webhookToken]);
+}
+
+// POST /gateway/testar — testa conexão com Asaas
+if ($method === 'POST' && $uri === '/gateway/testar') {
+    $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare('SELECT api_key, ambiente FROM gateway_configs WHERE tenant_id = ? AND gateway = "asaas" LIMIT 1');
+    $stmt->execute([$tid]);
+    $config = $stmt->fetch();
+
+    if (!$config || empty($config['api_key'])) {
+        json_out(['error' => 'API Key não configurada'], 422);
+    }
+
+    // Testa chamando /myAccount no Asaas
+    $baseUrl = $config['ambiente'] === 'producao'
+        ? 'https://api.asaas.com/v3'
+        : 'https://sandbox.asaas.com/api/v3';
+
+    $ch = curl_init($baseUrl . '/myAccount');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'access_token: ' . $config['api_key'],
+        ],
+    ]);
+    $res  = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    $data = json_decode($res ?: '{}', true);
+
+    if ($code === 200 && !empty($data['name'])) {
+        // Atualiza testado_em
+        pdo()->prepare('UPDATE gateway_configs SET testado_em = NOW(), ativo = 1 WHERE tenant_id = ? AND gateway = "asaas"')
+             ->execute([$tid]);
+
+        json_out([
+            'sucesso'      => true,
+            'conta_nome'   => $data['name'],
+            'conta_email'  => $data['email'] ?? null,
+            'conta_wallet' => $data['walletId'] ?? null,
+            'ambiente'     => $config['ambiente'],
+        ]);
+    } else {
+        json_out([
+            'sucesso' => false,
+            'erro'    => $data['errors'][0]['description'] ?? 'Credenciais inválidas',
+            'http'    => $code,
+        ]);
+    }
 }
 
 // ============================================================
 // 404
 // ============================================================
 json_out(['error' => 'Rota não encontrada', 'path' => $uri, 'method' => $method], 404);
-
-// ============================================================
-// PATCH /usuarios/{id} — ativa/desativa usuário
-// ============================================================
-if ($method === 'PATCH' && preg_match('#^/usuarios/(\d+)$#', $uri, $m)) {
-    $p = auth_required();
-    require_role($p, ['superadmin', 'gestor']);
-    $tid = $p['tenant_id'] ?? tenant_id();
-    $b   = body();
-
-    if (!isset($b['ativo'])) json_out(['error' => 'Campo ativo obrigatório'], 422);
-
-    pdo()->prepare(
-        'UPDATE usuarios SET ativo = ?, atualizado_em = NOW() WHERE id = ? AND tenant_id = ?'
-    )->execute([(int)$b['ativo'], $m[1], $tid]);
-
-    $stmt = pdo()->prepare('SELECT id, nome, email, role, ativo FROM usuarios WHERE id = ?');
-    $stmt->execute([$m[1]]);
-    json_out($stmt->fetch());
-}
-
-// ============================================================
-// POST /usuarios — alias de /auth/criar-usuario
-// ============================================================
-if ($method === 'POST' && $uri === '/usuarios') {
-    $p = auth_required();
-    require_role($p, ['superadmin', 'gestor']);
-    required_fields(['nome', 'email', 'role']);
-    $b   = body();
-    $tid = $p['tenant_id'] ?? tenant_id();
-
-    if (!in_array($b['role'], ['gestor', 'atendente'])) {
-        json_out(['error' => 'Role inválida. Use: gestor ou atendente'], 422);
-    }
-
-    $chk = pdo()->prepare('SELECT id FROM usuarios WHERE email = ? AND tenant_id = ?');
-    $chk->execute([$b['email'], $tid]);
-    if ($chk->fetch()) json_out(['error' => 'E-mail já cadastrado'], 409);
-
-    $senha = $b['senha'] ?? 'Acic@2026';
-    pdo()->prepare(
-        'INSERT INTO usuarios (tenant_id, nome, email, senha_hash, role, ativo, criado_em)
-         VALUES (?, ?, ?, ?, ?, 1, NOW())'
-    )->execute([$tid, $b['nome'], $b['email'], password_hash($senha, PASSWORD_DEFAULT), $b['role']]);
-
-    json_out(['id' => (int)pdo()->lastInsertId(), 'message' => 'Usuário criado'], 201);
-}
