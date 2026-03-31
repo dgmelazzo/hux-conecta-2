@@ -1199,16 +1199,17 @@ if ($method === 'POST' && $uri === '/inscricoes') {
 
     pdo()->prepare(
         'INSERT INTO inscricoes_publicas
-         (tenant_id, plano_id, nome_contato, email, telefone, documento, mensagem, status, criado_em)
-         VALUES (?, ?, ?, ?, ?, ?, ?, "pendente", NOW())'
+         (tenant_id, plano_id, nome_empresa, cnpj, nome_contato, email, whatsapp, status, ip_origem, criado_em)
+         VALUES (?, ?, ?, ?, ?, ?, ?, "pendente", ?, NOW())'
     )->execute([
         $tid,
         $b['plano_id'],
+        $b['nome_empresa'] ?? null,
+        isset($b['cnpj']) ? preg_replace('/\D/', '', $b['cnpj']) : null,
         $b['nome_contato'],
         $b['email'],
-        $b['telefone']  ?? null,
-        $b['documento'] ?? null,
-        $b['mensagem']  ?? null,
+        $b['whatsapp']  ?? null,
+        $_SERVER['REMOTE_ADDR'] ?? null,
     ]);
 
     json_out([
