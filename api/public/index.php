@@ -432,6 +432,21 @@ if ($method === 'PUT' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     json_out(['message' => 'Associado atualizado']);
 }
 
+// DELETE /associados/{id} — soft delete (status='cancelado')
+if ($method === 'DELETE' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
+    $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare('SELECT id FROM associados WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Associado não encontrado'], 404);
+
+    pdo()->prepare('UPDATE associados SET status = "cancelado", atualizado_em = NOW() WHERE id = ? AND tenant_id = ?')
+         ->execute([$m[1], $tid]);
+    json_out(['success' => true, 'message' => 'Associado cancelado']);
+}
+
 // GET /associados/{id}/cobrancas — cobranças de um associado
 if ($method === 'GET' && preg_match('#^/associados/(\d+)/cobrancas$#', $uri, $m)) {
     $p   = auth_required();
@@ -525,6 +540,46 @@ if ($method === 'POST' && $uri === '/planos') {
         $b['split_percentual'] ?? null,
     ]);
     json_out(['message' => 'Plano criado', 'id' => (int)pdo()->lastInsertId(), 'slug' => $slug], 201);
+}
+
+// PUT /planos/{id} — atualiza plano
+if ($method === 'PUT' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    $stmt = pdo()->prepare('SELECT id FROM planos WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Plano não encontrado'], 404);
+
+    $allowed = ['nome','tipo','descricao','valor','periodicidade','tem_conecta','desconto_avista',
+                'split_ativo','split_percentual','tem_link_publico'];
+    $set = []; $vals = [];
+    foreach ($allowed as $f) {
+        if (array_key_exists($f, $b)) { $set[] = "$f = ?"; $vals[] = $b[$f]; }
+    }
+    if (!$set) json_out(['error' => 'Nenhum campo para atualizar'], 422);
+
+    $vals[] = $m[1]; $vals[] = $tid;
+    pdo()->prepare('UPDATE planos SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?')
+         ->execute($vals);
+    json_out(['ok' => true, 'message' => 'Plano atualizado', 'id' => (int)$m[1]]);
+}
+
+// DELETE /planos/{id} — desativa plano (soft delete)
+if ($method === 'DELETE' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare('SELECT id FROM planos WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Plano não encontrado'], 404);
+
+    pdo()->prepare('UPDATE planos SET ativo = 0 WHERE id = ? AND tenant_id = ?')
+         ->execute([$m[1], $tid]);
+    json_out(['success' => true, 'message' => 'Plano desativado']);
 }
 
 // ============================================================
@@ -907,6 +962,27 @@ if ($method === 'GET' && $uri === '/usuarios') {
     $rows = $stmt->fetchAll(); json_out(["data" => $rows, "total" => count($rows)]);
 }
 
+// PATCH /usuarios/{id} — ativar/desativar usuário
+if ($method === 'PATCH' && preg_match('#^/usuarios/(\d+)$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    $stmt = pdo()->prepare('SELECT id FROM usuarios WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Usuário não encontrado'], 404);
+
+    $set = []; $vals = [];
+    if (array_key_exists('ativo', $b)) { $set[] = 'ativo = ?'; $vals[] = (int)$b['ativo']; }
+    if (array_key_exists('role', $b))  { $set[] = 'role = ?';  $vals[] = $b['role']; }
+    if (!$set) json_out(['error' => 'Nenhum campo para atualizar'], 422);
+
+    $vals[] = $m[1]; $vals[] = $tid;
+    pdo()->prepare('UPDATE usuarios SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?')
+         ->execute($vals);
+    json_out(['message' => 'Usuário atualizado', 'id' => (int)$m[1]]);
+}
 
 // ============================================================
 // GATEWAY CONFIG
@@ -1043,11 +1119,11 @@ if ($method === 'GET' && $uri === '/comunicados/templates') {
     $tid = $p['tenant_id'] ?? tenant_id();
 
     $stmt = pdo()->prepare(
-        'SELECT id, nome, gatilho, assunto_email, corpo_email, corpo_whatsapp,
+        'SELECT id, nome, slug, assunto_email, corpo_email, corpo_whatsapp,
                 canal, ativo, criado_em, atualizado_em
          FROM comunicado_templates
          WHERE tenant_id = ?
-         ORDER BY gatilho, nome'
+         ORDER BY slug, nome'
     );
     $stmt->execute([$tid]);
     $rows = $stmt->fetchAll();
@@ -1107,6 +1183,7 @@ if ($method === 'GET' && $uri === '/comunicados/envios') {
     if (!empty($_GET['associado_id'])) { $where .= ' AND e.associado_id = ?'; $params[] = $_GET['associado_id']; }
     if (!empty($_GET['canal']))        { $where .= ' AND e.canal = ?';        $params[] = $_GET['canal']; }
     if (!empty($_GET['gatilho']))       { $where .= ' AND e.gatilho = ?';      $params[] = $_GET['gatilho']; }
+    if (!empty($_GET['status']))        { $where .= ' AND e.status = ?';       $params[] = $_GET['status']; }
 
     $limit = min(200, max(1, (int)($_GET['limit'] ?? 50)));
 

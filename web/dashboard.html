@@ -691,14 +691,14 @@ async function sa(){
   const url=editId?`/associados/${editId}`:'/associados';
   const method=editId?'PUT':'POST';
   const r=await api(url,{method,body:JSON.stringify(b)});
-  if(r?.id){cm('ma');la(acp);toast(editId?'Associado atualizado!':'Associado cadastrado!');}
+  if(r?.id||r?.message){cm('ma');la(acp);toast(editId?'Associado atualizado!':'Associado cadastrado!');}
   else toast(r?.error||'Erro ao salvar','err');
 }
 async function delAssoc(id,nome){
-  if(!confirm(`Excluir "${nome}"? Esta ação não pode ser desfeita.`))return;
+  if(!confirm(`Cancelar "${nome}"? O associado será marcado como cancelado.`))return;
   const r=await api(`/associados/${id}`,{method:'DELETE'});
-  if(r?.success){la(acp);toast('Associado excluído!');}
-  else toast('Erro ao excluir','err');
+  if(r?.success||r?.message){la(acp);toast('Associado cancelado!');}
+  else toast(r?.error||'Erro ao cancelar','err');
 }
 
 // Planos
@@ -725,7 +725,7 @@ async function spl(){
   const r=pid
     ?await api('/planos/'+pid,{method:'PUT',body:JSON.stringify(b)})
     :await api('/planos',{method:'POST',body:JSON.stringify(b)});
-  if(r?.id||r?.ok){cm('mpl');document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';lp();toast(pid?'Plano atualizado!':'Plano criado!');}
+  if(r?.id||r?.message){cm('mpl');document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';lp();toast(pid?'Plano atualizado!':'Plano criado!');}
   else toast(r?.error||'Erro','err');
 }
 function editPlano(p){
@@ -739,10 +739,10 @@ function editPlano(p){
   om('mpl');
 }
 async function delPlano(id,nome){
-  if(!confirm(`Excluir plano "${nome}"?`))return;
+  if(!confirm(`Desativar plano "${nome}"?`))return;
   const r=await api(`/planos/${id}`,{method:'DELETE'});
-  if(r?.success){lp();toast('Plano excluído!');}
-  else toast('Erro ao excluir','err');
+  if(r?.success||r?.message){lp();toast('Plano desativado!');}
+  else toast(r?.error||'Erro ao desativar','err');
 }
 
 // Cobranças
@@ -758,7 +758,7 @@ async function lc(p2=1){
     <td style="font-size:12px;color:var(--t3)">${x.vencimento||'-'}</td>
     <td>${bs(x.status)}</td>
     <td style="white-space:nowrap">
-      ${x.status==='pendente'?`<button class="btn-o" onclick="pagarCob(${x.id},${x.valor})" style="margin-right:4px">Pagar</button><button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button>`:''}
+      ${x.status==='pendente'?`<button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button>`:''}
     </td>
   </tr>`).join('')}</tbody></table>`;
   const info=`${(p2-1)*20+1}–${Math.min(p2*20,d.total)} de ${d.total}`;
@@ -770,23 +770,19 @@ async function carregaAssocs(){
   if(d?.data){const s=document.getElementById('cob-assoc');s.innerHTML='<option value="">Selecionar...</option>'+d.data.map(a=>`<option value="${a.id}">${a.razao_social||a.nome_responsavel}</option>`).join('');}
 }
 async function scob(){
-  const b={associado_id:document.getElementById('cob-assoc').value,valor:document.getElementById('cob-val').value,vencimento:document.getElementById('cob-venc').value,descricao:document.getElementById('cob-desc').value||'Taxa associativa'};
+  const mod=document.getElementById('cob-tipo')?.value||'pix';
+  const b={associado_id:document.getElementById('cob-assoc').value,valor:document.getElementById('cob-val').value,data_vencimento:document.getElementById('cob-venc').value,modalidade:mod,descricao:document.getElementById('cob-desc').value||'Taxa associativa'};
   if(!b.associado_id){toast('Selecione um associado','err');return;}
   if(!b.valor||parseFloat(b.valor)<=0){toast('Informe um valor válido','err');return;}
-  if(!b.vencimento){toast('Informe a data de vencimento','err');return;}
+  if(!b.data_vencimento){toast('Informe a data de vencimento','err');return;}
   const r=await api('/cobrancas',{method:'POST',body:JSON.stringify(b)});
   if(r?.id){cm('mcob');lc();toast('Cobrança gerada!');}
   else toast(r?.error||'Erro','err');
 }
-async function pagarCob(id,valor){
-  if(!confirm(`Marcar cobrança de ${money(valor)} como paga?`))return;
-  const r=await api(`/cobrancas/${id}/pagar`,{method:'PATCH',body:JSON.stringify({valor_pago:valor})});
-  if(r?.id){lc();toast('Cobrança paga!');}else toast('Erro','err');
-}
 async function cancelarCob(id){
-  if(!confirm('Cancelar esta cobrança?'))return;
-  const r=await api(`/cobrancas/${id}/cancelar`,{method:'PATCH'});
-  if(r?.id){lc();toast('Cobrança cancelada!');}else toast('Erro','err');
+  if(!confirm('Cancelar esta cobrança? A cobrança será cancelada no Asaas.'))return;
+  const r=await api(`/cobrancas/${id}`,{method:'DELETE'});
+  if(r?.message){lc();toast('Cobrança cancelada!');}else toast(r?.error||'Erro ao cancelar','err');
 }
 
 // Usuários
@@ -810,14 +806,14 @@ async function susr(){
   if(!b.nome){toast('Informe o nome do usuário','err');return;}
   if(!b.email||!b.email.includes('@')){toast('Informe um e-mail válido','err');return;}
   if(b.senha&&b.senha.length<6){toast('A senha deve ter no mínimo 6 caracteres','err');return;}
-  const r=await api('/usuarios',{method:'POST',body:JSON.stringify(b)});
-  if(r?.id){cm('musr');lu();toast('Usuário criado! Senha: '+(document.getElementById('u-senha').value||'Acic@2026'));}
+  const r=await api('/auth/criar-usuario',{method:'POST',body:JSON.stringify(b)});
+  if(r?.id||r?.message){cm('musr');lu();toast('Usuário criado! Senha: '+(document.getElementById('u-senha').value||'Acic@2026'));}
   else toast(r?.error||'Erro','err');
 }
 async function toggleUsr(id,ativo,nome){
   if(!confirm(`${ativo?'Desativar':'Ativar'} o usuário "${nome}"?`))return;
   const r=await api(`/usuarios/${id}`,{method:'PATCH',body:JSON.stringify({ativo:ativo?0:1})});
-  if(r?.id){lu();toast(`Usuário ${ativo?'desativado':'ativado'}!`);}else toast('Erro','err');
+  if(r?.id||r?.message){lu();toast(`Usuário ${ativo?'desativado':'ativado'}!`);}else toast(r?.error||'Erro','err');
 }
 
 // Comunicados
@@ -836,9 +832,9 @@ async function lcomTpl(){
   document.getElementById('com-tpl-t').innerHTML='<div class="ld"><div class="sp"></div></div>';
   const d=await api('/comunicados/templates');if(!d)return;
   if(!d.data||d.data.length===0){document.getElementById('com-tpl-t').innerHTML='<div class="em">Nenhum template encontrado.</div>';return;}
-  document.getElementById('com-tpl-t').innerHTML=`<table><thead><tr><th>Nome</th><th>Gatilho</th><th>Canal</th><th>Status</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+  document.getElementById('com-tpl-t').innerHTML=`<table><thead><tr><th>Nome</th><th>Slug</th><th>Canal</th><th>Status</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
     <td><strong>${x.nome||'-'}</strong></td>
-    <td><span class="bx bb" style="font-size:10px">${x.gatilho||'-'}</span></td>
+    <td><span class="bx bb" style="font-size:10px">${x.slug||'-'}</span></td>
     <td>${canalBadges(x.canal)}</td>
     <td>${x.ativo?'<span class="bx bg">Ativo</span>':'<span class="bx bgr">Inativo</span>'}</td>
     <td><button class="btn-o" onclick="editTpl(${x.id})">Editar</button></td>
@@ -853,7 +849,7 @@ async function editTpl(id){
   const d=await api('/comunicados/templates/'+id);if(!d||!d.id)return;
   document.getElementById('com-tpl-id').value=d.id;
   document.getElementById('com-m-title').textContent='Editar: '+d.nome;
-  document.getElementById('com-m-sub').textContent='Gatilho: '+(d.gatilho||'-');
+  document.getElementById('com-m-sub').textContent='Slug: '+(d.slug||'-');
   document.getElementById('com-assunto').value=d.assunto_email||'';
   document.getElementById('com-corpo-email').value=d.corpo_email||'';
   document.getElementById('com-corpo-wpp').value=d.corpo_whatsapp||'';
@@ -877,10 +873,10 @@ async function salvarTpl(){
 async function lcomEnvios(){
   document.getElementById('com-hist-t').innerHTML='<div class="ld"><div class="sp"></div></div>';
   const canal=document.getElementById('com-h-canal')?.value||'';
-  const gatilho=document.getElementById('com-h-status')?.value||'';
+  const status=document.getElementById('com-h-status')?.value||'';
   let url='/comunicados/envios?limit=50';
   if(canal)url+='&canal='+canal;
-  if(gatilho)url+='&gatilho='+gatilho;
+  if(status)url+='&status='+status;
   const d=await api(url);if(!d)return;
   if(!d.data||d.data.length===0){document.getElementById('com-hist-t').innerHTML='<div class="em">Nenhum envio registrado.</div>';return;}
   document.getElementById('com-hist-t').innerHTML=`<table><thead><tr><th>Data</th><th>Associado</th><th>Canal</th><th>Gatilho</th><th>Status</th></tr></thead><tbody>${d.data.map(x=>`<tr>
