@@ -263,6 +263,9 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
       <div class="fg"><label class="fl3">Valor Anual (R$)</label><input type="number" class="fc" id="pl-anual" step="0.01" placeholder="0,00"></div><div class="fg"><label class="fl3">Periodicidade</label><select class="fc" id="pl-per"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="semestral">Semestral</option></select></div>
     </div>
     <div class="fg"><label class="fl3">Descrição</label><textarea class="fc" id="pl-desc" placeholder="Detalhes do plano..."></textarea></div>
+      <div class="fg" style="grid-column:span 2;border-top:1px solid var(--bd);padding-top:12px;margin-top:4px"><label class="fl3" style="font-weight:600">Split HUX</label></div>
+      <div class="fg"><label class="fl3"><input type="checkbox" id="pl-split-ativo" onchange="document.getElementById('pl-split-pct-wrap').style.display=this.checked?'block':'none'"/> Ativar split neste plano</label></div>
+      <div class="fg" id="pl-split-pct-wrap" style="display:none"><label class="fl3">Percentual HUX (%)</label><input type="number" class="fc" id="pl-split-pct" min="0" max="100" step="0.1" placeholder="2.0"/></div>
     <div class="mf">
       <button class="btn-o" onclick="cm('mpl')">Cancelar</button>
       <button class="btn" onclick="spl()"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar</button>

@@ -462,14 +462,17 @@ if ($method === 'POST' && $uri === '/planos') {
 
     pdo()->prepare(
         'INSERT INTO planos (tenant_id, nome, tipo, descricao, valor, periodicidade,
-          tem_conecta, desconto_avista, tem_link_publico, slug_link, ativo, criado_em)
-         VALUES (?,?,?,?,?,?,?,?,1,?,1,NOW())'
+          tem_conecta, desconto_avista, tem_link_publico, slug_link,
+          split_ativo, split_percentual, ativo, criado_em)
+         VALUES (?,?,?,?,?,?,?,?,1,?,?,?,1,NOW())'
     )->execute([
         $tid, $b['nome'], $b['tipo'], $b['descricao'] ?? null,
         $b['valor'], $b['periodicidade'],
         (int)($b['tem_conecta'] ?? 0),
         $b['desconto_avista'] ?? 0,
         $slug,
+        (int)($b['split_ativo'] ?? 0),
+        $b['split_percentual'] ?? null,
     ]);
     json_out(['message' => 'Plano criado', 'id' => (int)pdo()->lastInsertId(), 'slug' => $slug], 201);
 }
@@ -524,13 +527,55 @@ if ($method === 'POST' && $uri === '/cobrancas') {
     $customerId = asaasEnsureCustomer($assoc);
 
     // Cria cobrança no Asaas
-    $asaasResp = asaasReq('POST', '/payments', [
+    // Determina split: plano tem prioridade sobre gateway global
+    $splitAtivo = false;
+    $splitPct   = 0.0;
+    $splitWallet = null;
+
+    // Busca config do gateway (wallet sempre vem do gateway)
+    $stmtGW = pdo()->prepare(
+        'SELECT split_ativo, split_percentual, split_wallet_id
+         FROM gateway_configs WHERE tenant_id = ? AND gateway = "asaas" LIMIT 1'
+    );
+    $stmtGW->execute([$tid]);
+    $gwConfig = $stmtGW->fetch();
+    if ($gwConfig) $splitWallet = $gwConfig['split_wallet_id'] ?? null;
+
+    if (!empty($b['plano_id'])) {
+        // Cobrança vinculada a plano — split do plano
+        $stmtPl = pdo()->prepare('SELECT split_ativo, split_percentual FROM planos WHERE id = ? LIMIT 1');
+        $stmtPl->execute([$b['plano_id']]);
+        $plano = $stmtPl->fetch();
+        if ($plano && $plano['split_ativo'] && $plano['split_percentual'] > 0) {
+            $splitAtivo = true;
+            $splitPct   = (float)$plano['split_percentual'];
+        }
+    } else {
+        // Cobrança avulsa — split do gateway
+        if ($gwConfig && $gwConfig['split_ativo'] && $gwConfig['split_percentual'] > 0) {
+            $splitAtivo = true;
+            $splitPct   = (float)$gwConfig['split_percentual'];
+        }
+    }
+
+    $chargeData = [
         'customer'    => $customerId,
         'billingType' => $modalMap[$mod],
         'value'       => (float)$b['valor'],
         'dueDate'     => $b['data_vencimento'],
         'description' => $b['descricao'] ?? 'Taxa associativa',
-    ]);
+    ];
+
+    // Aplica split se configurado e wallet disponível
+    if ($splitAtivo && $splitPct > 0 && !empty($splitWallet)) {
+        $splitValor = round((float)$b['valor'] * $splitPct / 100, 2);
+        $chargeData['split'] = [[
+            'walletId'   => $splitWallet,
+            'fixedValue' => $splitValor,
+        ]];
+    }
+
+    $asaasResp = asaasReq('POST', '/payments', $chargeData);
 
     if (empty($asaasResp['id'])) {
         json_out(['error' => 'Erro no Asaas', 'detail' => $asaasResp], 502);
@@ -914,13 +959,11 @@ if ($method === 'POST' && $uri === '/gateway/testar') {
     require_role($p, ['superadmin', 'gestor']);
     $tid = $p['tenant_id'] ?? tenant_id();
 
-    // Usa asaasReq() que já funciona (usa a key do .env)
     $data = asaasReq('GET', '/myAccount');
 
     if (!empty($data['name'])) {
         pdo()->prepare('UPDATE gateway_configs SET testado_em = NOW(), ativo = 1 WHERE tenant_id = ? AND gateway = "asaas"')
              ->execute([$tid]);
-
         json_out([
             'sucesso'      => true,
             'conta_nome'   => $data['name'],
@@ -931,7 +974,7 @@ if ($method === 'POST' && $uri === '/gateway/testar') {
     } else {
         json_out([
             'sucesso' => false,
-            'erro'    => $data['errors'][0]['description'] ?? 'Credenciais inválidas',
+            'erro'    => $data['errors'][0]['description'] ?? 'Credenciais invalidas',
             'http'    => $data['_http'] ?? 0,
         ]);
     }
