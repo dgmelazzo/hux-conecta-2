@@ -39,6 +39,11 @@ a{color:var(--or);text-decoration:none}
 .ben-icon svg{width:20px;height:20px;stroke:var(--or);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ben h3{font-size:15px;font-weight:700;margin-bottom:6px}
 .ben p{font-size:13px;color:var(--t2);line-height:1.5}
+.plan-itens{list-style:none;margin:0 0 14px;padding:0}
+.plan-itens li{font-size:12px;color:var(--t2);padding:4px 0;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px}
+.plan-itens li:last-child{border-bottom:none}
+.plan-itens li::before{content:'✓';color:var(--gn);font-weight:700;flex-shrink:0}
+.plan-itens-combo{background:rgba(232,112,26,.04);border-radius:8px;padding:8px 10px}
 .ftr{background:var(--blue);color:rgba(255,255,255,.8);padding:40px 24px 24px}
 .ftr-inner{max-width:1100px;margin:0 auto}
 .ftr-top{display:flex;align-items:center;gap:16px;margin-bottom:20px}
@@ -133,7 +138,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
 <script>
 const API='https://api.acicdf.org.br';
-let planos=[];
+let planos=[],itensMap={};
 
 async function init(){
   try{
@@ -141,6 +146,10 @@ async function init(){
     planos=d.data?.data||d.data||d||[];
     if(!Array.isArray(planos))planos=[];
     if(!planos.length){document.getElementById('plans').innerHTML='<div class="ld">Nenhum plano disponível no momento.</div>';return;}
+    // Fetch items for each plan in parallel
+    await Promise.all(planos.map(async p=>{
+      try{const ri=await fetch(API+'/planos/'+p.id+'/itens');const di=await ri.json();itensMap[p.id]=(di.data?.data||di.data||[]);}catch(e){itensMap[p.id]=[];}
+    }));
     render();
     const path=location.pathname.replace(/\/+$/,'');const slug=path.split('/').pop();
     if(slug&&slug!=='associe-se'){const found=planos.find(p=>p.slug_link===slug);if(found)abrirModal(found);}
@@ -149,10 +158,14 @@ async function init(){
 function money(v){return'R$ '+parseFloat(v||0).toFixed(2).replace('.',',');}
 function render(){
   const tp={mei:'MEI',me:'ME',epp:'EPP',isento:'Isento',combo:'Combo',personalizado:'Personalizado'};
-  document.getElementById('plans').innerHTML=planos.map(p=>{const pop=p.tipo==='combo';return`<div class="plan${pop?' popular':''}">
+  document.getElementById('plans').innerHTML=planos.map(p=>{const pop=p.tipo==='combo';
+    const items=(itensMap[p.id]||[]).filter(i=>i.nome);
+    const itensHtml=items.length?`<div class="${pop?'plan-itens-combo':''}"><ul class="plan-itens">${items.map(i=>`<li>${i.nome}${i.tipo_cobranca==='incluso'?' <span style="color:var(--gn);font-size:10px;font-weight:600">(incluso)</span>':''}</li>`).join('')}</ul></div>`:'';
+    return`<div class="plan${pop?' popular':''}">
     ${pop?'<div class="pop-tag">Mais popular</div>':''}
     <div class="plan-tipo">${tp[p.tipo]||p.tipo}</div><div class="plan-nome">${p.nome}</div>
     <div class="plan-desc">${p.descricao||'Plano de associação'}</div>
+    ${itensHtml}
     <div class="plan-preco">${money(p.valor)} <span>/${p.periodicidade}</span></div>
     <div class="plan-badges"><span class="badge badge-b">${p.periodicidade}</span>${p.tem_conecta?'<span class="badge badge-g">Conecta</span>':''}</div>
     <button class="btn" onclick="abrirModal(planos.find(x=>x.id===${p.id}))">Associar-se</button>

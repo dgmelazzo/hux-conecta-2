@@ -850,12 +850,24 @@ if ($method === 'DELETE' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
 
 // ── PLANO ITENS ─────────────────────────────────────────────────────────────
 
-// GET /planos/{id}/itens
+// GET /planos/{id}/itens — público para planos com tem_link_publico=1
 if ($method === 'GET' && preg_match('#^/planos/(\d+)/itens$#', $uri, $m)) {
-    $p = auth_required();
-    $tid = $p['tenant_id'] ?? tenant_id();
+    $h = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $authenticated = false;
+    if (preg_match('/^Bearer\s+(.+)$/i', $h, $mAuth)) {
+        $p2 = jwt_decode($mAuth[1]);
+        if ($p2) $authenticated = true;
+    }
+    $tid = $authenticated ? ($p2['tenant_id'] ?? tenant_id()) : tenant_id();
+
+    if (!$authenticated) {
+        $stmtPub = pdo()->prepare('SELECT id FROM planos WHERE id = ? AND tenant_id = ? AND tem_link_publico = 1 LIMIT 1');
+        $stmtPub->execute([$m[1], $tid]);
+        if (!$stmtPub->fetch()) json_out(['error' => 'Plano não encontrado'], 404);
+    }
+
     $stmt = pdo()->prepare(
-        'SELECT pi.*, pa.nome AS parceiro_nome
+        'SELECT pi.nome, pi.tipo_cobranca, pi.valor_adesao, pi.valor_recorrencia, pa.nome AS parceiro_nome
          FROM plano_itens pi
          LEFT JOIN parceiros pa ON pa.id = pi.parceiro_id
          WHERE pi.plano_id = ? AND pi.tenant_id = ?
