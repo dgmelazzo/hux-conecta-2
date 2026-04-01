@@ -1255,7 +1255,7 @@ if ($method === 'POST' && $uri === '/tenant/config') {
 
 // POST /inscricoes — inscrição pública (sem auth)
 if ($method === 'POST' && $uri === '/inscricoes') {
-    required_fields(['plano_id', 'nome_contato', 'email']);
+    required_fields(['plano_id', 'razao_social', 'cpf_cnpj', 'telefone', 'email']);
     $b   = body();
     $tid = tenant_id();
 
@@ -1278,18 +1278,45 @@ if ($method === 'POST' && $uri === '/inscricoes') {
         json_out(['error' => 'Limite de inscrições atingido. Tente novamente em 24 horas.'], 429);
     }
 
+    // Hash senha se fornecida
+    $senhaHash = null;
+    if (!empty($b['senha'])) {
+        if (strlen($b['senha']) < 6) {
+            json_out(['error' => 'A senha deve ter no mínimo 6 caracteres'], 422);
+        }
+        $senhaHash = password_hash($b['senha'], PASSWORD_BCRYPT);
+    }
+
     pdo()->prepare(
         'INSERT INTO inscricoes_publicas
-         (tenant_id, plano_id, nome_empresa, cnpj, nome_contato, email, whatsapp, status, ip_origem, criado_em)
-         VALUES (?, ?, ?, ?, ?, ?, ?, "pendente", ?, NOW())'
+         (tenant_id, plano_id, nome_empresa, cnpj, nome_contato, email, whatsapp,
+          nome_fantasia, senha_hash, telefone, cep, logradouro, complemento, bairro, cidade,
+          capital_social, data_abertura, faturamento_mensal, num_funcionarios,
+          status, ip_origem, criado_em)
+         VALUES (?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?,
+          "pendente", ?, NOW())'
     )->execute([
         $tid,
         $b['plano_id'],
-        $b['nome_empresa'] ?? null,
-        isset($b['cnpj']) ? preg_replace('/\D/', '', $b['cnpj']) : null,
-        $b['nome_contato'],
+        $b['razao_social'],
+        preg_replace('/\D/', '', $b['cpf_cnpj']),
+        $b['razao_social'],
         $b['email'],
-        $b['whatsapp']  ?? null,
+        $b['telefone'] ?? null,
+        $b['nome_fantasia'] ?? null,
+        $senhaHash,
+        $b['telefone'] ?? null,
+        isset($b['cep']) ? preg_replace('/\D/', '', $b['cep']) : null,
+        $b['logradouro'] ?? null,
+        $b['complemento'] ?? null,
+        $b['bairro'] ?? null,
+        $b['cidade'] ?? null,
+        isset($b['capital_social']) ? (float)$b['capital_social'] : null,
+        $b['data_abertura'] ?? null,
+        $b['faturamento_mensal'] ?? null,
+        $b['num_funcionarios'] ?? null,
         $_SERVER['REMOTE_ADDR'] ?? null,
     ]);
 

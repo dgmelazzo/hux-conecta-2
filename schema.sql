@@ -521,6 +521,19 @@ CREATE TABLE inscricoes_publicas (
   nome_contato    VARCHAR(120) NOT NULL,
   email           VARCHAR(180) NOT NULL,
   whatsapp        VARCHAR(20),
+  -- Campos HiGestor
+  nome_fantasia       VARCHAR(180),
+  senha_hash          VARCHAR(255),
+  telefone            VARCHAR(20),
+  cep                 VARCHAR(10),
+  logradouro          VARCHAR(200),
+  complemento         VARCHAR(100),
+  bairro              VARCHAR(100),
+  cidade              VARCHAR(100),
+  capital_social      DECIMAL(15,2),
+  data_abertura       DATE,
+  faturamento_mensal  VARCHAR(30),
+  num_funcionarios    VARCHAR(20),
   -- Processamento
   status          ENUM('pendente','convertido','rejeitado') NOT NULL DEFAULT 'pendente',
   prospecto_id    INT UNSIGNED,                        -- criado automaticamente

@@ -29,10 +29,11 @@ h1{font-size:28px;font-weight:700;text-align:center;margin-bottom:8px;color:var(
 .badge-g{background:#ECFDF5;color:#065F46}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;background:var(--or);color:#fff;border:none;border-radius:8px;font-family:var(--f);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;width:100%}
 .btn:hover{background:var(--ordk)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto}
 /* Modal */
 .mo{display:none;position:fixed;inset:0;background:rgba(27,43,107,.6);z-index:1000;align-items:center;justify-content:center;padding:24px}
 .mo.on{display:flex}
-.mb{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative}
+.mb{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative}
 .mc{position:absolute;top:12px;right:12px;z-index:10;width:32px;height:32px;border-radius:8px;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mc:hover{background:var(--bd)}
 .mc svg{width:16px;height:16px;stroke:var(--t2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -42,11 +43,16 @@ h1{font-size:28px;font-weight:700;text-align:center;margin-bottom:8px;color:var(
 .plan-banner{background:var(--lt);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
 .plan-banner-nome{font-weight:600;font-size:14px;color:var(--tx)}
 .plan-banner-val{font-weight:700;color:var(--or);font-size:16px}
-.fg{margin-bottom:16px}
+.sec-title{font-size:13px;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.08em;margin:20px 0 12px;padding-bottom:6px;border-bottom:1.5px solid var(--lt)}
+.sec-title:first-of-type{margin-top:0}
+.fg{margin-bottom:14px}
 .fl{display:block;font-size:12px;font-weight:600;color:var(--tx);margin-bottom:6px}
+.fl-hint{font-weight:400;color:var(--t3);font-size:11px}
 .fc{width:100%;height:42px;padding:0 14px;background:var(--bg);border:1.5px solid var(--bd);border-radius:8px;font-family:var(--f);font-size:14px;color:var(--tx);outline:none;transition:all .15s}
 .fc:focus{background:#fff;border-color:var(--or);box-shadow:0 0 0 3px rgba(232,112,26,.1)}
-.fr2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fr3{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
 .msg{padding:16px 20px;border-radius:10px;font-size:14px;font-weight:500;margin-top:16px;display:none}
 .msg.ok{display:block;background:#ECFDF5;border:1px solid #BBF7D0;color:#065F46}
 .msg.err{display:block;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
@@ -100,16 +106,79 @@ h1{font-size:28px;font-weight:700;text-align:center;margin-bottom:8px;color:var(
     </div>
     <form id="frm" onsubmit="return enviar(event)">
       <input type="hidden" id="f-plano" value="">
-      <div class="fg"><label class="fl">Nome da Empresa *</label><input type="text" class="fc" id="f-empresa" placeholder="Razão social ou nome fantasia" required></div>
+
+      <!-- DADOS CADASTRAIS -->
+      <div class="sec-title">Dados Cadastrais</div>
+      <div class="fg"><label class="fl">Razão Social *</label><input type="text" class="fc" id="f-razao" placeholder="Razão social da empresa" required></div>
       <div class="fr2">
-        <div class="fg"><label class="fl">CNPJ</label><input type="text" class="fc" id="f-cnpj" placeholder="00.000.000/0001-00"></div>
-        <div class="fg"><label class="fl">Responsável *</label><input type="text" class="fc" id="f-nome" placeholder="Nome completo" required></div>
+        <div class="fg"><label class="fl">Nome Fantasia</label><input type="text" class="fc" id="f-fantasia" placeholder="Nome fantasia"></div>
+        <div class="fg"><label class="fl">CPF/CNPJ *</label><input type="text" class="fc" id="f-cpfcnpj" placeholder="000.000.000-00 ou 00.000.000/0001-00" required></div>
       </div>
+
+      <!-- SENHA DO PORTAL -->
+      <div class="sec-title">Senha do Portal <span class="fl-hint">(opcional — acesso futuro Conecta 2.0)</span></div>
       <div class="fr2">
+        <div class="fg"><label class="fl">Senha</label><input type="password" class="fc" id="f-senha" placeholder="Mínimo 6 caracteres"></div>
+        <div class="fg"><label class="fl">Confirmar Senha</label><input type="password" class="fc" id="f-senha2" placeholder="Repita a senha"></div>
+      </div>
+
+      <!-- CONTATO -->
+      <div class="sec-title">Contato</div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Telefone * <span class="fl-hint">Digite traço (-) para ignorar o 5&ordm; dígito</span></label><input type="tel" class="fc" id="f-telefone" placeholder="(61) 9999-9999" required></div>
         <div class="fg"><label class="fl">E-mail *</label><input type="email" class="fc" id="f-email" placeholder="contato@empresa.com.br" required></div>
-        <div class="fg"><label class="fl">WhatsApp</label><input type="tel" class="fc" id="f-wpp" placeholder="(61) 99999-9999"></div>
       </div>
-      <button type="submit" class="btn" id="btn-enviar">Enviar Inscrição</button>
+
+      <!-- ENDEREÇO -->
+      <div class="sec-title">Endereço</div>
+      <div class="fr3">
+        <div class="fg"><label class="fl">CEP</label><input type="text" class="fc" id="f-cep" placeholder="00000-000" maxlength="9"></div>
+        <div class="fg"><button type="button" class="btn btn-sm" onclick="buscarCep()">Consultar CEP</button></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Logradouro</label><input type="text" class="fc" id="f-logradouro" placeholder="Rua, Avenida..."></div>
+        <div class="fg"><label class="fl">Complemento</label><input type="text" class="fc" id="f-complemento" placeholder="Sala, andar..."></div>
+      </div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Bairro</label><input type="text" class="fc" id="f-bairro" placeholder="Bairro"></div>
+        <div class="fg"><label class="fl">Cidade</label><input type="text" class="fc" id="f-cidade" placeholder="Cidade"></div>
+      </div>
+
+      <!-- DADOS OPCIONAIS -->
+      <div class="sec-title">Dados Opcionais</div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Capital Social (R$)</label><input type="number" class="fc" id="f-capital" placeholder="0,00" step="0.01" min="0"></div>
+        <div class="fg"><label class="fl">Data de Abertura</label><input type="date" class="fc" id="f-abertura"></div>
+      </div>
+
+      <!-- OUTRAS INFORMAÇÕES -->
+      <div class="sec-title">Outras Informações</div>
+      <div class="fr2">
+        <div class="fg">
+          <label class="fl">Faturamento Mensal</label>
+          <select class="fc" id="f-faturamento">
+            <option value="">Selecione...</option>
+            <option value="1000-5000">R$ 1.000 — 5.000</option>
+            <option value="5001-10000">R$ 5.001 — 10.000</option>
+            <option value="10001-50000">R$ 10.001 — 50.000</option>
+            <option value="50001-100000">R$ 50.001 — 100.000</option>
+            <option value="100001+">Acima de R$ 100.000</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Número de Funcionários</label>
+          <select class="fc" id="f-funcionarios">
+            <option value="">Selecione...</option>
+            <option value="1-10">1 — 10</option>
+            <option value="11-20">11 — 20</option>
+            <option value="21-50">21 — 50</option>
+            <option value="51-100">51 — 100</option>
+            <option value="100+">Acima de 100</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="btn" id="btn-enviar" style="margin-top:8px">Enviar Inscrição</button>
     </form>
     <div class="msg" id="msg"></div>
   </div>
@@ -157,6 +226,12 @@ function render(){
   </div>`).join('');
 }
 
+const formFields = [
+  'f-razao','f-fantasia','f-cpfcnpj','f-senha','f-senha2',
+  'f-telefone','f-email','f-cep','f-logradouro','f-complemento',
+  'f-bairro','f-cidade','f-capital','f-abertura','f-faturamento','f-funcionarios'
+];
+
 function abrirModal(p){
   document.getElementById('f-plano').value=p.id;
   document.getElementById('sel-nome').textContent=p.nome;
@@ -166,7 +241,7 @@ function abrirModal(p){
   document.getElementById('msg').style.display='none';
   document.getElementById('btn-enviar').disabled=false;
   document.getElementById('btn-enviar').textContent='Enviar Inscrição';
-  ['f-empresa','f-cnpj','f-nome','f-email','f-wpp'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  formFields.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('mo').classList.add('on');
   document.body.style.overflow='hidden';
 }
@@ -176,39 +251,77 @@ function fecharModal(){
   document.body.style.overflow='';
 }
 
+async function buscarCep(){
+  const raw=document.getElementById('f-cep').value.replace(/\D/g,'');
+  if(raw.length!==8)return alert('Digite um CEP válido com 8 dígitos.');
+  try{
+    const r=await fetch('https://viacep.com.br/ws/'+raw+'/json/');
+    const d=await r.json();
+    if(d.erro)return alert('CEP não encontrado.');
+    document.getElementById('f-logradouro').value=d.logradouro||'';
+    document.getElementById('f-bairro').value=d.bairro||'';
+    document.getElementById('f-cidade').value=d.localidade||'';
+  }catch(e){
+    alert('Erro ao consultar CEP. Verifique sua conexão.');
+  }
+}
+
+document.getElementById('f-cep').addEventListener('blur',function(){
+  if(this.value.replace(/\D/g,'').length===8)buscarCep();
+});
+
 async function enviar(e){
   e.preventDefault();
   const btn=document.getElementById('btn-enviar');
   const msg=document.getElementById('msg');
   msg.className='msg';msg.style.display='none';
 
-  const nome=document.getElementById('f-nome').value.trim();
+  const razao=document.getElementById('f-razao').value.trim();
+  const cpfcnpj=document.getElementById('f-cpfcnpj').value.trim();
+  const telefone=document.getElementById('f-telefone').value.trim();
   const email=document.getElementById('f-email').value.trim();
-  const empresa=document.getElementById('f-empresa').value.trim();
-  if(!empresa){msg.className='msg err';msg.textContent='Informe o nome da empresa';msg.style.display='block';return false;}
-  if(!nome){msg.className='msg err';msg.textContent='Informe o nome do responsável';msg.style.display='block';return false;}
-  if(!email||!email.includes('@')){msg.className='msg err';msg.textContent='Informe um e-mail válido';msg.style.display='block';return false;}
+  const senha=document.getElementById('f-senha').value;
+  const senha2=document.getElementById('f-senha2').value;
+
+  if(!razao){msg.className='msg err';msg.textContent='Informe a Razão Social.';msg.style.display='block';return false;}
+  if(!cpfcnpj){msg.className='msg err';msg.textContent='Informe o CPF/CNPJ.';msg.style.display='block';return false;}
+  if(!telefone){msg.className='msg err';msg.textContent='Informe o telefone.';msg.style.display='block';return false;}
+  if(!email||!email.includes('@')){msg.className='msg err';msg.textContent='Informe um e-mail válido.';msg.style.display='block';return false;}
+  if(senha&&senha.length<6){msg.className='msg err';msg.textContent='A senha deve ter no mínimo 6 caracteres.';msg.style.display='block';return false;}
+  if(senha&&senha!==senha2){msg.className='msg err';msg.textContent='As senhas não conferem.';msg.style.display='block';return false;}
 
   btn.disabled=true;btn.innerHTML='<div class="sp"></div> Enviando...';
+
+  const payload={
+    plano_id:parseInt(document.getElementById('f-plano').value),
+    razao_social:razao,
+    nome_fantasia:document.getElementById('f-fantasia').value.trim()||null,
+    cpf_cnpj:cpfcnpj,
+    senha:senha||null,
+    telefone:telefone,
+    email:email,
+    cep:document.getElementById('f-cep').value.trim()||null,
+    logradouro:document.getElementById('f-logradouro').value.trim()||null,
+    complemento:document.getElementById('f-complemento').value.trim()||null,
+    bairro:document.getElementById('f-bairro').value.trim()||null,
+    cidade:document.getElementById('f-cidade').value.trim()||null,
+    capital_social:parseFloat(document.getElementById('f-capital').value)||null,
+    data_abertura:document.getElementById('f-abertura').value||null,
+    faturamento_mensal:document.getElementById('f-faturamento').value||null,
+    num_funcionarios:document.getElementById('f-funcionarios').value||null
+  };
 
   try{
     const r=await fetch(API+'/inscricoes',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        plano_id:parseInt(document.getElementById('f-plano').value),
-        nome_empresa:empresa,
-        cnpj:document.getElementById('f-cnpj').value.trim()||null,
-        nome_contato:nome,
-        email:email,
-        whatsapp:document.getElementById('f-wpp').value.trim()||null
-      })
+      body:JSON.stringify(payload)
     });
     const d=await r.json();
     if(d.ok){
       document.getElementById('frm').style.display='none';
       msg.className='msg ok';
-      msg.innerHTML='<strong>Inscrição recebida com sucesso!</strong><br>Entraremos em contato em breve pelo e-mail ou WhatsApp informado.';
+      msg.innerHTML='<strong>Inscrição recebida com sucesso!</strong><br>Entraremos em contato em breve pelo e-mail ou telefone informado.';
       msg.style.display='block';
     }else{
       msg.className='msg err';msg.textContent=d.error||'Erro ao enviar. Tente novamente.';msg.style.display='block';
