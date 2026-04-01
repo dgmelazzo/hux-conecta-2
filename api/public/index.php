@@ -749,7 +749,7 @@ if ($method === 'GET' && $uri === '/planos') {
     if ($authenticated) {
         // Authenticated: show all active plans
         $tid = $p['tenant_id'] ?? tenant_id();
-        $stmt = pdo()->prepare('SELECT * FROM planos WHERE tenant_id = ? AND ativo = 1 ORDER BY valor ASC');
+        $stmt = pdo()->prepare('SELECT * FROM planos WHERE tenant_id = ? AND ativo = 1 ORDER BY ordem ASC, valor ASC');
         $stmt->execute([$tid]);
         $rows = $stmt->fetchAll();
         foreach ($rows as &$row) {
@@ -765,7 +765,7 @@ if ($method === 'GET' && $uri === '/planos') {
             'SELECT id, nome, tipo, descricao, valor, periodicidade, slug_link, tem_conecta
              FROM planos
              WHERE tenant_id = ? AND ativo = 1 AND tem_link_publico = 1
-             ORDER BY valor ASC'
+             ORDER BY ordem ASC, valor ASC'
         );
         $stmt->execute([$tid]);
         $rows = $stmt->fetchAll();
@@ -854,6 +854,21 @@ if ($method === 'PUT' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
     }
 
     json_out(['ok' => true, 'message' => 'Plano atualizado', 'id' => (int)$m[1]]);
+}
+
+// PATCH /planos/reordenar — atualiza ordem dos planos
+if ($method === 'PATCH' && $uri === '/planos/reordenar') {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b = body();
+    $itens = $b['ordem'] ?? [];
+    if (empty($itens)) json_out(['error' => 'ordem é obrigatório'], 422);
+    $stmt = pdo()->prepare('UPDATE planos SET ordem = ? WHERE id = ? AND tenant_id = ?');
+    foreach ($itens as $item) {
+        $stmt->execute([(int)$item['ordem'], (int)$item['id'], $tid]);
+    }
+    json_out(['message' => 'Ordem atualizada', 'total' => count($itens)]);
 }
 
 // DELETE /planos/{id} — desativa plano (soft delete)

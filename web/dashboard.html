@@ -124,6 +124,11 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 .btn-s:hover{background:#C85D15}
 .btn-ghost{background:none;color:var(--or);border:1.5px dashed var(--bd);border-radius:8px;font-family:var(--f);cursor:pointer;transition:all .15s}
 .btn-ghost:hover{border-color:var(--or);background:rgba(232,112,26,.04)}
+.pl-drag-handle{cursor:grab;color:var(--t3);padding:2px;display:flex;align-items:center;transition:color .15s}
+.pl-drag-handle:hover{color:var(--t2)}
+.pl-drag-handle:active{cursor:grabbing}
+.pl-dragging{opacity:.4;border:2px dashed var(--or)!important;box-shadow:none!important}
+.sortable-ghost{opacity:.6}
 .pl-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--lt);border:1px solid var(--bd);border-radius:6px;font-size:11px;font-weight:600;color:var(--tx)}
 .pl-chip button{background:none;border:none;color:var(--t3);cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 4px}
 .pl-chip button:hover{color:var(--rd)}
@@ -972,8 +977,9 @@ async function lp(){
     :d.data.map(p=>{
   const items=p.itens||[];const ic=items.length;const isCombo=p.tipo==='combo';
   const totalRecorr=parseFloat(p.valor||0)+items.reduce((s,i)=>s+parseFloat(i.valor_recorrencia||0),0);
-  return`<div class="pl-card" style="${isCombo?'border-color:var(--or);box-shadow:0 0 0 1px var(--or)':''}">
+  return`<div class="pl-card" data-id="${p.id}" style="${isCombo?'border-color:var(--or);box-shadow:0 0 0 1px var(--or)':''}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="pl-drag-handle" title="Arrastar para reordenar"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="4" r="2"/><circle cx="16" cy="4" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="20" r="2"/><circle cx="16" cy="20" r="2"/></svg></div>
         <span class="bx ${isCombo?'by':'bb'}" style="font-size:10px">${tp[p.tipo]||p.tipo}</span>
         ${p.tem_conecta?'<span class="bx bg" style="font-size:10px">Conecta</span>':''}
         ${p.split_ativo?'<span class="bx bb" style="font-size:10px">Split</span>':''}
@@ -991,6 +997,15 @@ async function lp(){
         <button class="btn-r" onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Desativar</button>
       </div>
     </div>`}).join('');
+  // Init Sortable drag & drop
+  if(typeof Sortable!=='undefined'){
+    Sortable.create(document.getElementById('pg3'),{animation:150,ghostClass:'pl-dragging',handle:'.pl-drag-handle',onEnd:async function(){
+      const items=[...document.querySelectorAll('#pg3 .pl-card')];
+      const novaOrdem=items.map((el,idx)=>({id:parseInt(el.dataset.id),ordem:idx}));
+      await api('/planos/reordenar',{method:'PATCH',body:JSON.stringify({ordem:novaOrdem})});
+      toast('Ordem atualizada!');
+    }});
+  }
 }
 // Plan modal — product picker state
 let _plSelectedItems=[],_plConectaCache=[];
@@ -1578,5 +1593,6 @@ async function gwSalvar(){var key=document.getElementById('gw-key').value.trim()
 // Init
 go('d');
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </body>
 </html>
