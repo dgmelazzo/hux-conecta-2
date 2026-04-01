@@ -223,6 +223,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <button class="ni" data-nav="insc" onclick="go('insc')"><svg class="ic" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Inscrições<span class="nb" id="nb-insc" style="display:none">0</span></button>
     <div class="sc" id="sec-adm" style="display:none">Administração</div>
     <button class="ni" id="ni-gw" data-nav="gw" onclick="go('gw')" style="display:none"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>Gateway</button>
+    <button class="ni" data-nav="par" onclick="go('par')"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>Parceiros</button>
     <button class="ni" id="ni-usr" data-nav="u" onclick="go('u')" style="display:none"><svg class="ic" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Usuários</button>
     <div class="sc">Sistema</div>
     <button class="ni" onclick="logout()"><svg class="ic" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair</button>
@@ -360,6 +361,13 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
       </div>
     </div>
 
+    <!-- Parceiros -->
+    <div class="pg2" id="ppar">
+      <div class="cd">
+        <div class="tbl-s"><div class="cb" id="par-t"><div class="ld"><div class="sp"></div></div></div></div>
+      </div>
+    </div>
+
     <!-- Usuários -->
     <div class="pg2" id="pu">
       <div class="cd">
@@ -471,6 +479,10 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
       <div class="fg"><label class="fl3">Valor (R$) *</label><input type="number" class="fc" id="pl-val" step="0.01" placeholder="0,00"></div>
       <div class="fg"><label class="fl3">Valor Anual (R$)</label><input type="number" class="fc" id="pl-anual" step="0.01" placeholder="0,00"></div><div class="fg"><label class="fl3">Periodicidade</label><select class="fc" id="pl-per"><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="semestral">Semestral</option></select></div>
     </div>
+    <div class="fr">
+      <div class="fg"><label class="fl3">Valor Adesão (R$)</label><input type="number" class="fc" id="pl-val-adesao" step="0.01" placeholder="0,00"></div>
+      <div class="fg"><label class="fl3">Valor Recorrência (R$)</label><input type="number" class="fc" id="pl-val-recorr" step="0.01" placeholder="0,00"></div>
+    </div>
     <div class="fg"><label class="fl3">Descrição</label><textarea class="fc" id="pl-desc" placeholder="Detalhes do plano..."></textarea></div>
       <div class="fg" style="grid-column:span 2;border-top:1px solid var(--bd);padding-top:12px;margin-top:4px"><label class="fl3" style="font-weight:600">Split HUX</label></div>
       <div class="fg"><label class="fl3"><input type="checkbox" id="pl-split-ativo" onchange="document.getElementById('pl-split-pct-wrap').style.display=this.checked?'block':'none'"/> Ativar split neste plano</label></div>
@@ -522,6 +534,52 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <div class="mf">
       <button class="btn-o" onclick="cm('mcom')">Cancelar</button>
       <button class="btn" onclick="salvarTpl()"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Itens do Plano -->
+<div class="mo" id="mitens" onclick="if(event.target===this)cm('mitens')">
+  <div class="mb" style="max-width:640px">
+    <button class="mc" onclick="cm('mitens')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="mt2" id="itens-title">Itens do Plano</div>
+    <div class="ms2">Produtos e serviços incluídos neste plano</div>
+    <div id="itens-list"><div class="ld"><div class="sp"></div></div></div>
+    <div style="border-top:1px solid var(--bd);padding-top:16px;margin-top:16px">
+      <div class="mt2" style="font-size:14px;padding-right:0">Adicionar Item</div>
+      <div class="fg" style="margin-top:8px"><label class="fl3">Nome *</label><input type="text" class="fc" id="item-nome" placeholder="Nome do produto"></div>
+      <div class="fr">
+        <div class="fg"><label class="fl3">Adesão (R$)</label><input type="number" class="fc" id="item-adesao" step="0.01" placeholder="0,00"></div>
+        <div class="fg"><label class="fl3">Recorrência (R$)</label><input type="number" class="fc" id="item-recorr" step="0.01" placeholder="0,00"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl3">Tipo</label><select class="fc" id="item-tipo"><option value="incluso">Incluso</option><option value="split">Split (parceiro)</option><option value="separado">Separado</option></select></div>
+        <div class="fg"><label class="fl3">Parceiro</label><select class="fc" id="item-parceiro"><option value="">Nenhum</option></select></div>
+      </div>
+      <button class="btn" onclick="addItem()" style="width:auto">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Parceiro -->
+<div class="mo" id="mpar" onclick="if(event.target===this)cm('mpar')">
+  <div class="mb">
+    <button class="mc" onclick="cm('mpar')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="mt2" id="par-title">Novo Parceiro</div>
+    <div class="ms2">Fornecedor de produtos do plano</div>
+    <input type="hidden" id="par-id">
+    <div class="fg"><label class="fl3">Nome *</label><input type="text" class="fc" id="par-nome" placeholder="Nome do parceiro"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl3">CNPJ</label><input type="text" class="fc" id="par-cnpj" placeholder="00.000.000/0001-00"></div>
+      <div class="fg"><label class="fl3">E-mail</label><input type="email" class="fc" id="par-email" placeholder="contato@parceiro.com.br"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl3">Wallet Asaas (split)</label><input type="text" class="fc" id="par-wallet" placeholder="wallet_id"></div>
+      <div class="fg"><label class="fl3">Split %</label><input type="number" class="fc" id="par-split" step="0.1" placeholder="0.0"></div>
+    </div>
+    <div class="mf">
+      <button class="btn-o" onclick="cm('mpar')">Cancelar</button>
+      <button class="btn" onclick="salvarPar()">Salvar</button>
     </div>
   </div>
 </div>
@@ -656,7 +714,7 @@ function cm(i){document.getElementById(i).classList.remove('on');editId=null;}
 // Modals close only via X button (no backdrop click)
 
 // Navegação
-const PM={d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
+const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
 // Sidebar mobile
 function openSb(){document.getElementById('sb').classList.add('open');document.getElementById('sb-ov').classList.add('on');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('sb-ov').classList.remove('on');}
@@ -672,13 +730,14 @@ function go(n){
   const isAdmin=usr.role==='superadmin'||usr.role==='gestor';
   if(p.b && isAdmin){btnTop.style.display='';document.getElementById('bl').textContent=p.b;}
   else{btnTop.style.display='none';}
-  if(n==='d')ld();if(n==='a')la();if(n==='p')lp();if(n==='c')lc();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();if(n==='insc')linsc();
+  if(n==='d')ld();if(n==='a')la();if(n==='p')lp();if(n==='c')lc();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();if(n==='insc')linsc();if(n==='par')lpar();
 }
 function act(){const on=document.querySelector('.pg2.on')?.id;
   if(on==='pd'||on==='pa'){editId=null;document.getElementById('ma-title').textContent='Novo Associado';limpaCampos(['frz','fnf','fd','fe','ftel','fw','fobs']);document.getElementById('fst').value='prospecto';document.getElementById('fvc').value='';document.getElementById('fcat').disabled=false;om('ma');}
   else if(on==='pp'){document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';limpaCampos(['pl-nome','pl-val','pl-anual','pl-desc']);document.getElementById('pl-split-ativo').checked=false;document.getElementById('pl-split-pct-wrap').style.display='none';om('mpl');}
   else if(on==='pc'){carregaAssocs();om('mcob');}
   else if(on==='pu')om('musr');
+  else if(on==='ppar'){document.getElementById('par-id').value='';document.getElementById('par-title').textContent='Novo Parceiro';['par-nome','par-cnpj','par-email','par-wallet','par-split'].forEach(id=>{document.getElementById(id).value='';});om('mpar');}
 }
 function limpaCampos(ids){ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';})}
 
@@ -855,18 +914,31 @@ async function lp(){
   const tp={mei:'MEI',me:'ME',epp:'EPP',isento:'Isento',combo:'Combo',personalizado:'Personalizado'};
   document.getElementById('pg3').innerHTML=d.data.length===0
     ?'<div class="em">Nenhum plano configurado.</div>'
-    :d.data.map(p=>`<div class="pl-card">
+    :d.data.map(p=>{
+  const itemCount=(p.itens||[]).length;
+  const totalAdesao=(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_adesao||0),0);
+  const totalRecorr=parseFloat(p.valor||0)+(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_recorrencia||0),0);
+  return`<div class="pl-card">
       <div class="pl-tipo">${tp[p.tipo]||p.tipo}</div>
       <div class="pl-nome">${p.nome}</div>
-      <div class="pl-val">${money(p.valor)} <span>/${p.periodicidade}</span></div>
-      ${p.slug_link?`<div class="pl-link">🔗 /associe-se/${p.slug_link}</div>`:''}
-      <div class="pl-acts">
-        <button class="btn-o" onclick="_plCache&&editPlano(_plCache[${p.id}])" style="margin-right:4px">Editar</button><button class="btn-r" onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Excluir</button>
+      <div style="font-size:13px;color:var(--t2);margin-bottom:8px">
+        Adesão: <strong>${money(totalAdesao)}</strong> · Recorrência: <strong>${money(totalRecorr)}</strong>/${p.periodicidade}
       </div>
-    </div>`).join('');
+      <div style="font-size:12px;color:var(--t3);margin-bottom:12px">${itemCount} produto${itemCount!==1?'s':''} incluído${itemCount!==1?'s':''}</div>
+      <div class="plan-badges" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
+        ${p.split_ativo?'<span class="bx bb" style="font-size:10px">Split</span>':''}
+        ${p.tem_conecta?'<span class="bx bg" style="font-size:10px">Conecta</span>':''}
+      </div>
+      ${p.slug_link?'<div class="pl-link">\ud83d\udd17 /associe-se/'+p.slug_link+'</div>':''}
+      <div class="pl-acts">
+        <button class="btn-o" onclick="_plCache&&editPlano(_plCache[${p.id}])" style="margin-right:4px">Editar</button>
+        <button class="btn-o" onclick="editPlanoItens(${p.id})" style="margin-right:4px">Itens</button>
+        <button class="btn-r" onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Desativar</button>
+      </div>
+    </div>`}).join('');
 }
 async function spl(){
-  const b={nome:document.getElementById('pl-nome').value,tipo:document.getElementById('pl-tipo').value,valor:document.getElementById('pl-val').value,periodicidade:document.getElementById('pl-per').value,descricao:document.getElementById('pl-desc').value};
+  const b={nome:document.getElementById('pl-nome').value,tipo:document.getElementById('pl-tipo').value,valor:document.getElementById('pl-val').value,periodicidade:document.getElementById('pl-per').value,descricao:document.getElementById('pl-desc').value,valor_adesao:parseFloat(document.getElementById('pl-val-adesao')?.value)||0,valor_recorrencia:parseFloat(document.getElementById('pl-val-recorr')?.value)||0};
   if(!b.nome||!b.valor){toast('Nome e valor obrigatórios','err');return;}
   const pid=document.getElementById('pl-id').value;
   const r=pid
@@ -883,6 +955,9 @@ function editPlano(p){
   document.getElementById('pl-anual').value=p.valor_anual||'';
   document.getElementById('pl-per').value=p.periodicidade||'mensal';
   document.getElementById('pl-title').textContent='Editar Plano';
+  if(document.getElementById('pl-split-ativo'))document.getElementById('pl-split-ativo').checked=!!p.split_ativo;
+  if(p.split_ativo&&document.getElementById('pl-split-pct-wrap'))document.getElementById('pl-split-pct-wrap').style.display='block';
+  if(document.getElementById('pl-split-pct'))document.getElementById('pl-split-pct').value=p.split_percentual||'';
   om('mpl');
 }
 async function delPlano(id,nome){
@@ -1231,6 +1306,95 @@ async function submitPwd(){
   } else {
     toast(r?.error||'Erro ao redefinir senha','err');
   }
+}
+
+// Parceiros
+async function lpar(){
+  document.getElementById('par-t').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  const d=await api('/parceiros');if(!d)return;
+  if(!d.data||d.data.length===0){document.getElementById('par-t').innerHTML='<div class="em">Nenhum parceiro cadastrado.</div>';return;}
+  document.getElementById('par-t').innerHTML=`<table><thead><tr><th>Nome</th><th>CNPJ</th><th>E-mail</th><th>Split %</th><th>Wallet</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+    <td><strong>${x.nome}</strong></td>
+    <td style="font-size:12px">${x.cnpj||'-'}</td>
+    <td style="font-size:12px">${x.email||'-'}</td>
+    <td style="font-size:12px">${x.split_percentual||'0'}%</td>
+    <td style="font-size:11px;color:var(--t3)">${x.wallet_id_asaas?x.wallet_id_asaas.substring(0,12)+'...':'-'}</td>
+    <td style="white-space:nowrap">
+      <button class="btn-o" onclick="editPar(${x.id})" style="margin-right:4px">Editar</button>
+      <button class="btn-r" onclick="delPar(${x.id},'${x.nome.replace(/'/g,"\\'")}')">Excluir</button>
+    </td>
+  </tr>`).join('')}</tbody></table>`;
+}
+async function editPar(id){
+  const d=await api('/parceiros');if(!d)return;
+  const p=(d.data||[]).find(x=>x.id===id);if(!p)return;
+  document.getElementById('par-id').value=p.id;
+  document.getElementById('par-title').textContent='Editar Parceiro';
+  document.getElementById('par-nome').value=p.nome||'';
+  document.getElementById('par-cnpj').value=p.cnpj||'';
+  document.getElementById('par-email').value=p.email||'';
+  document.getElementById('par-wallet').value=p.wallet_id_asaas||'';
+  document.getElementById('par-split').value=p.split_percentual||'';
+  om('mpar');
+}
+async function salvarPar(){
+  const id=document.getElementById('par-id').value;
+  const b={nome:document.getElementById('par-nome').value,cnpj:document.getElementById('par-cnpj').value,email:document.getElementById('par-email').value,wallet_id_asaas:document.getElementById('par-wallet').value,split_percentual:parseFloat(document.getElementById('par-split').value)||0};
+  if(!b.nome){toast('Informe o nome do parceiro','err');return;}
+  const r=id
+    ?await api('/parceiros/'+id,{method:'PUT',body:JSON.stringify(b)})
+    :await api('/parceiros',{method:'POST',body:JSON.stringify(b)});
+  if(r?.id||r?.message){cm('mpar');lpar();toast(id?'Parceiro atualizado!':'Parceiro criado!');}
+  else toast(r?.error||'Erro','err');
+}
+async function delPar(id,nome){
+  if(!confirm('Desativar parceiro "'+nome+'"?'))return;
+  const r=await api('/parceiros/'+id,{method:'DELETE'});
+  if(r?.success||r?.message){lpar();toast('Parceiro desativado!');}
+  else toast(r?.error||'Erro','err');
+}
+
+// Plan Items
+let _itensPlanoId=null;
+async function editPlanoItens(planoId){
+  _itensPlanoId=planoId;
+  document.getElementById('itens-title').textContent='Itens do Plano #'+planoId;
+  om('mitens');
+  loadItens();
+  const pars=await api('/parceiros');
+  const sel=document.getElementById('item-parceiro');
+  sel.innerHTML='<option value="">Nenhum</option>'+((pars?.data||[]).map(p=>'<option value="'+p.id+'">'+p.nome+'</option>').join(''));
+}
+async function loadItens(){
+  if(!_itensPlanoId)return;
+  document.getElementById('itens-list').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  const d=await api('/planos/'+_itensPlanoId+'/itens');
+  if(!d||!d.data||d.data.length===0){document.getElementById('itens-list').innerHTML='<div class="em" style="padding:20px">Nenhum item cadastrado.</div>';return;}
+  const tipoBadge={incluso:'bg',split:'bb',separado:'bgr'};
+  const tipoLabel={incluso:'Incluso',split:'Split',separado:'Separado'};
+  document.getElementById('itens-list').innerHTML=`<table><thead><tr><th>Item</th><th>Adesão</th><th>Recorrência</th><th>Tipo</th><th>Parceiro</th><th></th></tr></thead><tbody>${d.data.map(x=>`<tr>
+    <td><strong>${x.nome}</strong>${x.conecta_produto_nome?'<br><span style="font-size:10px;color:var(--t3)">Conecta: '+x.conecta_produto_nome+'</span>':''}</td>
+    <td style="font-size:12px">${money(x.valor_adesao)}</td>
+    <td style="font-size:12px">${money(x.valor_recorrencia)}</td>
+    <td><span class="bx ${tipoBadge[x.tipo_cobranca]||'bgr'}" style="font-size:10px">${tipoLabel[x.tipo_cobranca]||x.tipo_cobranca}</span></td>
+    <td style="font-size:12px">${x.parceiro_nome||'-'}</td>
+    <td><button class="btn-r" style="font-size:11px;padding:2px 8px" onclick="delItem(${x.id})">✕</button></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+async function addItem(){
+  if(!_itensPlanoId)return;
+  const nome=document.getElementById('item-nome').value.trim();
+  if(!nome){toast('Informe o nome do item','err');return;}
+  const b={nome,valor_adesao:parseFloat(document.getElementById('item-adesao').value)||0,valor_recorrencia:parseFloat(document.getElementById('item-recorr').value)||0,tipo_cobranca:document.getElementById('item-tipo').value,parceiro_id:document.getElementById('item-parceiro').value||null};
+  const r=await api('/planos/'+_itensPlanoId+'/itens',{method:'POST',body:JSON.stringify(b)});
+  if(r?.id||r?.message){document.getElementById('item-nome').value='';document.getElementById('item-adesao').value='';document.getElementById('item-recorr').value='';loadItens();toast('Item adicionado!');}
+  else toast(r?.error||'Erro','err');
+}
+async function delItem(itemId){
+  if(!_itensPlanoId||!confirm('Remover este item?'))return;
+  const r=await api('/planos/'+_itensPlanoId+'/itens/'+itemId,{method:'DELETE'});
+  if(r?.message){loadItens();toast('Item removido!');}
+  else toast(r?.error||'Erro','err');
 }
 
 // Selects

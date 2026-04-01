@@ -743,6 +743,12 @@ if ($method === 'GET' && $uri === '/planos') {
         $stmt = pdo()->prepare('SELECT * FROM planos WHERE tenant_id = ? AND ativo = 1 ORDER BY valor ASC');
         $stmt->execute([$tid]);
         $rows = $stmt->fetchAll();
+        foreach ($rows as &$row) {
+            $stmtI = pdo()->prepare('SELECT pi.*, pa.nome AS parceiro_nome FROM plano_itens pi LEFT JOIN parceiros pa ON pa.id = pi.parceiro_id WHERE pi.plano_id = ? AND pi.tenant_id = ? ORDER BY pi.ordem');
+            $stmtI->execute([$row['id'], $tid]);
+            $row['itens'] = $stmtI->fetchAll();
+        }
+        unset($row);
     } else {
         // Public: only plans with tem_link_publico=1, safe columns only
         $tid = tenant_id();
@@ -777,8 +783,8 @@ if ($method === 'POST' && $uri === '/planos') {
     pdo()->prepare(
         'INSERT INTO planos (tenant_id, nome, tipo, descricao, valor, periodicidade,
           tem_conecta, desconto_avista, tem_link_publico, slug_link,
-          split_ativo, split_percentual, ativo, criado_em)
-         VALUES (?,?,?,?,?,?,?,?,1,?,?,?,1,NOW())'
+          split_ativo, split_percentual, valor_adesao, valor_recorrencia, ativo, criado_em)
+         VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?,?,1,NOW())'
     )->execute([
         $tid, $b['nome'], $b['tipo'], $b['descricao'] ?? null,
         $b['valor'], $b['periodicidade'],
@@ -787,6 +793,8 @@ if ($method === 'POST' && $uri === '/planos') {
         $slug,
         (int)($b['split_ativo'] ?? 0),
         $b['split_percentual'] ?? null,
+        $b['valor_adesao'] ?? null,
+        $b['valor_recorrencia'] ?? null,
     ]);
     json_out(['message' => 'Plano criado', 'id' => (int)pdo()->lastInsertId(), 'slug' => $slug], 201);
 }
@@ -803,7 +811,7 @@ if ($method === 'PUT' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
     if (!$stmt->fetch()) json_out(['error' => 'Plano não encontrado'], 404);
 
     $allowed = ['nome','tipo','descricao','valor','periodicidade','tem_conecta','desconto_avista',
-                'split_ativo','split_percentual','tem_link_publico'];
+                'split_ativo','split_percentual','tem_link_publico','valor_adesao','valor_recorrencia','descricao_adesao'];
     $set = []; $vals = [];
     foreach ($allowed as $f) {
         if (array_key_exists($f, $b)) { $set[] = "$f = ?"; $vals[] = $b[$f]; }
@@ -829,6 +837,86 @@ if ($method === 'DELETE' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
     pdo()->prepare('UPDATE planos SET ativo = 0 WHERE id = ? AND tenant_id = ?')
          ->execute([$m[1], $tid]);
     json_out(['success' => true, 'message' => 'Plano desativado']);
+}
+
+// ── PLANO ITENS ─────────────────────────────────────────────────────────────
+
+// GET /planos/{id}/itens
+if ($method === 'GET' && preg_match('#^/planos/(\d+)/itens$#', $uri, $m)) {
+    $p = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $stmt = pdo()->prepare(
+        'SELECT pi.*, pa.nome AS parceiro_nome
+         FROM plano_itens pi
+         LEFT JOIN parceiros pa ON pa.id = pi.parceiro_id
+         WHERE pi.plano_id = ? AND pi.tenant_id = ?
+         ORDER BY pi.ordem, pi.nome'
+    );
+    $stmt->execute([$m[1], $tid]);
+    $rows = $stmt->fetchAll();
+    json_out(['data' => $rows, 'total' => count($rows)]);
+}
+
+// POST /planos/{id}/itens
+if ($method === 'POST' && preg_match('#^/planos/(\d+)/itens$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    required_fields(['nome']);
+    $b   = body();
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    pdo()->prepare(
+        'INSERT INTO plano_itens (tenant_id, plano_id, nome, descricao, conecta_produto_id, conecta_produto_nome,
+          valor_adesao, valor_recorrencia, tipo_cobranca, parceiro_id, ordem, criado_em)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,NOW())'
+    )->execute([
+        $tid, $m[1], $b['nome'], $b['descricao'] ?? null,
+        $b['conecta_produto_id'] ?? null, $b['conecta_produto_nome'] ?? null,
+        $b['valor_adesao'] ?? null, $b['valor_recorrencia'] ?? null,
+        $b['tipo_cobranca'] ?? null, $b['parceiro_id'] ?? null,
+        $b['ordem'] ?? 0,
+    ]);
+    json_out(['message' => 'Item adicionado', 'id' => (int)pdo()->lastInsertId()], 201);
+}
+
+// PUT /planos/{id}/itens/{item_id}
+if ($method === 'PUT' && preg_match('#^/planos/(\d+)/itens/(\d+)$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    $stmt = pdo()->prepare('SELECT id FROM plano_itens WHERE id = ? AND plano_id = ? AND tenant_id = ?');
+    $stmt->execute([$m[2], $m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Item não encontrado'], 404);
+
+    $allowed = ['nome','descricao','conecta_produto_id','conecta_produto_nome',
+                'valor_adesao','valor_recorrencia','tipo_cobranca','parceiro_id','ordem'];
+    $set = []; $vals = [];
+    foreach ($allowed as $f) {
+        if (array_key_exists($f, $b)) { $set[] = "$f = ?"; $vals[] = $b[$f]; }
+    }
+    if (!$set) json_out(['error' => 'Nenhum campo para atualizar'], 422);
+
+    $vals[] = $m[2]; $vals[] = $m[1]; $vals[] = $tid;
+    pdo()->prepare('UPDATE plano_itens SET ' . implode(', ', $set) . ' WHERE id = ? AND plano_id = ? AND tenant_id = ?')
+         ->execute($vals);
+    json_out(['ok' => true, 'message' => 'Item atualizado', 'id' => (int)$m[2]]);
+}
+
+// DELETE /planos/{id}/itens/{item_id}
+if ($method === 'DELETE' && preg_match('#^/planos/(\d+)/itens/(\d+)$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare('SELECT id FROM plano_itens WHERE id = ? AND plano_id = ? AND tenant_id = ?');
+    $stmt->execute([$m[2], $m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Item não encontrado'], 404);
+
+    pdo()->prepare('DELETE FROM plano_itens WHERE id = ? AND plano_id = ? AND tenant_id = ?')
+         ->execute([$m[2], $m[1], $tid]);
+    json_out(['success' => true, 'message' => 'Item removido']);
 }
 
 // ============================================================
@@ -1992,6 +2080,108 @@ if ($method === 'POST' && $uri === '/sync/conecta') {
     }
 
     json_out(['error' => 'Action inválida: ' . $action], 422);
+}
+
+// ============================================================
+// PARCEIROS
+// ============================================================
+
+// GET /parceiros
+if ($method === 'GET' && $uri === '/parceiros') {
+    $p = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $stmt = pdo()->prepare('SELECT * FROM parceiros WHERE tenant_id = ? AND ativo = 1 ORDER BY nome');
+    $stmt->execute([$tid]);
+    $rows = $stmt->fetchAll();
+    json_out(['data' => $rows, 'total' => count($rows)]);
+}
+
+// POST /parceiros
+if ($method === 'POST' && $uri === '/parceiros') {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    required_fields(['nome']);
+    $b   = body();
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    pdo()->prepare(
+        'INSERT INTO parceiros (tenant_id, nome, cnpj, wallet_id_asaas, split_percentual, email, telefone, ativo, criado_em)
+         VALUES (?,?,?,?,?,?,?,1,NOW())'
+    )->execute([
+        $tid, $b['nome'], $b['cnpj'] ?? null,
+        $b['wallet_id_asaas'] ?? null, $b['split_percentual'] ?? null,
+        $b['email'] ?? null, $b['telefone'] ?? null,
+    ]);
+    json_out(['message' => 'Parceiro criado', 'id' => (int)pdo()->lastInsertId()], 201);
+}
+
+// PUT /parceiros/{id}
+if ($method === 'PUT' && preg_match('#^/parceiros/(\d+)$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    $stmt = pdo()->prepare('SELECT id FROM parceiros WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Parceiro não encontrado'], 404);
+
+    $allowed = ['nome','cnpj','wallet_id_asaas','split_percentual','email','telefone'];
+    $set = []; $vals = [];
+    foreach ($allowed as $f) {
+        if (array_key_exists($f, $b)) { $set[] = "$f = ?"; $vals[] = $b[$f]; }
+    }
+    if (!$set) json_out(['error' => 'Nenhum campo para atualizar'], 422);
+
+    $vals[] = $m[1]; $vals[] = $tid;
+    pdo()->prepare('UPDATE parceiros SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?')
+         ->execute($vals);
+    json_out(['ok' => true, 'message' => 'Parceiro atualizado', 'id' => (int)$m[1]]);
+}
+
+// DELETE /parceiros/{id}
+if ($method === 'DELETE' && preg_match('#^/parceiros/(\d+)$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+
+    $stmt = pdo()->prepare('SELECT id FROM parceiros WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Parceiro não encontrado'], 404);
+
+    pdo()->prepare('UPDATE parceiros SET ativo = 0 WHERE id = ? AND tenant_id = ?')
+         ->execute([$m[1], $tid]);
+    json_out(['success' => true, 'message' => 'Parceiro desativado']);
+}
+
+// ============================================================
+// CONECTA PRODUTOS PROXY
+// ============================================================
+
+// GET /conecta/produtos
+if ($method === 'GET' && $uri === '/conecta/produtos') {
+    $p = auth_required();
+    $cacheFile = '/tmp/conecta_produtos_cache.json';
+
+    if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 300) {
+        $cached = json_decode(file_get_contents($cacheFile), true);
+        if ($cached) json_out($cached);
+    }
+
+    $ctx = stream_context_create(['http' => ['timeout' => 10]]);
+    $resp = @file_get_contents('https://acicdf.org.br/conecta/produtos.php?action=list&status=ativo', false, $ctx);
+
+    if ($resp === false) {
+        json_out(['error' => 'Erro ao buscar produtos do Conecta'], 502);
+    }
+
+    $data = json_decode($resp, true);
+    if ($data === null) {
+        json_out(['error' => 'Resposta inválida do Conecta'], 502);
+    }
+
+    file_put_contents($cacheFile, json_encode($data));
+    json_out($data);
 }
 
 // ============================================================
