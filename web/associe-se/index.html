@@ -2,532 +2,130 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Associe-se — ACIC-DF | Associação Comercial de Ceilândia</title>
-<meta name="description" content="Associe-se à ACIC-DF e fortaleça sua empresa em Ceilândia. Planos acessíveis, sem taxa de adesão.">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Associe-se — ACIC-DF</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--blue:#1B2B6B;--dk:#0F1F4E;--or:#E8701A;--ordk:#C85D15;--orl:rgba(232,112,26,.12);--tx:#1B2B6B;--t2:#6B7280;--t3:#94A3B8;--bg:#F5F6FA;--sf:#fff;--bd:#E2E8F0;--gn:#10B981;--f:'Sora',sans-serif}
-html{scroll-behavior:smooth}
-body{font-family:var(--f);color:#1E293B;background:#fff;overflow-x:hidden}
+:root{--blue:#1B2B6B;--dk:#141F4F;--or:#E8701A;--ordk:#C85D15;--lt:#ECEEF5;--tx:#1B2B6B;--t2:#6B7280;--t3:#94A3B8;--bg:#F5F6FA;--sf:#fff;--bd:#E2E8F0;--gn:#10B981;--f:'Sora',sans-serif}
+body{font-family:var(--f);background:var(--bg);color:var(--tx)}
 a{color:var(--or);text-decoration:none}
-img{max-width:100%;display:block}
-
-/* ─── ANIMATIONS ─── */
-.anim{opacity:0;transform:translateY(30px);transition:opacity .6s ease,transform .6s ease}
-.anim.vis{opacity:1;transform:translateY(0)}
-.anim-scale{opacity:0;transform:scale(.92);transition:opacity .5s ease,transform .5s ease}
-.anim-scale.vis{opacity:1;transform:scale(1)}
-.anim-left{opacity:0;transform:translateX(-30px);transition:opacity .5s ease,transform .5s ease}
-.anim-left.vis{opacity:1;transform:translateX(0)}
-@keyframes heroIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-.hero-anim{animation:heroIn .7s ease both}
-.hero-anim-d1{animation-delay:.15s}
-.hero-anim-d2{animation-delay:.3s}
-.hero-anim-d3{animation-delay:.45s}
-
-/* ─── HEADER ─── */
-.hdr{position:sticky;top:0;z-index:100;background:rgba(27,43,107,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08)}
-.hdr-inner{max-width:1200px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
-.hdr-logo{width:160px;height:auto}
-.hdr-nav{display:flex;align-items:center;gap:28px}
-.hdr-link{color:rgba(255,255,255,.75);font-size:13px;font-weight:500;transition:color .15s}
-.hdr-link:hover{color:#fff}
-.hdr-cta{display:inline-flex;align-items:center;padding:8px 20px;background:var(--or);color:#fff;border:none;border-radius:8px;font-family:var(--f);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none}
-.hdr-cta:hover{background:var(--ordk)}
-.hdr-ham{display:none;background:none;border:none;cursor:pointer;padding:6px}
-.hdr-ham span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px}
-
-/* ─── HERO ─── */
-.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;background:url('https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1600&q=80') center/cover no-repeat fixed}
-.hero-overlay{position:absolute;inset:0;background:rgba(27,43,107,.78)}
-.hero-inner{max-width:1200px;margin:0 auto;padding:80px 24px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:1;width:100%}
-.hero h1{font-size:46px;font-weight:800;color:#fff;line-height:1.12;margin-bottom:18px;letter-spacing:-.5px}
-.hero h1 span{color:var(--or)}
-.hero-sub{font-size:17px;color:rgba(255,255,255,.75);line-height:1.7;margin-bottom:36px}
-.hero-cta{display:inline-flex;align-items:center;gap:10px;padding:16px 36px;background:var(--or);color:#fff;border:none;border-radius:12px;font-family:var(--f);font-size:17px;font-weight:700;cursor:pointer;transition:all .2s;text-decoration:none;box-shadow:0 6px 24px rgba(232,112,26,.4)}
-.hero-cta:hover{background:var(--ordk);transform:translateY(-2px);box-shadow:0 8px 32px rgba(232,112,26,.5)}
-.hero-cta svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px;text-align:center;backdrop-filter:blur(12px);transition:all .25s}
-.stat:hover{background:rgba(255,255,255,.14);border-color:rgba(232,112,26,.4);transform:translateY(-2px)}
-.stat-val{font-size:34px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:4px}
-.stat-val span{color:var(--or)}
-.stat-lbl{font-size:13px;color:rgba(255,255,255,.55);font-weight:500}
-
-/* ─── SECTION COMMON ─── */
-.sec{padding:88px 24px}
-.sec-inner{max-width:1200px;margin:0 auto}
-.sec-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--or);margin-bottom:12px}
-.sec-title{font-size:34px;font-weight:800;color:var(--tx);margin-bottom:8px;letter-spacing:-.3px}
-.sec-sub{font-size:15px;color:var(--t2);margin-bottom:44px;max-width:560px}
-
-/* ─── BENEFITS ─── */
-.benefits{background:var(--bg)}
-.ben-layout{display:grid;grid-template-columns:320px 1fr;gap:40px;align-items:start}
-.ben-photo{border-radius:16px;overflow:hidden;border:3px solid var(--or);box-shadow:0 12px 40px rgba(27,43,107,.12);position:sticky;top:100px}
-.ben-photo img{width:100%;height:420px;object-fit:cover;display:block}
-.ben-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.ben-card{background:#fff;border:1.5px solid var(--bd);border-radius:14px;padding:24px 20px;transition:all .3s cubic-bezier(.25,.8,.25,1)}
-.ben-card:hover{border-color:var(--or);box-shadow:0 12px 32px rgba(232,112,26,.1);transform:translateY(-4px)}
-.ben-icon{width:44px;height:44px;background:var(--orl);border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
-.ben-icon svg{width:20px;height:20px;stroke:var(--or);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.ben-card h3{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:5px}
-.ben-card p{font-size:13px;color:var(--t2);line-height:1.6}
-
-/* ─── SOCIAL PROOF ─── */
-.proof{background:var(--blue);padding:64px 24px}
-.proof-inner{max-width:1200px;margin:0 auto}
-.proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
-.proof-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 24px;transition:all .2s}
-.proof-card:hover{background:rgba(255,255,255,.1);border-color:rgba(232,112,26,.3)}
-.proof-top{display:flex;align-items:center;gap:14px;margin-bottom:16px}
-.proof-av{width:44px;height:44px;background:var(--or);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
-.proof-name{font-size:14px;font-weight:600;color:#fff}
-.proof-tipo{font-size:12px;color:rgba(255,255,255,.45);font-weight:500}
-.proof-quote{font-size:13px;color:rgba(255,255,255,.7);line-height:1.7;font-style:italic}
-.proof-quote::before{content:'\201C';font-size:24px;color:var(--or);font-weight:800;line-height:1;display:block;margin-bottom:4px}
-
-/* ─── CONECTA ─── */
-.conecta{position:relative;overflow:hidden}
-.conecta-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80') center/cover no-repeat}
-.conecta-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(240,244,255,.95),rgba(255,255,255,.88))}
-.conecta .sec-inner{position:relative;z-index:1}
-.conecta-inner{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
-.conecta-feat{list-style:none;margin:24px 0 32px;display:flex;flex-direction:column;gap:14px}
-.conecta-feat li{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:#374151;line-height:1.5}
-.conecta-feat li svg{width:20px;height:20px;stroke:var(--gn);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;margin-top:1px}
-.conecta-cta{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:var(--or);color:#fff;border:none;border-radius:10px;font-family:var(--f);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none}
-.conecta-cta:hover{background:var(--ordk)}
-.mockup{background:var(--blue);border-radius:16px;padding:20px;box-shadow:0 20px 56px rgba(27,43,107,.25);position:relative;overflow:hidden}
-.mockup::before{content:'';position:absolute;top:-60px;right:-60px;width:160px;height:160px;background:radial-gradient(circle,rgba(232,112,26,.12) 0%,transparent 70%);border-radius:50%}
-.mockup-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.1)}
-.mockup-dots{display:flex;gap:5px}
-.mockup-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15)}
-.mockup-dots span:first-child{background:#EF4444}
-.mockup-dots span:nth-child(2){background:#F59E0B}
-.mockup-dots span:last-child{background:#10B981}
-.mockup-title{font-size:12px;font-weight:600;color:rgba(255,255,255,.6);margin-left:8px}
-.mockup-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.mockup-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px 12px;text-align:center;transition:all .2s}
-.mockup-card:hover{background:rgba(255,255,255,.14)}
-.mockup-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
-.mockup-ic svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.mockup-ic.o{background:rgba(232,112,26,.2)}.mockup-ic.o svg{stroke:var(--or)}
-.mockup-ic.b{background:rgba(96,165,250,.2)}.mockup-ic.b svg{stroke:#60A5FA}
-.mockup-ic.g{background:rgba(16,185,129,.2)}.mockup-ic.g svg{stroke:var(--gn)}
-.mockup-card span{font-size:11px;font-weight:600;color:rgba(255,255,255,.7)}
-.mockup-footer{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
-.mockup-footer span{font-size:10px;color:rgba(255,255,255,.35)}
-.mockup-footer div{width:48px;height:6px;background:var(--or);border-radius:99px;opacity:.6}
-
-/* ─── PLANS ─── */
-.plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.plan{background:#fff;border:1.5px solid var(--bd);border-radius:16px;padding:28px 24px;display:flex;flex-direction:column;transition:all .3s cubic-bezier(.25,.8,.25,1);position:relative}
-.plan:hover{border-color:var(--blue);box-shadow:0 12px 40px rgba(27,43,107,.12);transform:translateY(-4px)}
-.plan.destaque{border-color:var(--or);box-shadow:0 8px 32px rgba(232,112,26,.12)}
-.plan-pop{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--or);color:#fff;font-size:11px;font-weight:700;padding:4px 14px;border-radius:99px;white-space:nowrap}
-.plan-tipo{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--or);margin-bottom:8px}
-.plan-nome{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:6px}
-.plan-desc{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:16px;flex:1}
-.plan-preco{font-size:30px;font-weight:800;color:var(--tx);margin-bottom:4px;letter-spacing:-.5px}
-.plan-preco small{font-size:13px;font-weight:400;color:var(--t3)}
-.plan-per{font-size:12px;color:var(--t3);margin-bottom:20px}
-.plan-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr-left img{height:32px}
+.hdr-nav{display:flex;align-items:center;gap:24px}
+.hdr-nav a{color:var(--t2);font-size:13px;font-weight:600;transition:color .15s}
+.hdr-nav a:hover{color:var(--tx)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 20px;background:var(--or);color:#fff;border:none;border-radius:8px;font-family:var(--f);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn:hover{background:var(--ordk)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.wrap{max-width:1100px;margin:0 auto;padding:48px 24px;width:100%}
+.stitle{font-size:26px;font-weight:700;text-align:center;margin-bottom:8px}
+.ssub{text-align:center;color:var(--t2);font-size:14px;margin-bottom:36px}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.plan{background:var(--sf);border:1.5px solid var(--bd);border-radius:14px;padding:24px;display:flex;flex-direction:column;position:relative;transition:all .2s}
+.plan:hover{border-color:var(--or);box-shadow:0 8px 24px rgba(232,112,26,.08);transform:translateY(-2px)}
+.plan.popular{border-color:var(--or)}
+.pop-tag{position:absolute;top:-1px;right:20px;background:var(--or);color:#fff;font-size:10px;font-weight:700;letter-spacing:.05em;padding:4px 12px;border-radius:0 0 8px 8px}
+.plan-tipo{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--or);margin-bottom:8px}
+.plan-nome{font-size:17px;font-weight:700;margin-bottom:6px}
+.plan-desc{font-size:13px;color:var(--t2);margin-bottom:14px;flex:1}
+.plan-preco{font-size:28px;font-weight:700;margin-bottom:4px}.plan-preco span{font-size:13px;font-weight:400;color:var(--t3)}
+.plan-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
 .badge{display:inline-flex;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600}
-.badge-b{background:var(--bg);color:var(--tx)}.badge-g{background:#ECFDF5;color:#065F46}
-.plan-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;background:var(--or);color:#fff;border:none;border-radius:10px;font-family:var(--f);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;width:100%}
-.plan-btn:hover{background:var(--ordk)}
-.plan-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.ld{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--t3);gap:8px;font-size:14px;grid-column:1/-1}
-.sp{display:inline-block;width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--or);border-radius:50%;animation:sp .6s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-
-/* ─── FAQ ─── */
-.faq{background:var(--bg)}
-.faq-list{max-width:720px}
-.faq-item{background:#fff;border:1.5px solid var(--bd);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
-.faq-item.open{border-color:var(--or)}
-.faq-q{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--tx);gap:12px;background:none;border:none;width:100%;text-align:left;font-family:var(--f)}
-.faq-q:hover{color:var(--or)}
-.faq-q svg{width:18px;height:18px;stroke:var(--t3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;transition:transform .2s}
-.faq-item.open .faq-q svg{transform:rotate(180deg);stroke:var(--or)}
-.faq-a{padding:0 20px;max-height:0;overflow:hidden;transition:max-height .25s ease,padding .25s ease}
-.faq-item.open .faq-a{max-height:200px;padding:0 20px 18px}
-.faq-a p{font-size:13px;color:var(--t2);line-height:1.7}
-
-/* ─── CTA BANNER ─── */
-.cta-banner{background:var(--or);padding:64px 24px;text-align:center;position:relative;overflow:hidden}
-.cta-banner::before{content:'';position:absolute;top:-80px;right:-80px;width:250px;height:250px;background:rgba(255,255,255,.08);border-radius:50%}
-.cta-banner::after{content:'';position:absolute;bottom:-60px;left:-60px;width:180px;height:180px;background:rgba(0,0,0,.05);border-radius:50%}
-.cta-banner-inner{max-width:640px;margin:0 auto;position:relative;z-index:1}
-.cta-banner h2{font-size:30px;font-weight:800;color:#fff;margin-bottom:12px;letter-spacing:-.3px}
-.cta-banner p{font-size:16px;color:rgba(255,255,255,.85);margin-bottom:28px}
-.cta-banner-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 36px;background:#fff;color:var(--blue);border:none;border-radius:12px;font-family:var(--f);font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;text-decoration:none;box-shadow:0 4px 16px rgba(0,0,0,.15)}
-.cta-banner-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.2);color:var(--dk)}
-
-/* ─── FOOTER ─── */
-.ftr{background:var(--blue);padding:32px 24px;text-align:center}
-.ftr-inner{max-width:1200px;margin:0 auto}
-.ftr-logo{height:32px;margin:0 auto 14px;opacity:.7}
-.ftr p{font-size:12px;color:rgba(255,255,255,.4)}
-.footer-legal{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:12px;flex-wrap:wrap}
-.footer-legal a{color:rgba(255,255,255,.7);font-size:12px;text-decoration:none}
-.footer-legal a:hover{color:var(--or)}
-.footer-legal span{color:rgba(255,255,255,.3);font-size:12px}
-.consent-wrap{margin:16px 0 8px;padding:12px;background:#F0F4FF;border-radius:8px;border:1px solid #BFDBFE}
-.consent-label{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#374151;cursor:pointer;line-height:1.5}
-.consent-label input{margin-top:2px;accent-color:var(--or);width:16px;height:16px;flex-shrink:0}
-.consent-label a{color:var(--tx);font-weight:600;text-decoration:underline}
-
-/* ─── MODAL ─── */
-.mo{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:1000;align-items:center;justify-content:center;padding:24px}
+.badge-b{background:var(--lt);color:var(--dk)}.badge-g{background:#ECFDF5;color:#065F46}
+.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.ben{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:28px 24px;transition:all .15s}
+.ben:hover{box-shadow:0 4px 16px rgba(0,0,0,.04);transform:translateY(-1px)}
+.ben-icon{width:40px;height:40px;background:rgba(232,112,26,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.ben-icon svg{width:20px;height:20px;stroke:var(--or);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ben h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.ben p{font-size:13px;color:var(--t2);line-height:1.5}
+.ftr{background:var(--blue);color:rgba(255,255,255,.8);padding:40px 24px 24px}
+.ftr-inner{max-width:1100px;margin:0 auto}
+.ftr-top{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.ftr-top img{height:28px}.ftr-top span{font-size:14px;font-weight:500}
+.ftr-links{display:flex;gap:20px;flex-wrap:wrap;padding:16px 0;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:16px}
+.ftr-links a{color:rgba(255,255,255,.6);font-size:12px;font-weight:500}.ftr-links a:hover{color:#fff}
+.ftr-copy{font-size:11px;color:rgba(255,255,255,.4)}
+.mo{display:none;position:fixed;inset:0;background:rgba(27,43,107,.6);z-index:1000;align-items:center;justify-content:center;padding:24px}
 .mo.on{display:flex}
-.mb{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.25);position:relative}
-.mc{position:absolute;top:14px;right:14px;z-index:10;width:36px;height:36px;border-radius:8px;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-.mc:hover{background:var(--bd)}
-.mc svg{width:16px;height:16px;stroke:var(--t2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.mo-hdr{margin-bottom:20px;padding-right:44px}
-.mo-hdr h2{font-size:20px;font-weight:700;color:var(--tx);margin-bottom:4px}
-.mo-hdr p{font-size:13px;color:var(--t3)}
-.plan-banner{background:var(--bg);border:1.5px solid var(--bd);border-radius:10px;padding:14px 18px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center}
-.plan-banner-nome{font-weight:600;font-size:14px;color:var(--tx)}
-.plan-banner-val{font-weight:700;color:var(--or);font-size:16px}
-.sec-title-form{font-size:12px;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.1em;margin:22px 0 12px;padding-bottom:6px;border-bottom:1.5px solid var(--bg)}
-.sec-title-form:first-of-type{margin-top:0}
-.fg{margin-bottom:14px}
-.fl{display:block;font-size:12px;font-weight:600;color:var(--tx);margin-bottom:5px}
-.fl-hint{font-weight:400;color:var(--t3);font-size:11px}
+.mb{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);position:relative}
+.mc{position:absolute;top:12px;right:12px;z-index:10;width:32px;height:32px;border-radius:8px;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mc:hover{background:var(--bd)}.mc svg{width:16px;height:16px;stroke:var(--t2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mo-hdr{margin-bottom:20px;padding-right:40px}.mo-hdr h2{font-size:18px;font-weight:700;margin-bottom:4px}.mo-hdr p{font-size:13px;color:var(--t3)}
+.plan-banner{background:var(--lt);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.plan-banner-nome{font-weight:600;font-size:14px}.plan-banner-val{font-weight:700;color:var(--or);font-size:16px}
+.fg{margin-bottom:14px}.fl{display:block;font-size:12px;font-weight:600;color:var(--tx);margin-bottom:5px}
 .fc{width:100%;height:42px;padding:0 14px;background:var(--bg);border:1.5px solid var(--bd);border-radius:8px;font-family:var(--f);font-size:14px;color:var(--tx);outline:none;transition:all .15s}
 .fc:focus{background:#fff;border-color:var(--or);box-shadow:0 0 0 3px rgba(232,112,26,.1)}
-select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
 .fr2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.fr3{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
-.btn-sub{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:var(--or);color:#fff;border:none;border-radius:10px;font-family:var(--f);font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:8px}
-.btn-sub:hover{background:var(--ordk)}.btn-sub:disabled{opacity:.5;cursor:not-allowed}
-.btn-cep{padding:10px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:var(--f);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-.btn-cep:hover{background:var(--dk)}
-.msg{padding:16px 20px;border-radius:10px;font-size:14px;font-weight:500;margin-top:16px;display:none}
+.chk{display:flex;align-items:flex-start;gap:8px;margin:16px 0 4px;font-size:12px;color:var(--t2);line-height:1.4}
+.chk input{margin-top:2px;accent-color:var(--or)}
+.msg{padding:14px 18px;border-radius:10px;font-size:14px;font-weight:500;margin-top:16px;display:none}
 .msg.ok{display:block;background:#ECFDF5;border:1px solid #BBF7D0;color:#065F46}
 .msg.err{display:block;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
-
-/* ─── MOBILE ─── */
-@media(max-width:900px){
-  .hero-inner{grid-template-columns:1fr;text-align:center}
-  .hero h1{font-size:34px}
-  .hero-sub{margin-left:auto;margin-right:auto;max-width:480px}
-  .hero-cta{margin-bottom:40px}
-  .hero-stats{max-width:400px;margin:0 auto}
-  .ben-layout{grid-template-columns:1fr}
-  .ben-photo{max-width:320px;margin:0 auto;position:static}
-  .ben-photo img{height:280px}
-  .ben-grid{grid-template-columns:1fr 1fr}
-  .plans-grid{grid-template-columns:1fr 1fr}
-  .conecta-inner{grid-template-columns:1fr;text-align:center}
-  .conecta-feat{align-items:center}
-  .conecta-feat li{text-align:left}
-  .mockup{max-width:400px;margin:0 auto}
-  .proof-grid{grid-template-columns:1fr}
-}
-@media(max-width:768px){
-  .hdr-nav .hdr-link{display:none}
-  .hdr-ham{display:block}
-  .sec{padding:56px 20px}
-  .sec-title{font-size:26px}
-  .hero{min-height:auto;background-attachment:scroll}
-  .hero-inner{padding:60px 20px}
-  .hero h1{font-size:28px}
-  .hero-sub{font-size:15px}
-  .stat-val{font-size:26px}
-  .fr2{grid-template-columns:1fr}
-  .mo{padding:0}
-  .mb{border-radius:16px 16px 0 0;max-height:95vh;max-width:100%;padding:24px 18px}
-  .mc{position:fixed;top:12px;right:12px;z-index:1001;background:var(--sf);box-shadow:0 2px 8px rgba(0,0,0,.15)}
-  .cta-banner h2{font-size:24px}
-  .proof{padding:48px 20px}
-}
-@media(max-width:520px){
-  .ben-grid{grid-template-columns:1fr}
-  .plans-grid{grid-template-columns:1fr}
-  .hero-stats{grid-template-columns:1fr 1fr}
-  .stat{padding:18px 14px}
-  .stat-val{font-size:24px}
-}
+.sp{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ld{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--t3);gap:8px;font-size:14px}
+.ld .sp{border-color:var(--bd);border-top-color:var(--or)}
+@media(max-width:768px){.plans,.benefits{grid-template-columns:1fr 1fr}.wrap{padding:32px 16px}.stitle{font-size:22px}.fr2{grid-template-columns:1fr}.mo{padding:0;align-items:flex-end}.mb{border-radius:16px 16px 0 0;max-height:95vh;padding:20px 16px;max-width:100%}.ftr-links{gap:12px}}
+@media(max-width:480px){.plans,.benefits{grid-template-columns:1fr}.plan{padding:20px}.plan-preco{font-size:24px}.stitle{font-size:20px}.hdr-nav a.hide-m{display:none}}
 </style>
 </head>
 <body>
+<header class="hdr"><div class="hdr-left"><img src="/assets/logo-conecta-crm.png" alt="Conecta CRM"></div><nav class="hdr-nav"><a href="#planos">Planos</a><a href="#beneficios" class="hide-m">Benefícios</a><a href="#planos" class="btn">Associar-se</a></nav></header>
 
-<!-- ═══ HEADER ═══ -->
-<header class="hdr">
-  <div class="hdr-inner">
-    <img src="/assets/logo-conecta-crm-white.png" alt="ACIC-DF" class="hdr-logo">
-    <nav class="hdr-nav">
-      <a href="#beneficios" class="hdr-link">Benefícios</a>
-      <a href="#conecta" class="hdr-link">Conecta</a>
-      <a href="#planos" class="hdr-link">Planos</a>
-      <a href="#duvidas" class="hdr-link">Dúvidas</a>
-      <a href="#planos" class="hdr-cta">Associe-se agora</a>
-    </nav>
-    <button class="hdr-ham" onclick="document.querySelector('.hdr-nav').classList.toggle('open')"><span></span><span></span><span></span></button>
+<section id="planos"><div class="wrap">
+  <h2 class="stitle">Escolha seu plano</h2>
+  <p class="ssub">Associe-se e tenha acesso a todos os benefícios da ACIC-DF</p>
+  <div class="plans" id="plans"><div class="ld"><div class="sp"></div> Carregando planos...</div></div>
+</div></section>
+
+<section id="beneficios" style="background:var(--sf)"><div class="wrap">
+  <h2 class="stitle">Benefícios de ser associado à ACIC-DF</h2>
+  <p class="ssub">Muito mais do que representatividade — uma rede completa de suporte ao seu negócio</p>
+  <div class="benefits">
+    <div class="ben"><div class="ben-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><h3>Networking</h3><p>Conecte-se com empresários e empreendedores da região em eventos exclusivos.</p></div>
+    <div class="ben"><div class="ben-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Representatividade</h3><p>Tenha voz ativa junto ao poder público nas decisões que impactam o comércio local.</p></div>
+    <div class="ben"><div class="ben-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div><h3>Convênios</h3><p>Descontos exclusivos em saúde, educação, tecnologia e serviços para sua empresa.</p></div>
+    <div class="ben"><div class="ben-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><h3>Capacitação</h3><p>Cursos, workshops e palestras para desenvolver sua equipe e modernizar sua gestão.</p></div>
+    <div class="ben"><div class="ben-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div><h3>Visibilidade</h3><p>Divulgação da sua empresa no portal, redes sociais e materiais da ACIC-DF.</p></div>
+    <div class="ben"><div class="ben-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><h3>Portal Digital</h3><p>Acesso ao Conecta 2.0 — plataforma digital exclusiva com ferramentas de gestão.</p></div>
   </div>
-</header>
+</div></section>
 
-<!-- ═══ HERO ═══ -->
-<section class="hero">
-  <div class="hero-overlay"></div>
-  <div class="hero-inner">
-    <div>
-      <h1 class="hero-anim">Sua empresa mais forte, com quem entende <span>Ceilândia.</span></h1>
-      <p class="hero-sub hero-anim hero-anim-d1">A ACIC-DF conecta empresários locais, defende seus interesses e abre portas para novos negócios. Faça parte.</p>
-      <a href="#planos" class="hero-cta hero-anim hero-anim-d2"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Associe-se agora</a>
-    </div>
-    <div class="hero-stats hero-anim hero-anim-d3">
-      <div class="stat"><div class="stat-val" data-count="500">0<span>+</span></div><div class="stat-lbl">Empresas associadas</div></div>
-      <div class="stat"><div class="stat-val" data-count="30">0<span>+</span></div><div class="stat-lbl">Anos de história</div></div>
-      <div class="stat"><div class="stat-val" data-count="200">0<span>+</span></div><div class="stat-lbl">Convênios ativos</div></div>
-      <div class="stat"><div class="stat-val">R$0</div><div class="stat-lbl">Sem taxa de adesão</div></div>
-    </div>
-  </div>
-</section>
+<footer class="ftr"><div class="ftr-inner">
+  <div class="ftr-top"><img src="/assets/logo-conecta-crm-white.png" alt="ACIC-DF"><span>ACIC-DF — Associação Comercial Industrial e Empresarial de Ceilândia</span></div>
+  <div class="ftr-links"><a href="/docs/termos-de-uso.pdf" target="_blank">Termos de Uso</a><a href="/docs/politica-de-privacidade.pdf" target="_blank">Política de Privacidade</a><a href="/docs/cookies.pdf" target="_blank">Cookies</a><a href="/docs/contrato-de-associacao.pdf" target="_blank">Contrato de Associação</a></div>
+  <div class="ftr-copy">&copy; 2026 HUX Participações. Todos os direitos reservados.</div>
+</div></footer>
 
-<!-- ═══ BENEFITS ═══ -->
-<section class="sec benefits" id="beneficios">
-  <div class="sec-inner">
-    <div class="sec-tag anim">Vantagens</div>
-    <h2 class="sec-title anim">Por que se associar à ACIC-DF?</h2>
-    <p class="sec-sub anim">Benefícios reais para quem empreende em Ceilândia e região.</p>
-    <div class="ben-layout">
-      <div class="ben-photo anim">
-        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&q=80" alt="Empresária associada ACIC-DF" loading="lazy">
-      </div>
-      <div class="ben-grid">
-        <div class="ben-card anim" style="transition-delay:.05s">
-          <div class="ben-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <h3>Networking</h3>
-          <p>Conecte-se com outros empresários da região e crie parcerias que geram negócios.</p>
-        </div>
-        <div class="ben-card anim" style="transition-delay:.15s">
-          <div class="ben-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-          <h3>Representatividade</h3>
-          <p>A ACIC-DF defende os interesses do comércio local perante o governo e entidades.</p>
-        </div>
-        <div class="ben-card anim" style="transition-delay:.25s">
-          <div class="ben-icon"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
-          <h3>Convênios exclusivos</h3>
-          <p>Descontos em saúde, educação, contabilidade, seguros e muito mais.</p>
-        </div>
-        <div class="ben-card anim" style="transition-delay:.35s">
-          <div class="ben-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
-          <h3>Capacitação</h3>
-          <p>Cursos e workshops pensados para micro e pequenas empresas.</p>
-        </div>
-        <div class="ben-card anim" style="transition-delay:.45s">
-          <div class="ben-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-          <h3>Visibilidade</h3>
-          <p>Sua empresa divulgada nos canais da ACIC-DF e em eventos da região.</p>
-        </div>
-        <div class="ben-card anim" style="transition-delay:.55s">
-          <div class="ben-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-          <h3>Portal Conecta 2.0</h3>
-          <p>Painel online com boletos, certificados, convênios e muito mais.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SOCIAL PROOF ═══ -->
-<section class="proof">
-  <div class="proof-inner">
-    <div class="proof-grid">
-      <div class="proof-card anim" style="transition-delay:.05s">
-        <div class="proof-top"><div class="proof-av">JC</div><div><div class="proof-name">João Carlos</div><div class="proof-tipo">MEI — Ceilândia</div></div></div>
-        <div class="proof-quote">Consegui meu primeiro contrato grande através da rede de associados. Vale cada centavo.</div>
-      </div>
-      <div class="proof-card anim" style="transition-delay:.15s">
-        <div class="proof-top"><div class="proof-av">MP</div><div><div class="proof-name">Maria Paula</div><div class="proof-tipo">ME — Taguatinga</div></div></div>
-        <div class="proof-quote">O Conecta 2.0 facilitou muito minha gestão. Tudo na palma da mão.</div>
-      </div>
-      <div class="proof-card anim" style="transition-delay:.25s">
-        <div class="proof-top"><div class="proof-av">RS</div><div><div class="proof-name">Roberto Silva</div><div class="proof-tipo">EPP — Ceilândia</div></div></div>
-        <div class="proof-quote">A ACIC-DF me ajudou a navegar na burocracia do GDF. Economizei muito tempo.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ CONECTA 2.0 ═══ -->
-<section class="sec conecta" id="conecta">
-  <div class="conecta-bg"></div>
-  <div class="sec-inner">
-    <div class="conecta-inner">
-      <div>
-        <div class="sec-tag anim">Exclusivo para associados</div>
-        <h2 class="sec-title anim">Conecta 2.0 — Seu clube de benefícios na palma da mão</h2>
-        <p class="sec-sub anim" style="margin-bottom:0">Ao se associar à ACIC-DF, você e seus colaboradores ganham acesso ao Conecta 2.0 — o portal digital exclusivo de benefícios da associação. Tudo em um só lugar, no celular ou computador.</p>
-        <ul class="conecta-feat anim">
-          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Catálogo de produtos e serviços exclusivos para associados</li>
-          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Comunicados e novidades da ACIC-DF em tempo real</li>
-          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Acesso para todos os colaboradores da sua empresa</li>
-          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Login único com o mesmo CPF/CNPJ da associação</li>
-        </ul>
-        <a href="#planos" class="conecta-cta anim">Ver planos com Conecta 2.0</a>
-      </div>
-      <div class="anim-scale">
-        <div class="mockup">
-          <div class="mockup-bar"><div class="mockup-dots"><span></span><span></span><span></span></div><span class="mockup-title">Conecta 2.0</span></div>
-          <div class="mockup-grid">
-            <div class="mockup-card"><div class="mockup-ic o"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div><span>Produtos</span></div>
-            <div class="mockup-card"><div class="mockup-ic b"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span>Comunicados</span></div>
-            <div class="mockup-card"><div class="mockup-ic g"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><span>Benefícios</span></div>
-          </div>
-          <div class="mockup-footer"><span>acicdf.org.br/conecta</span><div></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ PLANS ═══ -->
-<section class="sec" id="planos">
-  <div class="sec-inner">
-    <div class="sec-tag anim">Planos</div>
-    <h2 class="sec-title anim">Escolha seu plano</h2>
-    <p class="sec-sub anim">Sem taxa de adesão. Cancele quando quiser.</p>
-    <div class="plans-grid" id="plans-grid">
-      <div class="ld"><div class="sp"></div> Carregando planos...</div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ FAQ ═══ -->
-<section class="sec faq" id="duvidas">
-  <div class="sec-inner">
-    <div class="sec-tag anim">Dúvidas frequentes</div>
-    <h2 class="sec-title anim">Perguntas comuns</h2>
-    <p class="sec-sub anim">Tire suas dúvidas antes de se associar.</p>
-    <div class="faq-list">
-      <div class="faq-item anim-left" style="transition-delay:.05s">
-        <button class="faq-q" onclick="toggleFaq(this)">Preciso pagar taxa de adesão?<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="faq-a"><p>Não! A ACIC-DF não cobra taxa de adesão. Você paga apenas a mensalidade do plano escolhido, sem surpresas.</p></div>
-      </div>
-      <div class="faq-item anim-left" style="transition-delay:.1s">
-        <button class="faq-q" onclick="toggleFaq(this)">Posso cancelar a qualquer momento?<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="faq-a"><p>Sim. Não existe fidelidade ou multa. Você pode cancelar sua associação quando quiser, sem burocracia.</p></div>
-      </div>
-      <div class="faq-item anim-left" style="transition-delay:.15s">
-        <button class="faq-q" onclick="toggleFaq(this)">Quem pode se associar?<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="faq-a"><p>Qualquer empresa — MEI, ME, EPP ou de qualquer porte — com atividade comercial, industrial ou de serviços em Ceilândia e região do DF.</p></div>
-      </div>
-      <div class="faq-item anim-left" style="transition-delay:.2s">
-        <button class="faq-q" onclick="toggleFaq(this)">O que é o Conecta 2.0?<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="faq-a"><p>É o portal digital exclusivo dos associados. Nele você acessa boletos, certificados, convênios e gerencia tudo sobre sua associação online.</p></div>
-      </div>
-      <div class="faq-item anim-left" style="transition-delay:.25s">
-        <button class="faq-q" onclick="toggleFaq(this)">Qual o prazo de aprovação da inscrição?<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="faq-a"><p>Normalmente em até 2 dias úteis. Após a aprovação, você recebe o link de pagamento e já pode acessar os benefícios.</p></div>
-      </div>
-      <div class="faq-item anim-left" style="transition-delay:.3s">
-        <button class="faq-q" onclick="toggleFaq(this)">Posso cadastrar colaboradores e dependentes?<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="faq-a"><p>Sim! Associados podem cadastrar colaboradores e dependentes para que também usufruam dos convênios e benefícios da associação.</p></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ CTA BANNER ═══ -->
-<section class="cta-banner">
-  <div class="cta-banner-inner anim">
-    <h2>Pronto para fortalecer seu negócio em Ceilândia?</h2>
-    <p>Associe-se hoje. Sem taxa de adesão. Sem burocracia.</p>
-    <a href="#planos" class="cta-banner-btn">Começar agora</a>
-  </div>
-</section>
-
-<!-- ═══ FOOTER ═══ -->
-<footer class="ftr">
-  <div class="ftr-inner">
-    <img src="/assets/logo-conecta-crm-white.png" alt="ACIC-DF" class="ftr-logo">
-    <p>ACIC-DF — Associação Comercial, Industrial e de Serviços de Ceilândia</p>
-    <p style="margin-top:6px">&copy; <script>document.write(new Date().getFullYear())</script> HUX Participações. Todos os direitos reservados.</p>
-    <div class="footer-legal">
-      <a href="/docs/termos-de-uso.pdf" target="_blank">Termos de Uso</a><span>&middot;</span>
-      <a href="/docs/politica-privacidade.pdf" target="_blank">Política de Privacidade</a><span>&middot;</span>
-      <a href="/docs/politica-cookies.pdf" target="_blank">Cookies</a><span>&middot;</span>
-      <a href="/docs/contrato-associacao.pdf" target="_blank">Contrato de Associação</a>
-    </div>
-  </div>
-</footer>
-
-<!-- ═══ MODAL ═══ -->
 <div class="mo" id="mo">
   <div class="mb">
     <button class="mc" onclick="fecharModal()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    <div class="mo-hdr">
-      <h2>Dados para Inscrição</h2>
-      <p>Preencha seus dados e entraremos em contato</p>
-    </div>
-    <div class="plan-banner">
-      <span class="plan-banner-nome" id="sel-nome">-</span>
-      <span class="plan-banner-val" id="sel-val">-</span>
-    </div>
+    <div class="mo-hdr"><h2>Dados para Inscrição</h2><p>Preencha seus dados e entraremos em contato</p></div>
+    <div class="plan-banner"><span class="plan-banner-nome" id="sel-nome">-</span><span class="plan-banner-val" id="sel-val">-</span></div>
     <form id="frm" onsubmit="return enviar(event)">
       <input type="hidden" id="f-plano" value="">
-      <div class="sec-title-form">Dados da Empresa</div>
-      <div class="fg"><label class="fl">Razão Social *</label><input type="text" class="fc" id="f-razao" placeholder="Razão social da empresa" required></div>
+      <div class="fg"><label class="fl">Razão Social / Nome Fantasia *</label><input type="text" class="fc" id="f-empresa" placeholder="Nome da empresa" required></div>
       <div class="fr2">
-        <div class="fg"><label class="fl">CNPJ *</label><input type="text" class="fc" id="f-cpfcnpj" placeholder="00.000.000/0001-00" required></div>
+        <div class="fg"><label class="fl">CNPJ</label><input type="text" class="fc" id="f-cnpj" placeholder="00.000.000/0001-00"></div>
         <div class="fg"><label class="fl">E-mail *</label><input type="email" class="fc" id="f-email" placeholder="contato@empresa.com.br" required></div>
       </div>
       <div class="fr2">
-        <div class="fg"><label class="fl">Telefone / WhatsApp *</label><input type="tel" class="fc" id="f-telefone" placeholder="(61) 99999-9999" required></div>
-        <div class="fg"><label class="fl">WhatsApp</label><input type="tel" class="fc" id="f-whatsapp" placeholder="(61) 99999-9999"></div>
-      </div>
-      <div class="sec-title-form">Endereço</div>
-      <div class="fr3">
-        <div class="fg"><label class="fl">CEP</label><input type="text" class="fc" id="f-cep" placeholder="00000-000" maxlength="9"></div>
-        <div class="fg"><button type="button" class="btn-cep" onclick="buscarCep()">Consultar</button></div>
+        <div class="fg"><label class="fl">Telefone</label><input type="tel" class="fc" id="f-tel" placeholder="(61) 3333-3333"></div>
+        <div class="fg"><label class="fl">WhatsApp</label><input type="tel" class="fc" id="f-wpp" placeholder="(61) 99999-9999"></div>
       </div>
       <div class="fr2">
-        <div class="fg"><label class="fl">Logradouro</label><input type="text" class="fc" id="f-logradouro" placeholder="Rua, Avenida..."></div>
-        <div class="fg"><label class="fl">Complemento</label><input type="text" class="fc" id="f-complemento" placeholder="Sala, andar..."></div>
+        <div class="fg"><label class="fl">CEP</label><input type="text" class="fc" id="f-cep" placeholder="72000-000" maxlength="9" oninput="buscarCep(this.value)"></div>
+        <div class="fg"><label class="fl">Cidade/UF</label><input type="text" class="fc" id="f-cidade" placeholder="Ceilândia/DF" readonly></div>
       </div>
       <div class="fr2">
-        <div class="fg"><label class="fl">Bairro</label><input type="text" class="fc" id="f-bairro" placeholder="Bairro"></div>
-        <div class="fg"><label class="fl">Cidade</label><input type="text" class="fc" id="f-cidade" placeholder="Cidade"></div>
+        <div class="fg"><label class="fl">Faturamento Mensal</label><select class="fc" id="f-fat"><option value="">Selecione</option><option value="ate_81k">Até R$ 81 mil (MEI)</option><option value="ate_360k">Até R$ 360 mil (ME)</option><option value="ate_4800k">Até R$ 4,8 milhões (EPP)</option><option value="acima">Acima de R$ 4,8 milhões</option></select></div>
+        <div class="fg"><label class="fl">Nº de Funcionários</label><select class="fc" id="f-func"><option value="">Selecione</option><option value="0">Nenhum (MEI)</option><option value="1-5">1 a 5</option><option value="6-20">6 a 20</option><option value="21-50">21 a 50</option><option value="50+">Mais de 50</option></select></div>
       </div>
-      <div class="sec-title-form">Informações adicionais</div>
-      <div class="fr2">
-        <div class="fg">
-          <label class="fl">Faturamento mensal</label>
-          <select class="fc" id="f-faturamento">
-            <option value="">Selecione...</option>
-            <option value="ate-5000">Até R$ 5.000</option>
-            <option value="5001-10000">R$ 5.001 — 10.000</option>
-            <option value="10001-50000">R$ 10.001 — 50.000</option>
-            <option value="50001-100000">R$ 50.001 — 100.000</option>
-            <option value="100001+">Acima de R$ 100.000</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label class="fl">Nº de funcionários</label>
-          <select class="fc" id="f-funcionarios">
-            <option value="">Selecione...</option>
-            <option value="0">Apenas eu (MEI)</option>
-            <option value="1-5">1 — 5</option>
-            <option value="6-20">6 — 20</option>
-            <option value="21-50">21 — 50</option>
-            <option value="50+">Mais de 50</option>
-          </select>
-        </div>
-      </div>
-      <div class="consent-wrap">
-        <label class="consent-label">
-          <input type="checkbox" id="consent-terms" required>
-          <span>Li e concordo com os <a href="/docs/termos-de-uso.pdf" target="_blank">Termos de Uso</a>, a <a href="/docs/politica-privacidade.pdf" target="_blank">Política de Privacidade</a> e o <a href="/docs/contrato-associacao.pdf" target="_blank">Contrato de Associação</a> da ACIC-DF.</span>
-        </label>
-      </div>
-      <button type="submit" class="btn-sub" id="btn-enviar">Enviar Inscrição</button>
+      <label class="chk"><input type="checkbox" id="f-consent" required> Concordo com os <a href="/docs/termos-de-uso.pdf" target="_blank">Termos de Uso</a> e autorizo o contato da ACIC-DF.</label>
+      <div style="margin-top:16px"><button type="submit" class="btn" id="btn-enviar" style="width:100%;height:46px;font-size:15px">Enviar Inscrição</button></div>
     </form>
     <div class="msg" id="msg"></div>
   </div>
@@ -537,168 +135,59 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 const API='https://api.acicdf.org.br';
 let planos=[];
 
-// ── Intersection Observer for animations ──
-const obs=new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');obs.unobserve(e.target);}});
-},{threshold:.15,rootMargin:'0px 0px -40px 0px'});
-document.querySelectorAll('.anim,.anim-scale,.anim-left').forEach(el=>obs.observe(el));
-
-// ── Count-up animation for stats ──
-let counted=false;
-const countObs=new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{
-    if(e.isIntersecting&&!counted){
-      counted=true;
-      document.querySelectorAll('[data-count]').forEach(el=>{
-        const target=parseInt(el.dataset.count);
-        const suffix=el.querySelector('span')?.outerHTML||'';
-        let current=0;
-        const step=Math.ceil(target/40);
-        const timer=setInterval(()=>{
-          current+=step;
-          if(current>=target){current=target;clearInterval(timer);}
-          el.innerHTML=current+suffix;
-        },30);
-      });
-    }
-  });
-},{threshold:.3});
-document.querySelectorAll('.hero-stats').forEach(el=>countObs.observe(el));
-
-// ── Plans ──
 async function init(){
   try{
-    const r=await fetch(API+'/planos');
-    const d=await r.json();
+    const r=await fetch(API+'/planos');const d=await r.json();
     planos=d.data?.data||d.data||d||[];
     if(!Array.isArray(planos))planos=[];
-    if(!planos.length){document.getElementById('plans-grid').innerHTML='<div class="ld">Nenhum plano disponível no momento.</div>';return;}
-    renderPlans();
-    const slug=location.pathname.replace(/\/+$/,'').split('/').pop();
-    if(slug&&slug!=='associe-se'){
-      const found=planos.find(p=>p.slug_link===slug);
-      if(found)abrirModal(found);
-    }
-  }catch(e){
-    document.getElementById('plans-grid').innerHTML='<div class="ld" style="color:#991B1B">Erro ao carregar planos. Tente novamente.</div>';
-  }
+    if(!planos.length){document.getElementById('plans').innerHTML='<div class="ld">Nenhum plano disponível no momento.</div>';return;}
+    render();
+    const path=location.pathname.replace(/\/+$/,'');const slug=path.split('/').pop();
+    if(slug&&slug!=='associe-se'){const found=planos.find(p=>p.slug_link===slug);if(found)abrirModal(found);}
+  }catch(e){document.getElementById('plans').innerHTML='<div class="ld" style="color:#991B1B">Erro ao carregar planos.</div>';}
 }
-
 function money(v){return'R$ '+parseFloat(v||0).toFixed(2).replace('.',',');}
-
-function renderPlans(){
+function render(){
   const tp={mei:'MEI',me:'ME',epp:'EPP',isento:'Isento',combo:'Combo',personalizado:'Personalizado'};
-  const per={mensal:'/mês',trimestral:'/tri',semestral:'/sem',anual:'/ano'};
-  document.getElementById('plans-grid').innerHTML=planos.map((p,i)=>{
-    const isCombo=p.tipo==='combo';
-    return `<div class="plan anim-scale${isCombo?' destaque':''}" style="transition-delay:${i*.1}s" id="plan-${p.id}">
-      ${isCombo?'<div class="plan-pop">Mais popular</div>':''}
-      <div class="plan-tipo">${tp[p.tipo]||p.tipo}</div>
-      <div class="plan-nome">${p.nome}</div>
-      <div class="plan-desc">${p.descricao||'Plano de associação ACIC-DF'}</div>
-      <div class="plan-preco">${money(p.valor)} <small>${per[p.periodicidade]||'/'+p.periodicidade}</small></div>
-      <div class="plan-per">Sem taxa de adesão</div>
-      <div class="plan-badges">
-        <span class="badge badge-b">${p.periodicidade}</span>
-        ${p.tem_conecta?'<span class="badge badge-g">Conecta 2.0</span>':''}
-      </div>
-      <button class="plan-btn" onclick="abrirModal(planos.find(x=>x.id===${p.id}))"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Associar-se</button>
-    </div>`;
-  }).join('');
-  // Re-observe dynamically added plan cards
-  document.querySelectorAll('#plans-grid .anim-scale').forEach(el=>obs.observe(el));
+  document.getElementById('plans').innerHTML=planos.map(p=>{const pop=p.tipo==='combo';return`<div class="plan${pop?' popular':''}">
+    ${pop?'<div class="pop-tag">Mais popular</div>':''}
+    <div class="plan-tipo">${tp[p.tipo]||p.tipo}</div><div class="plan-nome">${p.nome}</div>
+    <div class="plan-desc">${p.descricao||'Plano de associação'}</div>
+    <div class="plan-preco">${money(p.valor)} <span>/${p.periodicidade}</span></div>
+    <div class="plan-badges"><span class="badge badge-b">${p.periodicidade}</span>${p.tem_conecta?'<span class="badge badge-g">Conecta</span>':''}</div>
+    <button class="btn" onclick="abrirModal(planos.find(x=>x.id===${p.id}))">Associar-se</button>
+  </div>`}).join('');
 }
-
-function toggleFaq(btn){
-  const item=btn.parentElement;
-  const wasOpen=item.classList.contains('open');
-  document.querySelectorAll('.faq-item.open').forEach(i=>i.classList.remove('open'));
-  if(!wasOpen)item.classList.add('open');
-}
-
-const formFields=['f-razao','f-cpfcnpj','f-email','f-telefone','f-whatsapp','f-cep','f-logradouro','f-complemento','f-bairro','f-cidade','f-faturamento','f-funcionarios'];
-
 function abrirModal(p){
   document.getElementById('f-plano').value=p.id;
   document.getElementById('sel-nome').textContent=p.nome;
   document.getElementById('sel-val').textContent=money(p.valor)+'/'+p.periodicidade;
   document.getElementById('frm').style.display='';
-  document.getElementById('msg').className='msg';
-  document.getElementById('msg').style.display='none';
-  document.getElementById('btn-enviar').disabled=false;
-  document.getElementById('btn-enviar').textContent='Enviar Inscrição';
-  formFields.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('mo').classList.add('on');
-  document.body.style.overflow='hidden';
+  document.getElementById('msg').className='msg';document.getElementById('msg').style.display='none';
+  document.getElementById('btn-enviar').disabled=false;document.getElementById('btn-enviar').textContent='Enviar Inscrição';
+  ['f-empresa','f-cnpj','f-email','f-tel','f-wpp','f-cep','f-cidade'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-fat').value='';document.getElementById('f-func').value='';
+  document.getElementById('f-consent').checked=false;
+  document.getElementById('mo').classList.add('on');document.body.style.overflow='hidden';
 }
-
-function fecharModal(){
-  document.getElementById('mo').classList.remove('on');
-  document.body.style.overflow='';
-}
-
-async function buscarCep(){
-  const raw=document.getElementById('f-cep').value.replace(/\D/g,'');
-  if(raw.length!==8)return alert('Digite um CEP válido com 8 dígitos.');
-  try{
-    const r=await fetch('https://viacep.com.br/ws/'+raw+'/json/');
-    const d=await r.json();
-    if(d.erro)return alert('CEP não encontrado.');
-    document.getElementById('f-logradouro').value=d.logradouro||'';
-    document.getElementById('f-bairro').value=d.bairro||'';
-    document.getElementById('f-cidade').value=d.localidade||'';
-  }catch(e){alert('Erro ao consultar CEP.');}
-}
-
-document.getElementById('f-cep').addEventListener('blur',function(){
-  if(this.value.replace(/\D/g,'').length===8)buscarCep();
-});
-
+function fecharModal(){document.getElementById('mo').classList.remove('on');document.body.style.overflow='';}
+async function buscarCep(v){const cep=v.replace(/\D/g,'');if(cep.length!==8)return;try{const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');const d=await r.json();if(!d.erro)document.getElementById('f-cidade').value=(d.localidade||'')+'/'+d.uf;}catch(e){}}
 async function enviar(e){
-  e.preventDefault();
-  const btn=document.getElementById('btn-enviar');
-  const msg=document.getElementById('msg');
+  e.preventDefault();const btn=document.getElementById('btn-enviar');const msg=document.getElementById('msg');
   msg.className='msg';msg.style.display='none';
-  const razao=document.getElementById('f-razao').value.trim();
-  const cpfcnpj=document.getElementById('f-cpfcnpj').value.trim();
-  const telefone=document.getElementById('f-telefone').value.trim();
-  const email=document.getElementById('f-email').value.trim();
-  if(!document.getElementById('consent-terms').checked){msg.className='msg err';msg.textContent='Você precisa aceitar os termos para continuar.';msg.style.display='block';return false;}
-  if(!razao){msg.className='msg err';msg.textContent='Informe a Razão Social.';msg.style.display='block';return false;}
-  if(!cpfcnpj){msg.className='msg err';msg.textContent='Informe o CNPJ.';msg.style.display='block';return false;}
-  if(!telefone){msg.className='msg err';msg.textContent='Informe o telefone.';msg.style.display='block';return false;}
-  if(!email||!email.includes('@')){msg.className='msg err';msg.textContent='Informe um e-mail válido.';msg.style.display='block';return false;}
+  const empresa=document.getElementById('f-empresa').value.trim();const email=document.getElementById('f-email').value.trim();
+  if(!empresa){msg.className='msg err';msg.textContent='Informe a razão social';msg.style.display='block';return false;}
+  if(!email||!email.includes('@')){msg.className='msg err';msg.textContent='Informe um e-mail válido';msg.style.display='block';return false;}
+  if(!document.getElementById('f-consent').checked){msg.className='msg err';msg.textContent='Aceite os termos para continuar';msg.style.display='block';return false;}
   btn.disabled=true;btn.innerHTML='<div class="sp"></div> Enviando...';
-  const payload={
-    plano_id:parseInt(document.getElementById('f-plano').value),
-    razao_social:razao,cpf_cnpj:cpfcnpj,telefone:telefone,email:email,
-    cep:document.getElementById('f-cep').value.trim()||null,
-    logradouro:document.getElementById('f-logradouro').value.trim()||null,
-    complemento:document.getElementById('f-complemento').value.trim()||null,
-    bairro:document.getElementById('f-bairro').value.trim()||null,
-    cidade:document.getElementById('f-cidade').value.trim()||null,
-    faturamento_mensal:document.getElementById('f-faturamento').value||null,
-    num_funcionarios:document.getElementById('f-funcionarios').value||null
-  };
   try{
-    const r=await fetch(API+'/inscricoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await fetch(API+'/inscricoes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plano_id:parseInt(document.getElementById('f-plano').value),nome_empresa:empresa,cnpj:document.getElementById('f-cnpj').value.trim()||null,nome_contato:empresa,email:email,whatsapp:document.getElementById('f-wpp').value.trim()||null})});
     const d=await r.json();
-    if(d.ok){
-      document.getElementById('frm').style.display='none';
-      msg.className='msg ok';
-      msg.innerHTML='<strong>Inscrição recebida com sucesso!</strong><br>Entraremos em contato em breve pelo e-mail ou telefone informado. Obrigado por escolher a ACIC-DF!';
-      msg.style.display='block';
-    }else{
-      msg.className='msg err';msg.textContent=d.error||'Erro ao enviar. Tente novamente.';msg.style.display='block';
-      btn.disabled=false;btn.textContent='Enviar Inscrição';
-    }
-  }catch(err){
-    msg.className='msg err';msg.textContent='Erro de conexão. Verifique sua internet e tente novamente.';msg.style.display='block';
-    btn.disabled=false;btn.textContent='Enviar Inscrição';
-  }
+    if(d.ok){document.getElementById('frm').style.display='none';msg.className='msg ok';msg.innerHTML='<strong>Inscrição recebida!</strong><br>Entraremos em contato em breve.';msg.style.display='block';}
+    else{msg.className='msg err';msg.textContent=d.error||'Erro ao enviar.';msg.style.display='block';btn.disabled=false;btn.textContent='Enviar Inscrição';}
+  }catch(err){msg.className='msg err';msg.textContent='Erro de conexão.';msg.style.display='block';btn.disabled=false;btn.textContent='Enviar Inscrição';}
   return false;
 }
-
 init();
 </script>
 </body>
