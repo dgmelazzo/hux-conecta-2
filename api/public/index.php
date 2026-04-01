@@ -277,68 +277,46 @@ if ($method === 'POST' && $uri === '/auth/login') {
     $isCpfCnpj = !str_contains($login, '@') && strlen($docClean) >= 11;
 
     if ($isCpfCnpj) {
-        // ── LOGIN VIA CPF/CNPJ — valida no Conecta 2.0 e mapeia para associado ──
-        $conectaUrl = 'https://acicdf.org.br/conecta/auth.php?action=login';
-        $conectaPayload = ['cpf_cnpj' => $docClean, 'password' => $senha];
-        $ch = curl_init($conectaUrl);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 15,
-            CURLOPT_POST           => true,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-            CURLOPT_POSTFIELDS     => json_encode($conectaPayload),
-            CURLOPT_SSL_VERIFYPEER => true,
-        ]);
-        $conectaResp = curl_exec($ch);
-        $conectaCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $conectaErr  = curl_error($ch);
-        curl_close($ch);
+        // ── LOGIN VIA CPF/CNPJ — fluxo em 3 etapas via Conecta 2.0 ──
 
-        // Log para debug
-        error_log("[CRM-SSO] Conecta login attempt: doc=$docClean, url=$conectaUrl");
-        error_log("[CRM-SSO] Conecta response: code=$conectaCode, err=$conectaErr, body=" . substr($conectaResp ?: '(empty)', 0, 500));
+        // STEP 1: Check — verifica se o documento existe no Conecta 2.0
+        $checkResp = conectaApi('check', ['cpf_cnpj' => $docClean]);
+        error_log("[CRM-SSO] check doc=$docClean: ok=" . ($checkResp['_ok'] ? 'Y' : 'N') . " http=" . $checkResp['_http']);
 
-        if ($conectaErr || $conectaCode >= 400) {
-            error_log("[CRM-SSO] Conecta failed: curl_err=$conectaErr, http=$conectaCode");
-            json_out(['error' => 'Credenciais inválidas'], 401);
+        if (!$checkResp['_ok'] && ($checkResp['_http'] ?? 0) >= 400) {
+            json_out(['error' => 'CPF/CNPJ não encontrado como associado da ACIC-DF.'], 404);
         }
 
-        $conectaData = json_decode($conectaResp ?: '{}', true);
+        $checkData = $checkResp['data'] ?? $checkResp;
 
-        // Aceita qualquer resposta de sucesso do Conecta 2.0
-        $conectaOk = false;
-        if (!empty($conectaData)) {
-            // Possíveis formatos: {ok:true}, {success:true}, {id:...}, {user:...}, HTTP 200 com dados
-            $conectaOk = ($conectaData['ok'] ?? false)
-                      || ($conectaData['success'] ?? false)
-                      || !empty($conectaData['id'])
-                      || !empty($conectaData['user'])
-                      || !empty($conectaData['token']);
-        }
-
-        // Primeiro acesso: Conecta 2.0 diz que precisa criar senha
-        $primeiroAcesso = ($conectaData['data']['primeiro_acesso'] ?? false)
-                       || ($conectaData['primeiro_acesso'] ?? false);
+        // STEP 2: Se primeiro_acesso=true → retorna para frontend criar senha
+        $primeiroAcesso = ($checkData['primeiro_acesso'] ?? false);
         if ($primeiroAcesso) {
-            // Busca nome do associado para mostrar no frontend
-            $tid2  = tenant_id();
-            $fld2  = strlen($docClean) === 14 ? 'cnpj' : 'cpf';
-            $st2   = pdo()->prepare("SELECT nome_fantasia, razao_social, nome_responsavel FROM associados WHERE $fld2 = ? AND tenant_id = ? LIMIT 1");
-            $st2->execute([$docClean, $tid2]);
-            $a2 = $st2->fetch();
+            $nome = $checkData['nome'] ?? '';
+            // Tenta complementar nome do CRM local se Conecta não trouxe
+            if (!$nome) {
+                $fld2  = strlen($docClean) === 14 ? 'cnpj' : 'cpf';
+                $st2   = pdo()->prepare("SELECT nome_fantasia, razao_social, nome_responsavel FROM associados WHERE $fld2 = ? AND tenant_id = ? LIMIT 1");
+                $st2->execute([$docClean, tenant_id()]);
+                $a2 = $st2->fetch();
+                $nome = $a2['nome_fantasia'] ?? $a2['razao_social'] ?? $a2['nome_responsavel'] ?? '';
+            }
             json_out([
                 'primeiro_acesso' => true,
                 'documento'       => $docClean,
-                'nome'            => $a2['nome_fantasia'] ?? $a2['razao_social'] ?? $a2['nome_responsavel'] ?? '',
+                'nome'            => $nome,
             ]);
         }
 
-        if (!$conectaOk) {
-            error_log("[CRM-SSO] Conecta auth rejected: " . json_encode($conectaData));
+        // STEP 3: primeiro_acesso=false → tenta login com senha
+        $loginResp = conectaApi('login', ['cpf_cnpj' => $docClean, 'password' => $senha]);
+        error_log("[CRM-SSO] login doc=$docClean: ok=" . ($loginResp['_ok'] ? 'Y' : 'N') . " http=" . $loginResp['_http']);
+
+        if (!$loginResp['_ok']) {
             json_out(['error' => 'Credenciais inválidas'], 401);
         }
 
-        // Busca associado pelo documento no CRM
+        // Login OK — busca associado no CRM
         $tid   = tenant_id();
         $field = strlen($docClean) === 14 ? 'cnpj' : 'cpf';
         $stmt  = pdo()->prepare("SELECT * FROM associados WHERE $field = ? AND tenant_id = ? LIMIT 1");
@@ -354,7 +332,7 @@ if ($method === 'POST' && $uri === '/auth/login') {
         $role = in_array($categoria, ['colaborador', 'dependente']) ? 'colaborador' : 'associado_empresa';
 
         // Token SSO do Conecta 2.0 (para Portal do Associado)
-        $conectaToken = $conectaData['token'] ?? $conectaData['sso_token'] ?? null;
+        $conectaToken = $loginResp['data']['token'] ?? $loginResp['token'] ?? null;
 
         $token = jwt_encode([
             'sub'           => $assoc['id'],
