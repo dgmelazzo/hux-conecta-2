@@ -35,7 +35,7 @@ nav{flex:1;padding:12px 10px;overflow-y:auto}
 .btn-r{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:none;color:var(--rd);border:1.5px solid #FECACA;border-radius:8px;font-family:var(--f);font-size:12px;font-weight:500;cursor:pointer}
 .btn-r:hover{background:#FEF2F2}
 .ct{padding:24px 28px;flex:1}
-.kg{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.kg{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
 .kc{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:20px;transition:all .15s}
 .kc:hover{box-shadow:0 4px 16px rgba(0,0,0,.06);transform:translateY(-1px)}
 .ki{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
@@ -58,7 +58,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#F8FAFC}
 .by{background:#FFFBEB;color:#92400E}.bb{background:#EFF6FF;color:#1E40AF}.bgr{background:#F1F5F9;color:#475569}
 .sp{display:inline-block;width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--blue);border-radius:50%;animation:sp .6s linear infinite;flex-shrink:0}
 @keyframes sp{to{transform:rotate(360deg)}}
-.ld{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--t3);gap:8px;font-size:13px}
+.ld{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--t3);gap:8px;font-size:13px;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .em{text-align:center;padding:48px 24px;color:var(--t3);font-size:13px}
 .em svg{width:40px;height:40px;stroke:var(--bd);fill:none;stroke-width:1.5;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto}
 .pg2{display:none}.pg2.on{display:block}
@@ -100,7 +101,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 /* Planos */
 .assoc-tab{padding:6px 14px;border:1px solid var(--bd);border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;background:none;color:var(--t2);transition:all .15s}
 .assoc-tab.on{background:var(--or);color:#fff;border-color:var(--or)}
-.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;grid-auto-rows:1fr}
 .pl-card{background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;padding:20px;position:relative;transition:all .15s;display:flex;flex-direction:column;overflow:visible}
 .pl-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(37,99,235,.1)}
 .pl-tipo{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
@@ -154,7 +155,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   .main{margin-left:0}
   .tb{padding:0 16px}
   .ct{padding:16px}
-  .kg{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+  .kg{grid-template-columns:repeat(2,1fr);gap:12px}
   .g2{grid-template-columns:1fr}
   .fr{grid-template-columns:1fr}
   /* Modal: full-screen on mobile, no backdrop close */
@@ -186,7 +187,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   .tb{height:52px}
   .pt{font-size:14px}.ps{font-size:11px;display:none}
   .ct{padding:12px}
-  .kg{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+  .kg{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
   .kc{padding:12px}.kv{font-size:18px}.ki{width:30px;height:30px;margin-bottom:10px}
   .ki svg{width:14px;height:14px}
   .btn{padding:6px 12px;font-size:12px}
@@ -443,7 +444,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   <div class="mb">
     <button class="mc" onclick="cm('ma')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="mt2" id="ma-title">Novo Associado</div>
-    <div class="ms2">Cadastrar empresa ou pessoa física no sistema</div>
+    <div class="ms2" style="border-bottom:1px solid var(--bd);padding-bottom:16px">Cadastrar empresa ou pessoa física no sistema <span style="font-size:11px;color:var(--t3);display:block;margin-top:4px">* campos obrigatórios</span></div>
     <div class="fr">
       <div class="fg"><label class="fl3">Tipo</label><select class="fc" id="ft"><option value="pj">Pessoa Jurídica</option><option value="pf">Pessoa Física</option></select></div>
       <div class="fg"><label class="fl3">Status</label><select class="fc" id="fst"><option value="prospecto">Prospecto</option><option value="ativo">Ativo</option><option value="inadimplente">Inadimplente</option><option value="suspenso">Suspenso</option></select></div>
@@ -768,16 +769,16 @@ async function api(u,o={}){
   }catch(e){toast('Erro de conexão','err');return null;}
 }
 function logout(){localStorage.clear();location.href='/';}
-function toast(msg,type='ok'){const t=document.createElement('div');t.className='toast '+(type==='ok'?'ok':'err');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+function toast(msg,type='ok'){const t=document.createElement('div');t.className='toast '+(type==='ok'?'ok':'err');t.innerHTML=(type==='ok'?'<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>')+' '+msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
 function om(i){document.getElementById(i).classList.add('on');}
 function cm(i){document.getElementById(i).classList.remove('on');editId=null;}
 // Modals close only via X button (no backdrop click)
 
 // Navegação
-const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
+const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{t:'Dashboard',s:'Visão geral do sistema',b:''},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
 // Sidebar mobile
-function openSb(){document.getElementById('sb').classList.add('open');document.getElementById('sb-ov').classList.add('on');}
-function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('sb-ov').classList.remove('on');}
+function openSb(){document.getElementById('sb').classList.add('open');document.getElementById('sb-ov').classList.add('on');document.body.style.overflow='hidden';}
+function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('sb-ov').classList.remove('on');document.body.style.overflow='';}
 function go(n){
   closeSb();
   document.querySelectorAll('.pg2').forEach(x=>x.classList.remove('on'));
@@ -1097,7 +1098,7 @@ async function lc(p2=1){
     <td><strong>${x.razao_social||x.nome_responsavel||'-'}</strong></td>
     <td style="font-size:12px">${x.descricao||'-'}</td>
     <td style="font-weight:600">${money(x.valor)}</td>
-    <td style="font-size:12px;color:var(--t3)">${x.vencimento||'-'}</td>
+    <td style="font-size:12px;color:var(--t3)">${x.data_vencimento?new Date(x.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR'):'-'}</td>
     <td>${bs(x.status)}</td>
     <td style="white-space:nowrap">
       ${x.status==='pendente'?`<button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button>`:''}
@@ -1105,7 +1106,7 @@ async function lc(p2=1){
   </tr>`).join('')}</tbody></table>
   <div class="m-cards">${d.data.map(x=>`<div class="m-card">
     <div class="m-card-row"><div class="m-card-main">${x.razao_social||x.nome_responsavel||'-'}</div><div class="m-card-val">${money(x.valor)}</div></div>
-    <div class="m-card-row"><span style="font-size:12px;color:var(--t3)">Venc: ${x.vencimento||'-'}</span>${bs(x.status)}</div>
+    <div class="m-card-row"><span style="font-size:12px;color:var(--t3)">Venc: ${x.data_vencimento||'-'}</span>${bs(x.status)}</div>
     ${x.status==='pendente'?`<div class="m-card-acts"><button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button></div>`:''}</div>`).join('')}</div>`;
   const info=`${(p2-1)*20+1}–${Math.min(p2*20,d.total)} de ${d.total}`;
   const btns=Array.from({length:d.pages},(_,i)=>`<button class="pag-btn${i+1===p2?' on':''}" onclick="lc(${i+1})">${i+1}</button>`).join('');
@@ -1593,6 +1594,6 @@ async function gwSalvar(){var key=document.getElementById('gw-key').value.trim()
 // Init
 go('d');
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js" onload="if(typeof lp==='function'&&document.getElementById('pg3')?.children.length>1)lp()"></script>
 </body>
 </html>
