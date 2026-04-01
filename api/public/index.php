@@ -830,6 +830,29 @@ if ($method === 'PUT' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
     $vals[] = $m[1]; $vals[] = $tid;
     pdo()->prepare('UPDATE planos SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?')
          ->execute($vals);
+
+    // Processar itens[] se enviados — recria atomicamente
+    if (isset($b['itens']) && is_array($b['itens'])) {
+        pdo()->prepare('DELETE FROM plano_itens WHERE plano_id = ? AND tenant_id = ?')
+             ->execute([$m[1], $tid]);
+        $ordem = 0;
+        foreach ($b['itens'] as $item) {
+            if (empty($item['nome'])) continue;
+            pdo()->prepare(
+                'INSERT INTO plano_itens (plano_id, tenant_id, nome, conecta_produto_id, conecta_produto_nome, tipo_cobranca, parceiro_id, ordem, criado_em)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+            )->execute([
+                $m[1], $tid,
+                $item['nome'],
+                $item['conecta_produto_id'] ?? null,
+                $item['conecta_produto_nome'] ?? null,
+                $item['tipo_cobranca'] ?? 'incluso',
+                $item['parceiro_id'] ?? null,
+                $ordem++,
+            ]);
+        }
+    }
+
     json_out(['ok' => true, 'message' => 'Plano atualizado', 'id' => (int)$m[1]]);
 }
 

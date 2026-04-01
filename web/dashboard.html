@@ -122,6 +122,16 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 /* btn-s (save/primary) */
 .btn-s{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--or);color:#fff;border:none;border-radius:8px;font-family:var(--f);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
 .btn-s:hover{background:#C85D15}
+.btn-ghost{background:none;color:var(--or);border:1.5px dashed var(--bd);border-radius:8px;font-family:var(--f);cursor:pointer;transition:all .15s}
+.btn-ghost:hover{border-color:var(--or);background:rgba(232,112,26,.04)}
+.pl-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--lt);border:1px solid var(--bd);border-radius:6px;font-size:11px;font-weight:600;color:var(--tx)}
+.pl-chip button{background:none;border:none;color:var(--t3);cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 4px}
+.pl-chip button:hover{color:var(--rd)}
+.cpick{background:var(--sf);border:1.5px solid var(--bd);border-radius:8px;padding:10px;cursor:pointer;transition:all .15s;text-align:center}
+.cpick:hover{border-color:var(--blue);background:var(--lt)}
+.cpick.sel{border-color:var(--or);background:rgba(232,112,26,.06)}
+.cpick-name{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cpick-cat{font-size:10px;color:var(--t3);font-weight:500}
 .btn-s:disabled,.btn:disabled,.btn-o:disabled{opacity:.5;cursor:not-allowed}
 /* Hamburger */
 .hb{display:none;background:none;border:none;cursor:pointer;padding:8px;margin-right:8px;flex-shrink:0}
@@ -507,6 +517,16 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
         <div class="fg"><label class="fl3">Percentual HUX (%)</label><input type="number" class="fc" id="pl-split-pct" min="0" max="100" step="0.1" placeholder="2.0"></div>
       </div>
     </div>
+    <!-- Produtos incluídos -->
+    <div style="border-top:1px solid var(--bd);padding-top:14px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:8px">Produtos incluídos</div>
+      <div id="pl-itens-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+      <div class="fg"><input type="text" class="fc" id="pl-conecta-busca" placeholder="Buscar produto do Conecta 2.0..." oninput="filtrarPlConecta()" style="font-size:13px"></div>
+      <div id="pl-conecta-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;max-height:180px;overflow-y:auto"></div>
+      <div style="margin-top:8px">
+        <button type="button" class="btn-ghost" style="font-size:12px;padding:6px 12px" onclick="addPlManualItem()">+ Produto externo (manual)</button>
+      </div>
+    </div>
     <div class="mf">
       <button class="btn-o" onclick="cm('mpl')">Cancelar</button>
       <button class="btn" onclick="spl()">Salvar Plano</button>
@@ -769,7 +789,7 @@ function go(n){
 }
 function act(){const on=document.querySelector('.pg2.on')?.id;
   if(on==='pd'||on==='pa'){editId=null;document.getElementById('ma-title').textContent='Novo Associado';limpaCampos(['frz','fnf','fd','fe','ftel','fw','fobs']);document.getElementById('fst').value='prospecto';document.getElementById('fvc').value='';document.getElementById('fcat').disabled=false;om('ma');}
-  else if(on==='pp'){document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';limpaCampos(['pl-nome','pl-val','pl-anual','pl-desc']);document.getElementById('pl-split-ativo').checked=false;document.getElementById('pl-split-pct-wrap').style.display='none';om('mpl');}
+  else if(on==='pp'){document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';limpaCampos(['pl-nome','pl-val','pl-anual','pl-desc','pl-val-adesao']);document.getElementById('pl-split-ativo').checked=false;document.getElementById('pl-split-pct-wrap').style.display='none';_plSelectedItems=[];renderPlChips();loadPlConecta().then(()=>renderPlConectaGrid());om('mpl');}
   else if(on==='pc'){carregaAssocs();om('mcob');}
   else if(on==='pu')om('musr');
   else if(on==='ppar'){document.getElementById('par-id').value='';document.getElementById('par-title').textContent='Novo Parceiro';['par-nome','par-cnpj','par-email','par-wallet','par-split'].forEach(id=>{document.getElementById(id).value='';});om('mpar');}
@@ -972,8 +992,45 @@ async function lp(){
       </div>
     </div>`}).join('');
 }
+// Plan modal — product picker state
+let _plSelectedItems=[],_plConectaCache=[];
+async function loadPlConecta(){
+  if(_plConectaCache.length)return;
+  try{const r=await api('/conecta/produtos');_plConectaCache=(r?.data?.data||r?.data||r||[]);if(!Array.isArray(_plConectaCache))_plConectaCache=[];}catch(e){_plConectaCache=[];}
+}
+function renderPlConectaGrid(filter){
+  const q=(filter||'').toLowerCase();
+  const items=q?_plConectaCache.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.categoria_nome||'').toLowerCase().includes(q)):_plConectaCache;
+  const selIds=_plSelectedItems.filter(i=>i.conecta_produto_id).map(i=>i.conecta_produto_id);
+  document.getElementById('pl-conecta-grid').innerHTML=items.length===0
+    ?'<div style="padding:16px;font-size:12px;color:var(--t3);grid-column:1/-1;text-align:center">'+(q?'Nenhum produto encontrado':'Carregando...')+'</div>'
+    :items.map(p=>`<div class="cpick${selIds.includes(p.id)?' sel':''}" onclick="togglePlProduto(${p.id},'${(p.nome||'').replace(/'/g,"\\'")}','${(p.categoria_nome||'').replace(/'/g,"\\'")}')">
+      <div class="cpick-name">${p.nome||'-'}</div>
+      <div class="cpick-cat">${p.categoria_nome||'Geral'}</div>
+    </div>`).join('');
+}
+function togglePlProduto(id,nome,cat){
+  const idx=_plSelectedItems.findIndex(i=>i.conecta_produto_id===id);
+  if(idx>=0){_plSelectedItems.splice(idx,1);}
+  else{_plSelectedItems.push({conecta_produto_id:id,nome,conecta_produto_nome:nome,tipo_cobranca:'incluso',parceiro_id:null,_cat:cat});}
+  renderPlChips();renderPlConectaGrid(document.getElementById('pl-conecta-busca').value);
+}
+function addPlManualItem(){
+  const nome=prompt('Nome do produto externo:');
+  if(!nome||!nome.trim())return;
+  _plSelectedItems.push({conecta_produto_id:null,nome:nome.trim(),conecta_produto_nome:null,tipo_cobranca:'incluso',parceiro_id:null,_cat:'Externo'});
+  renderPlChips();
+}
+function removePlItem(idx){_plSelectedItems.splice(idx,1);renderPlChips();renderPlConectaGrid(document.getElementById('pl-conecta-busca').value);}
+function renderPlChips(){
+  document.getElementById('pl-itens-chips').innerHTML=_plSelectedItems.length===0
+    ?'<span style="font-size:12px;color:var(--t3)">Nenhum produto selecionado</span>'
+    :_plSelectedItems.map((i,idx)=>`<span class="pl-chip">${i.nome} <span style="color:var(--t3);font-size:9px">${i._cat||''}</span><button onclick="removePlItem(${idx})">✕</button></span>`).join('');
+}
+function filtrarPlConecta(){renderPlConectaGrid(document.getElementById('pl-conecta-busca').value);}
+
 async function spl(){
-  const b={nome:document.getElementById('pl-nome').value,tipo:document.getElementById('pl-tipo').value,valor:document.getElementById('pl-val').value,periodicidade:document.getElementById('pl-per').value,descricao:document.getElementById('pl-desc').value,valor_adesao:parseFloat(document.getElementById('pl-val-adesao')?.value)||0,valor_recorrencia:parseFloat(document.getElementById('pl-val-recorr')?.value)||0,split_ativo:document.getElementById('pl-split-ativo')?.checked?1:0,split_percentual:parseFloat(document.getElementById('pl-split-pct')?.value)||0};
+  const b={nome:document.getElementById('pl-nome').value,tipo:document.getElementById('pl-tipo').value,valor:document.getElementById('pl-val').value,periodicidade:document.getElementById('pl-per').value,descricao:document.getElementById('pl-desc').value,valor_adesao:parseFloat(document.getElementById('pl-val-adesao')?.value)||0,split_ativo:document.getElementById('pl-split-ativo')?.checked?1:0,split_percentual:parseFloat(document.getElementById('pl-split-pct')?.value)||0,itens:_plSelectedItems.map(i=>({nome:i.nome,conecta_produto_id:i.conecta_produto_id,conecta_produto_nome:i.conecta_produto_nome,tipo_cobranca:i.tipo_cobranca,parceiro_id:i.parceiro_id}))};
   if(!b.nome||!b.valor){toast('Informe o nome e o valor de recorrência','err');return;}
   const pid=document.getElementById('pl-id').value;
   const r=pid
@@ -987,15 +1044,13 @@ function setPlTipo(tipo,btn){
   document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>b.classList.remove('on'));
   if(btn)btn.classList.add('on');
 }
-function editPlano(p){
+async function editPlano(p){
   document.getElementById('pl-id').value=p.id||'';
   document.getElementById('pl-nome').value=p.nome||'';
-  // Set tipo via pills
   document.getElementById('pl-tipo').value=p.tipo||'mei';
   document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>{b.classList.remove('on');if(b.textContent.toLowerCase()===p.tipo||(p.tipo==='personalizado'&&b.textContent==='Outro'))b.classList.add('on');});
   document.getElementById('pl-val').value=p.valor||'';
   document.getElementById('pl-val-adesao').value=p.valor_adesao||'';
-  document.getElementById('pl-val-recorr')&&(document.getElementById('pl-val-recorr').value=p.valor_recorrencia||'');
   document.getElementById('pl-anual').value=p.valor_anual||'';
   document.getElementById('pl-per').value=p.periodicidade||'mensal';
   document.getElementById('pl-desc').value=p.descricao||'';
@@ -1003,6 +1058,11 @@ function editPlano(p){
   var splitCb=document.getElementById('pl-split-ativo');
   if(splitCb){splitCb.checked=!!p.split_ativo;document.getElementById('pl-split-pct-wrap').style.display=p.split_ativo?'block':'none';}
   if(document.getElementById('pl-split-pct'))document.getElementById('pl-split-pct').value=p.split_percentual||'';
+  // Load items into picker
+  _plSelectedItems=(p.itens||[]).map(i=>({conecta_produto_id:i.conecta_produto_id||null,nome:i.nome,conecta_produto_nome:i.conecta_produto_nome||null,tipo_cobranca:i.tipo_cobranca||'incluso',parceiro_id:i.parceiro_id||null,_cat:i.conecta_produto_nome?'Conecta':'Externo'}));
+  renderPlChips();
+  await loadPlConecta();
+  renderPlConectaGrid();
   om('mpl');
 }
 async function delPlano(id,nome){
