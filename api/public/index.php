@@ -130,6 +130,45 @@ function require_role(array $payload, array $roles): void {
     }
 }
 
+// ── CONECTA 2.0 HELPERS ──────────────────────────────────────────────────────
+
+function conectaApi(string $action, array $data): array {
+    $url = 'https://acicdf.org.br/conecta/auth.php?action=' . $action;
+    $ch  = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS     => json_encode($data),
+        CURLOPT_SSL_VERIFYPEER => true,
+    ]);
+    $resp = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_error($ch);
+    curl_close($ch);
+    error_log("[CRM-CONECTA] action=$action code=$code err=$err body=" . substr($resp ?: '', 0, 500));
+    $decoded = json_decode($resp ?: '{}', true) ?? [];
+    $decoded['_http'] = $code;
+    $decoded['_ok']   = $code < 400 && (($decoded['success'] ?? false) || ($decoded['ok'] ?? false) || !empty($decoded['id']) || !empty($decoded['token']));
+    return $decoded;
+}
+
+function conectaSyncUser(string $doc, string $nome): void {
+    $secret = $_ENV['CRM_SECRET'] ?? '';
+    if (!$doc || !$secret) return;
+    // Check if user exists in Conecta 2.0
+    $check = conectaApi('check', ['cpf_cnpj' => $doc, 'secret' => $secret]);
+    if (!($check['exists'] ?? false) && !($check['_ok'] ?? false)) {
+        // Register in Conecta 2.0
+        conectaApi('register_from_crm', [
+            'cpf_cnpj' => $doc,
+            'nome'     => $nome,
+            'secret'   => $secret,
+        ]);
+    }
+}
+
 // ── ASAAS ────────────────────────────────────────────────────────────────────
 
 function asaasReq(string $method, string $path, array $data = []): array {
@@ -277,6 +316,23 @@ if ($method === 'POST' && $uri === '/auth/login') {
                       || !empty($conectaData['token']);
         }
 
+        // Primeiro acesso: Conecta 2.0 diz que precisa criar senha
+        $primeiroAcesso = ($conectaData['data']['primeiro_acesso'] ?? false)
+                       || ($conectaData['primeiro_acesso'] ?? false);
+        if ($primeiroAcesso) {
+            // Busca nome do associado para mostrar no frontend
+            $tid2  = tenant_id();
+            $fld2  = strlen($docClean) === 14 ? 'cnpj' : 'cpf';
+            $st2   = pdo()->prepare("SELECT nome_fantasia, razao_social, nome_responsavel FROM associados WHERE $fld2 = ? AND tenant_id = ? LIMIT 1");
+            $st2->execute([$docClean, $tid2]);
+            $a2 = $st2->fetch();
+            json_out([
+                'primeiro_acesso' => true,
+                'documento'       => $docClean,
+                'nome'            => $a2['nome_fantasia'] ?? $a2['razao_social'] ?? $a2['nome_responsavel'] ?? '',
+            ]);
+        }
+
         if (!$conectaOk) {
             error_log("[CRM-SSO] Conecta auth rejected: " . json_encode($conectaData));
             json_out(['error' => 'Credenciais inválidas'], 401);
@@ -364,6 +420,73 @@ if ($method === 'POST' && $uri === '/auth/login') {
 // ── GET /auth/me ──────────────────────────────────────────────────────────────
 if ($method === 'GET' && $uri === '/auth/me') {
     json_out(auth_required());
+}
+
+// ── POST /auth/primeiro-acesso — cria senha no Conecta 2.0 (público) ─────────
+if ($method === 'POST' && $uri === '/auth/primeiro-acesso') {
+    $b = body();
+    $doc   = preg_replace('/\D/', '', $b['documento'] ?? '');
+    $senha = $b['senha'] ?? '';
+
+    if (!$doc || strlen($doc) < 11) json_out(['error' => 'Documento inválido'], 422);
+    if (strlen($senha) < 8) json_out(['error' => 'A senha deve ter no mínimo 8 caracteres'], 422);
+
+    // Chama Conecta 2.0 para definir senha no primeiro acesso
+    $resp = conectaApi('first', ['cpf_cnpj' => $doc, 'password' => $senha]);
+
+    if (!$resp['_ok']) {
+        json_out(['error' => $resp['message'] ?? 'Erro ao criar senha no Conecta 2.0'], 502);
+    }
+
+    // Find or create associado no CRM
+    $tid   = tenant_id();
+    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+    $stmt  = pdo()->prepare("SELECT * FROM associados WHERE $field = ? AND tenant_id = ? LIMIT 1");
+    $stmt->execute([$doc, $tid]);
+    $assoc = $stmt->fetch();
+
+    if (!$assoc) {
+        // Cria associado automaticamente
+        $nome = $resp['nome'] ?? $b['nome'] ?? 'Associado';
+        pdo()->prepare(
+            "INSERT INTO associados (tenant_id, tipo_pessoa, nome_fantasia, $field, status, criado_em)
+             VALUES (?, ?, ?, ?, 'ativo', NOW())"
+        )->execute([$tid, strlen($doc) === 14 ? 'pj' : 'pf', $nome, $doc]);
+        $assocId = (int)pdo()->lastInsertId();
+        $stmt->execute([$doc, $tid]);
+        $assoc = $stmt->fetch();
+    }
+
+    $assocId  = (int)$assoc['id'];
+    $categoria = $assoc['categoria'] ?? 'empresa';
+    $role = in_array($categoria, ['colaborador', 'dependente']) ? 'colaborador' : 'associado_empresa';
+
+    $token = jwt_encode([
+        'sub'          => $assocId,
+        'documento'    => $doc,
+        'nome'         => $assoc['nome_fantasia'] ?? $assoc['razao_social'] ?? $assoc['nome_responsavel'],
+        'email'        => $assoc['email'],
+        'role'         => $role,
+        'tenant_id'    => $tid,
+        'associado_id' => $assocId,
+        'sso'          => true,
+    ]);
+
+    $conectaToken = $resp['token'] ?? $resp['sso_token'] ?? null;
+
+    $response = [
+        'token' => $token,
+        'user'  => [
+            'id'           => $assocId,
+            'nome'         => $assoc['nome_fantasia'] ?? $assoc['razao_social'] ?? $assoc['nome_responsavel'],
+            'email'        => $assoc['email'],
+            'role'         => $role,
+            'associado_id' => $assocId,
+        ],
+    ];
+    if ($conectaToken) $response['conecta_token'] = $conectaToken;
+
+    json_out($response);
 }
 
 // ── POST /auth/criar-usuario — cria gestor/atendente (só superadmin/gestor) ───
@@ -548,7 +671,14 @@ if ($method === 'POST' && $uri === '/associados') {
         $p['sub'],
     ]);
 
-    json_out(['message' => 'Associado criado', 'id' => (int)pdo()->lastInsertId()], 201);
+    $newId = (int)pdo()->lastInsertId();
+
+    // Sync to Conecta 2.0: register user if has documento
+    if ($doc) {
+        conectaSyncUser($doc, $b['nome_fantasia'] ?? $b['razao_social'] ?? 'Associado');
+    }
+
+    json_out(['message' => 'Associado criado', 'id' => $newId], 201);
 }
 
 // PUT /associados/{id}
@@ -1563,6 +1693,11 @@ if ($method === 'POST' && preg_match('#^/inscricoes/(\d+)/aprovar$#', $uri, $m))
     pdo()->prepare('UPDATE inscricoes_publicas SET status = "aprovado", prospecto_id = ?, convertido_em = NOW() WHERE id = ?')
          ->execute([$assocId, $m[1]]);
 
+    // Sync to Conecta 2.0
+    if ($doc) {
+        conectaSyncUser($doc, $insc['nome_empresa'] ?? 'Associado');
+    }
+
     json_out(['message' => 'Inscrição aprovada', 'associado_id' => $assocId]);
 }
 
@@ -1796,6 +1931,89 @@ if ($method === 'POST' && preg_match('#^/associados/(\d+)/redefinir-senha$#', $u
         : "Senha salva no CRM. O Conecta 2.0 será atualizado no próximo login.";
 
     json_out(['message' => $msg, 'associado' => $nome, 'conecta_atualizado' => $conectaOk]);
+}
+
+// ============================================================
+// SYNC — Conecta 2.0 → CRM (webhook de sincronização)
+// POST /sync/conecta  (autenticado via X-CRM-Secret header)
+// ============================================================
+if ($method === 'POST' && $uri === '/sync/conecta') {
+    $secret = $_ENV['CRM_SECRET'] ?? '';
+    $headerSecret = $_SERVER['HTTP_X_CRM_SECRET'] ?? '';
+
+    if (!$secret || $headerSecret !== $secret) {
+        json_out(['error' => 'Unauthorized'], 401);
+    }
+
+    $b      = body();
+    $action = $b['action'] ?? '';
+    $doc    = preg_replace('/\D/', '', $b['documento'] ?? $b['cpf_cnpj'] ?? '');
+    $tid    = tenant_id();
+
+    if (!$doc) json_out(['error' => 'Documento obrigatório'], 422);
+
+    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+    $stmt  = pdo()->prepare("SELECT * FROM associados WHERE $field = ? AND tenant_id = ? LIMIT 1");
+    $stmt->execute([$doc, $tid]);
+    $assoc = $stmt->fetch();
+
+    if ($action === 'upsert') {
+        $nome   = $b['nome'] ?? $b['nome_fantasia'] ?? 'Associado';
+        $status = $b['status'] ?? 'ativo';
+
+        if ($assoc) {
+            // Update
+            $sets = ['atualizado_em = NOW()'];
+            $vals = [];
+            if (!empty($b['nome']))        { $sets[] = 'nome_fantasia = ?'; $vals[] = $b['nome']; }
+            if (!empty($b['higestor_id'])) { $sets[] = 'higestor_id = ?';   $vals[] = $b['higestor_id']; }
+            if (!empty($b['status']))      { $sets[] = 'status = ?';        $vals[] = $b['status']; }
+            if (!empty($b['email']))       { $sets[] = 'email = ?';         $vals[] = $b['email']; }
+            if (!empty($b['conecta_user_id'])) { $sets[] = 'conecta_user_id = ?'; $vals[] = $b['conecta_user_id']; }
+            $vals[] = $assoc['id'];
+            pdo()->prepare('UPDATE associados SET ' . implode(', ', $sets) . ' WHERE id = ?')->execute($vals);
+            json_out(['message' => 'Associado atualizado', 'id' => $assoc['id']]);
+        } else {
+            // Create
+            pdo()->prepare(
+                "INSERT INTO associados (tenant_id, tipo_pessoa, nome_fantasia, $field, email, status, higestor_id, conecta_user_id, criado_em)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+            )->execute([
+                $tid,
+                strlen($doc) === 14 ? 'pj' : 'pf',
+                $nome,
+                $doc,
+                $b['email'] ?? null,
+                $status,
+                $b['higestor_id'] ?? null,
+                $b['conecta_user_id'] ?? null,
+            ]);
+            json_out(['message' => 'Associado criado via sync', 'id' => (int)pdo()->lastInsertId()], 201);
+        }
+    }
+
+    if ($action === 'status_change') {
+        if (!$assoc) json_out(['error' => 'Associado não encontrado'], 404);
+        $newStatus = $b['status'] ?? '';
+        if (!in_array($newStatus, ['ativo','inadimplente','suspenso','cancelado','prospecto'])) {
+            json_out(['error' => 'Status inválido'], 422);
+        }
+        pdo()->prepare('UPDATE associados SET status = ?, atualizado_em = NOW() WHERE id = ?')
+             ->execute([$newStatus, $assoc['id']]);
+        json_out(['message' => 'Status atualizado', 'id' => $assoc['id'], 'status' => $newStatus]);
+    }
+
+    if ($action === 'password_set') {
+        if (!$assoc) json_out(['error' => 'Associado não encontrado'], 404);
+        // Clear pending password hash since Conecta 2.0 now has the password
+        $extras = json_decode($assoc['campos_extras'] ?? '{}', true) ?? [];
+        unset($extras['pending_password_hash']);
+        pdo()->prepare('UPDATE associados SET campos_extras = ?, atualizado_em = NOW() WHERE id = ?')
+             ->execute([json_encode($extras), $assoc['id']]);
+        json_out(['message' => 'Password flag atualizada', 'id' => $assoc['id']]);
+    }
+
+    json_out(['error' => 'Action inválida: ' . $action], 422);
 }
 
 // ============================================================

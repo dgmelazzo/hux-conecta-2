@@ -1,0 +1,272 @@
+<?php
+/**
+ * auth.php — Conecta 2.0 Authentication API (HostGator)
+ * Location: https://acicdf.org.br/conecta/auth.php
+ *
+ * Actions: login, first, check, register_from_crm, reset_password
+ *
+ * This file should be uploaded manually to HostGator via WinSCP/cPanel.
+ * It replaces or extends the existing auth.php on the Conecta 2.0 platform.
+ *
+ * CRM_SECRET must match between this file and the CRM .env
+ */
+declare(strict_types=1);
+
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, X-CRM-Secret');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+// IMPORTANT: Update these values for your HostGator environment
+$DB_HOST = 'localhost';
+$DB_NAME = 'acicdf_conecta';  // HostGator database name
+$DB_USER = 'acicdf_conecta';  // HostGator database user
+$DB_PASS = '';                 // SET THIS — HostGator database password
+
+$CRM_SECRET  = 'cd1ea530c9d364f13e4b6911dcf7a59a431d023b3ab6db62d62acbfd8453ddfb';
+$CRM_API_URL = 'https://api.acicdf.org.br';
+// ────────────────────────────────────────────────────────────────────────────
+
+$action = $_GET['action'] ?? '';
+$body   = json_decode(file_get_contents('php://input') ?: '{}', true) ?? [];
+
+try {
+    $pdo = new PDO(
+        "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4",
+        $DB_USER, $DB_PASS,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
+    );
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database connection error']);
+    exit;
+}
+
+function respond(array $data, int $code = 200): never {
+    http_response_code($code);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+function notifyCRM(string $action, array $data): void {
+    global $CRM_SECRET, $CRM_API_URL;
+    $data['action'] = $action;
+    $ch = curl_init($CRM_API_URL . '/sync/conecta');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'X-CRM-Secret: ' . $CRM_SECRET,
+        ],
+        CURLOPT_POSTFIELDS     => json_encode($data),
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
+}
+
+// ============================================================
+// ACTION: login
+// ============================================================
+if ($action === 'login') {
+    $doc    = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
+    $passwd = $body['password'] ?? '';
+
+    if (!$doc || !$passwd) {
+        respond(['success' => false, 'message' => 'CPF/CNPJ e senha obrigatórios'], 422);
+    }
+
+    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+    $stmt  = $pdo->prepare("SELECT * FROM conecta_users WHERE $field = ? LIMIT 1");
+    $stmt->execute([$doc]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        respond(['success' => false, 'message' => 'Credenciais invalidas.'], 401);
+    }
+
+    // Primeiro acesso: user exists but has no password yet
+    if (!empty($user['primeiro_acesso']) || empty($user['senha_hash'])) {
+        respond([
+            'success'        => true,
+            'primeiro_acesso' => true,
+            'data'           => [
+                'primeiro_acesso' => true,
+                'nome'           => $user['nome'] ?? '',
+            ],
+        ]);
+    }
+
+    // Verify password
+    if (!password_verify($passwd, $user['senha_hash'])) {
+        respond(['success' => false, 'message' => 'Credenciais invalidas.'], 401);
+    }
+
+    // Update last login
+    $pdo->prepare('UPDATE conecta_users SET ultimo_login = NOW() WHERE id = ?')->execute([$user['id']]);
+
+    // Notify CRM of successful login
+    notifyCRM('upsert', [
+        'documento'       => $doc,
+        'nome'            => $user['nome'] ?? '',
+        'email'           => $user['email'] ?? '',
+        'conecta_user_id' => $user['id'],
+    ]);
+
+    // Generate simple session token
+    $token = bin2hex(random_bytes(32));
+    $pdo->prepare(
+        'INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+         VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))'
+    )->execute([$user['id'], $token]);
+
+    respond([
+        'success' => true,
+        'token'   => $token,
+        'user'    => [
+            'id'   => $user['id'],
+            'nome' => $user['nome'] ?? '',
+        ],
+    ]);
+}
+
+// ============================================================
+// ACTION: first — primeiro acesso, define senha
+// ============================================================
+if ($action === 'first') {
+    $doc    = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
+    $passwd = $body['password'] ?? '';
+
+    if (!$doc) respond(['success' => false, 'message' => 'CPF/CNPJ obrigatório'], 422);
+    if (strlen($passwd) < 8) respond(['success' => false, 'message' => 'Senha mínima 8 caracteres'], 422);
+
+    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+    $stmt  = $pdo->prepare("SELECT * FROM conecta_users WHERE $field = ? LIMIT 1");
+    $stmt->execute([$doc]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        respond(['success' => false, 'message' => 'Usuário não encontrado'], 404);
+    }
+
+    $hash = password_hash($passwd, PASSWORD_BCRYPT);
+    $pdo->prepare('UPDATE conecta_users SET senha_hash = ?, primeiro_acesso = 0, atualizado_em = NOW() WHERE id = ?')
+         ->execute([$hash, $user['id']]);
+
+    // Notify CRM
+    notifyCRM('password_set', ['documento' => $doc]);
+    notifyCRM('upsert', [
+        'documento'       => $doc,
+        'nome'            => $user['nome'] ?? '',
+        'conecta_user_id' => $user['id'],
+    ]);
+
+    // Generate token
+    $token = bin2hex(random_bytes(32));
+    $pdo->prepare(
+        'INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+         VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))'
+    )->execute([$user['id'], $token]);
+
+    respond([
+        'success' => true,
+        'token'   => $token,
+        'nome'    => $user['nome'] ?? '',
+        'user'    => ['id' => $user['id'], 'nome' => $user['nome'] ?? ''],
+    ]);
+}
+
+// ============================================================
+// ACTION: check — verifica se CPF/CNPJ existe
+// ============================================================
+if ($action === 'check') {
+    $secret = $body['secret'] ?? '';
+    if ($secret !== $CRM_SECRET) respond(['success' => false, 'message' => 'Unauthorized'], 401);
+
+    $doc   = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
+    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+    $stmt  = $pdo->prepare("SELECT id, nome FROM conecta_users WHERE $field = ? LIMIT 1");
+    $stmt->execute([$doc]);
+    $user = $stmt->fetch();
+
+    respond([
+        'success' => true,
+        'exists'  => (bool)$user,
+        'user_id' => $user['id'] ?? null,
+        'nome'    => $user['nome'] ?? null,
+    ]);
+}
+
+// ============================================================
+// ACTION: register_from_crm — CRM cria usuário no Conecta
+// ============================================================
+if ($action === 'register_from_crm') {
+    $secret = $body['secret'] ?? '';
+    if ($secret !== $CRM_SECRET) respond(['success' => false, 'message' => 'Unauthorized'], 401);
+
+    $doc  = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
+    $nome = $body['nome'] ?? 'Associado';
+
+    if (!$doc) respond(['success' => false, 'message' => 'CPF/CNPJ obrigatório'], 422);
+
+    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+
+    // Check if already exists
+    $stmt = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+    $stmt->execute([$doc]);
+    if ($stmt->fetch()) {
+        respond(['success' => true, 'message' => 'Usuário já existe', 'primeiro_acesso' => true]);
+    }
+
+    // Create with primeiro_acesso=1
+    $pdo->prepare(
+        "INSERT INTO conecta_users ($field, nome, primeiro_acesso, criado_em)
+         VALUES (?, ?, 1, NOW())"
+    )->execute([$doc, $nome]);
+
+    respond([
+        'success'         => true,
+        'message'         => 'Usuário criado',
+        'primeiro_acesso' => true,
+        'id'              => (int)$pdo->lastInsertId(),
+    ], 201);
+}
+
+// ============================================================
+// ACTION: reset_password — superadmin redefine senha
+// ============================================================
+if ($action === 'reset_password') {
+    $secret = $body['admin_secret'] ?? '';
+    if ($secret !== $CRM_SECRET) respond(['success' => false, 'message' => 'Unauthorized'], 401);
+
+    $doc      = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
+    $newPass  = $body['new_password'] ?? '';
+
+    if (!$doc) respond(['success' => false, 'message' => 'CPF/CNPJ obrigatório'], 422);
+    if (strlen($newPass) < 6) respond(['success' => false, 'message' => 'Senha mínima 6 caracteres'], 422);
+
+    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+    $stmt  = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+    $stmt->execute([$doc]);
+    $user = $stmt->fetch();
+
+    if (!$user) respond(['success' => false, 'message' => 'Usuário não encontrado'], 404);
+
+    $hash = password_hash($newPass, PASSWORD_BCRYPT);
+    $pdo->prepare('UPDATE conecta_users SET senha_hash = ?, primeiro_acesso = 0, atualizado_em = NOW() WHERE id = ?')
+         ->execute([$hash, $user['id']]);
+
+    // Notify CRM
+    notifyCRM('password_set', ['documento' => $doc]);
+
+    respond(['success' => true, 'message' => 'Senha redefinida']);
+}
+
+// ============================================================
+// Unknown action
+// ============================================================
+respond(['success' => false, 'message' => 'Action não reconhecida: ' . $action], 400);

@@ -79,6 +79,7 @@ body{font-family:var(--f);margin:0;background:var(--bg)}
 
       <div id="err" class="err-box" style="display:none"></div>
 
+      <!-- Login form -->
       <form id="frm" onsubmit="return login(event)">
         <div class="fg">
           <label class="fl">E-mail ou CNPJ/CPF</label>
@@ -90,6 +91,27 @@ body{font-family:var(--f);margin:0;background:var(--bg)}
         </div>
         <button type="submit" class="btn-login" id="btn">Entrar</button>
       </form>
+
+      <!-- Primeiro Acesso form (hidden by default) -->
+      <div id="primeiro-acesso" style="display:none">
+        <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 14px;font-size:13px;color:#1E40AF;margin-bottom:18px">
+          <strong>Primeiro acesso!</strong><br>Crie uma senha para acessar o painel.
+        </div>
+        <div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:16px" id="pa-nome"></div>
+        <form id="frm-pa" onsubmit="return submitPrimeiroAcesso(event)">
+          <input type="hidden" id="pa-doc">
+          <div class="fg">
+            <label class="fl">Nova Senha (mín. 8 caracteres)</label>
+            <input type="password" class="fc" id="pa-senha" placeholder="Crie uma senha segura" required minlength="8">
+          </div>
+          <div class="fg">
+            <label class="fl">Confirmar Senha</label>
+            <input type="password" class="fc" id="pa-senha2" placeholder="Repita a senha" required>
+          </div>
+          <button type="submit" class="btn-login" id="btn-pa">Criar senha e entrar</button>
+        </form>
+        <button onclick="voltarLogin()" style="background:none;border:none;color:var(--t3);font-size:13px;cursor:pointer;margin-top:12px;font-family:var(--f)">Voltar ao login</button>
+      </div>
 
       <div class="footer-text">Conecta CRM &copy; <script>document.write(new Date().getFullYear())</script> — HUX Participações</div>
     </div>
@@ -136,11 +158,21 @@ async function login(e){
     });
     const d=await r.json();
 
-    // API returns {ok: true, data: {token: "...", user: {...}}}
+    // Primeiro acesso: show create password form
+    if(d.ok && d.data && d.data.primeiro_acesso){
+      document.getElementById('frm').style.display='none';
+      document.getElementById('err').style.display='none';
+      document.getElementById('pa-doc').value=d.data.documento;
+      document.getElementById('pa-nome').textContent='Bem-vindo, '+(d.data.nome||'Associado')+'!';
+      document.getElementById('primeiro-acesso').style.display='';
+      btn.disabled=false;btn.textContent='Entrar';
+      return false;
+    }
+
+    // Normal login success
     if(d.ok && d.data && d.data.token){
       localStorage.setItem('crm_token', d.data.token);
       localStorage.setItem('crm_user', JSON.stringify(d.data.user));
-      // Store conecta_token for Portal do Associado SSO
       if(d.data.conecta_token){
         sessionStorage.setItem('conecta_token', d.data.conecta_token);
       }
@@ -157,6 +189,49 @@ async function login(e){
     err.style.display='block';
     btn.disabled=false;
     btn.textContent='Entrar';
+  }
+  return false;
+}
+
+function voltarLogin(){
+  document.getElementById('primeiro-acesso').style.display='none';
+  document.getElementById('frm').style.display='';
+}
+
+async function submitPrimeiroAcesso(e){
+  e.preventDefault();
+  const err=document.getElementById('err');
+  const btn=document.getElementById('btn-pa');
+  const senha=document.getElementById('pa-senha').value;
+  const senha2=document.getElementById('pa-senha2').value;
+  err.style.display='none';
+
+  if(senha.length<8){err.textContent='A senha deve ter no mínimo 8 caracteres.';err.style.display='block';return false;}
+  if(senha!==senha2){err.textContent='As senhas não conferem.';err.style.display='block';return false;}
+
+  btn.disabled=true;btn.innerHTML='<div class="sp"></div> Criando senha...';
+
+  try{
+    const r=await fetch(API+'/auth/primeiro-acesso',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({documento:document.getElementById('pa-doc').value,senha})
+    });
+    const d=await r.json();
+
+    if(d.ok && d.data && d.data.token){
+      localStorage.setItem('crm_token',d.data.token);
+      localStorage.setItem('crm_user',JSON.stringify(d.data.user));
+      if(d.data.conecta_token) sessionStorage.setItem('conecta_token',d.data.conecta_token);
+      window.location.href='/dashboard';
+    } else {
+      err.textContent=d.error||(d.data&&d.data.error)||'Erro ao criar senha.';
+      err.style.display='block';
+      btn.disabled=false;btn.textContent='Criar senha e entrar';
+    }
+  }catch(ex){
+    err.textContent='Erro de conexão.';err.style.display='block';
+    btn.disabled=false;btn.textContent='Criar senha e entrar';
   }
   return false;
 }
