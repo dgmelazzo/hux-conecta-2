@@ -2228,19 +2228,23 @@ if ($method === 'GET' && $uri === '/conecta/produtos') {
     }
 
     $ctx = stream_context_create(['http' => ['timeout' => 10]]);
-    $resp = @file_get_contents('https://acicdf.org.br/conecta/produtos.php?action=list&status=ativo', false, $ctx);
+    $resp = @file_get_contents('https://acicdf.org.br/conecta/produtos.php?action=listar', false, $ctx);
 
     if ($resp === false) {
         json_out(['error' => 'Erro ao buscar produtos do Conecta'], 502);
     }
 
-    $data = json_decode($resp, true);
-    if ($data === null) {
+    $raw = json_decode($resp, true);
+    if ($raw === null) {
         json_out(['error' => 'Resposta inválida do Conecta'], 502);
     }
 
-    file_put_contents($cacheFile, json_encode($data));
-    json_out($data);
+    // Normalizar: Conecta retorna {success, data:{produtos:[...]}}
+    $produtos = $raw['data']['produtos'] ?? $raw['data'] ?? $raw ?? [];
+    $result = ['data' => $produtos, 'total' => count($produtos)];
+
+    file_put_contents($cacheFile, json_encode($result));
+    json_out($result);
 }
 
 // ============================================================
