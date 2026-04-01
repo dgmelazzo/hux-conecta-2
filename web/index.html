@@ -75,14 +75,14 @@ body{font-family:var(--f);margin:0;background:var(--bg)}
   <div class="right">
     <div class="login-card">
       <h2>Entrar no painel</h2>
-      <p>Acesse com suas credenciais de gestor</p>
+      <p>Acesse com suas credenciais</p>
 
       <div id="err" class="err-box" style="display:none"></div>
 
       <form id="frm" onsubmit="return login(event)">
         <div class="fg">
-          <label class="fl">E-mail</label>
-          <input type="email" class="fc" id="email" placeholder="seu@email.com.br" required autofocus>
+          <label class="fl">E-mail ou CNPJ/CPF</label>
+          <input type="text" class="fc" id="email" placeholder="E-mail ou CNPJ/CPF" required autofocus>
         </div>
         <div class="fg">
           <label class="fl">Senha</label>
@@ -110,11 +110,11 @@ async function login(e){
   const err=document.getElementById('err');
   err.style.display='none';
 
-  const email=document.getElementById('email').value.trim();
+  const loginVal=document.getElementById('email').value.trim();
   const senha=document.getElementById('senha').value;
 
-  if(!email||!senha){
-    err.textContent='Preencha e-mail e senha.';
+  if(!loginVal||!senha){
+    err.textContent='Preencha login e senha.';
     err.style.display='block';
     return false;
   }
@@ -122,11 +122,17 @@ async function login(e){
   btn.disabled=true;
   btn.innerHTML='<div class="sp"></div> Entrando...';
 
+  // Auto-detect: if contains @ → email, otherwise → CPF/CNPJ
+  const isEmail = loginVal.includes('@');
+  const payload = isEmail
+    ? { email: loginVal, senha }
+    : { documento: loginVal, senha };
+
   try{
     const r=await fetch(API+'/auth/login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email,senha})
+      body:JSON.stringify(payload)
     });
     const d=await r.json();
 
@@ -134,9 +140,12 @@ async function login(e){
     if(d.ok && d.data && d.data.token){
       localStorage.setItem('crm_token', d.data.token);
       localStorage.setItem('crm_user', JSON.stringify(d.data.user));
+      // Store conecta_token for Portal do Associado SSO
+      if(d.data.conecta_token){
+        sessionStorage.setItem('conecta_token', d.data.conecta_token);
+      }
       window.location.href='/dashboard';
     } else {
-      // Error: {ok: false, error: "..."}
       const msg = d.error || (d.data && d.data.error) || 'Credenciais inválidas.';
       err.textContent=msg;
       err.style.display='block';

@@ -220,20 +220,102 @@ if ($uri === '/' || $uri === '/api') {
 }
 
 // ============================================================
-// AUTH — login de usuários internos (gestor/atendente)
-// POST /auth/login  { email, senha }
+// AUTH — login de usuários internos (gestor/atendente) e
+//        associados via CPF/CNPJ (SSO Conecta 2.0)
+// POST /auth/login  { email, senha } ou { documento, senha }
 // ============================================================
 if ($method === 'POST' && $uri === '/auth/login') {
-    required_fields(['email', 'senha']);
     $b = body();
+    $senha = $b['senha'] ?? '';
+    $login = trim($b['email'] ?? $b['documento'] ?? '');
 
+    if (!$login || !$senha) {
+        json_out(['error' => 'Preencha login e senha.'], 422);
+    }
+
+    // Detecta se é CPF/CNPJ (dígitos, pontos, traços, barras) ou e-mail
+    $docClean = preg_replace('/\D/', '', $login);
+    $isCpfCnpj = !str_contains($login, '@') && strlen($docClean) >= 11;
+
+    if ($isCpfCnpj) {
+        // ── LOGIN VIA CPF/CNPJ — valida no Conecta 2.0 e mapeia para associado ──
+        $conectaUrl = 'https://acicdf.org.br/conecta/auth.php?action=login';
+        $ch = curl_init($conectaUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_POST           => true,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_POSTFIELDS     => json_encode(['documento' => $docClean, 'senha' => $senha]),
+        ]);
+        $conectaResp = curl_exec($ch);
+        $conectaCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $conectaErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($conectaErr || $conectaCode >= 400) {
+            json_out(['error' => 'Credenciais inválidas'], 401);
+        }
+
+        $conectaData = json_decode($conectaResp ?: '{}', true);
+        if (empty($conectaData) || (!($conectaData['ok'] ?? false) && empty($conectaData['id']))) {
+            json_out(['error' => 'Credenciais inválidas'], 401);
+        }
+
+        // Busca associado pelo documento no CRM
+        $tid   = tenant_id();
+        $field = strlen($docClean) === 14 ? 'cnpj' : 'cpf';
+        $stmt  = pdo()->prepare("SELECT * FROM associados WHERE $field = ? AND tenant_id = ? LIMIT 1");
+        $stmt->execute([$docClean, $tid]);
+        $assoc = $stmt->fetch();
+
+        if (!$assoc) {
+            json_out(['error' => 'Associado não encontrado no CRM. Entre em contato com a associação.'], 404);
+        }
+
+        // Determina role com base na categoria do associado
+        $categoria = $assoc['categoria'] ?? 'empresa';
+        $role = in_array($categoria, ['colaborador', 'dependente']) ? 'colaborador' : 'associado_empresa';
+
+        // Token SSO do Conecta 2.0 (para Portal do Associado)
+        $conectaToken = $conectaData['token'] ?? $conectaData['sso_token'] ?? null;
+
+        $token = jwt_encode([
+            'sub'           => $assoc['id'],
+            'documento'     => $docClean,
+            'nome'          => $assoc['nome_fantasia'] ?? $assoc['razao_social'] ?? $assoc['nome_responsavel'],
+            'email'         => $assoc['email'],
+            'role'          => $role,
+            'tenant_id'     => $tid,
+            'associado_id'  => (int)$assoc['id'],
+            'sso'           => true,
+        ]);
+
+        $response = [
+            'token' => $token,
+            'user'  => [
+                'id'           => $assoc['id'],
+                'nome'         => $assoc['nome_fantasia'] ?? $assoc['razao_social'] ?? $assoc['nome_responsavel'],
+                'email'        => $assoc['email'],
+                'role'         => $role,
+                'associado_id' => (int)$assoc['id'],
+            ],
+        ];
+        if ($conectaToken) {
+            $response['conecta_token'] = $conectaToken;
+        }
+
+        json_out($response);
+    }
+
+    // ── LOGIN VIA E-MAIL — fluxo original (usuarios internos) ──
     $stmt = pdo()->prepare(
-        'SELECT * FROM usuarios WHERE email = ? AND tenant_id = ? LIMIT 1'
+        'SELECT * FROM usuarios WHERE email = ? AND (tenant_id = ? OR tenant_id IS NULL) LIMIT 1'
     );
-    $stmt->execute([$b['email'], tenant_id()]);
+    $stmt->execute([$login, tenant_id()]);
     $user = $stmt->fetch();
 
-    if (!$user || !password_verify($b['senha'], $user['senha_hash'])) {
+    if (!$user || !password_verify($senha, $user['senha_hash'])) {
         json_out(['error' => 'Credenciais inválidas'], 401);
     }
     if (!$user['ativo']) json_out(['error' => 'Usuário inativo'], 403);
@@ -271,8 +353,8 @@ if ($method === 'POST' && $uri === '/auth/criar-usuario') {
     required_fields(['nome', 'email', 'senha', 'role']);
     $b = body();
 
-    if (!in_array($b['role'], ['gestor', 'atendente'])) {
-        json_out(['error' => 'Role inválida. Use: gestor ou atendente'], 422);
+    if (!in_array($b['role'], ['gestor', 'atendente', 'associado_empresa', 'colaborador'])) {
+        json_out(['error' => 'Role inválida. Use: gestor, atendente, associado_empresa ou colaborador'], 422);
     }
 
     $check = pdo()->prepare('SELECT id FROM usuarios WHERE email = ? AND tenant_id = ?');
@@ -295,6 +377,30 @@ if ($method === 'POST' && $uri === '/auth/criar-usuario') {
 if ($method === 'GET' && $uri === '/associados') {
     $p = auth_required();
     $tid = $p['tenant_id'] ?? tenant_id();
+
+    // associado_empresa e colaborador: retornam apenas seu próprio registro
+    if (in_array($p['role'] ?? '', ['associado_empresa', 'colaborador'])) {
+        $assocId = $p['associado_id'] ?? $p['sub'];
+        $stmt = pdo()->prepare(
+            'SELECT a.id, a.tipo_pessoa, a.categoria, a.razao_social, a.nome_fantasia,
+                    a.cpf, a.cnpj, a.email, a.telefone, a.whatsapp,
+                    a.cidade, a.uf, a.status, a.data_associacao, a.data_vencimento,
+                    a.conecta_user_id, a.criado_em,
+                    p.nome AS plano_nome, p.valor AS plano_valor
+             FROM associados a
+             LEFT JOIN planos p ON p.id = a.plano_id
+             WHERE a.id = ? AND a.tenant_id = ?'
+        );
+        $stmt->execute([$assocId, $tid]);
+        $row = $stmt->fetch();
+        json_out([
+            'data'  => $row ? [$row] : [],
+            'total' => $row ? 1 : 0,
+            'page'  => 1,
+            'limit' => 20,
+            'pages' => 1,
+        ]);
+    }
 
     $where  = 'a.tenant_id = ?';
     $params = [$tid];
@@ -352,6 +458,15 @@ if ($method === 'GET' && $uri === '/associados') {
 if ($method === 'GET' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     $p   = auth_required();
     $tid = $p['tenant_id'] ?? tenant_id();
+
+    // associado_empresa e colaborador: apenas seu próprio registro
+    if (in_array($p['role'] ?? '', ['associado_empresa', 'colaborador'])) {
+        $ownId = $p['associado_id'] ?? $p['sub'];
+        if ((int)$m[1] !== (int)$ownId) {
+            json_out(['error' => 'Permissão insuficiente'], 403);
+        }
+    }
+
     $stmt = pdo()->prepare(
         'SELECT a.*, p.nome AS plano_nome, p.valor AS plano_valor
          FROM associados a
@@ -367,6 +482,7 @@ if ($method === 'GET' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
 // POST /associados
 if ($method === 'POST' && $uri === '/associados') {
     $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
     $tid = $p['tenant_id'] ?? tenant_id();
     required_fields(['nome_fantasia']);
     $b = body();
@@ -418,6 +534,7 @@ if ($method === 'POST' && $uri === '/associados') {
 // PUT /associados/{id}
 if ($method === 'PUT' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
     $tid = $p['tenant_id'] ?? tenant_id();
     $b   = body();
 
@@ -595,8 +712,20 @@ if ($method === 'GET' && $uri === '/cobrancas') {
     $p   = auth_required();
     $tid = $p['tenant_id'] ?? tenant_id();
 
+    // colaborador: sem acesso a dados financeiros
+    if (($p['role'] ?? '') === 'colaborador') {
+        json_out(['error' => 'Permissão insuficiente'], 403);
+    }
+
     $where  = 'c.tenant_id = ?';
     $params = [$tid];
+
+    // associado_empresa: apenas suas próprias cobranças
+    if (($p['role'] ?? '') === 'associado_empresa') {
+        $assocId = $p['associado_id'] ?? $p['sub'];
+        $where  .= ' AND c.associado_id = ?';
+        $params[] = $assocId;
+    }
 
     if (!empty($_GET['associado_id'])) { $where .= ' AND c.associado_id = ?'; $params[] = $_GET['associado_id']; }
     if (!empty($_GET['status']))        { $where .= ' AND c.status = ?';       $params[] = $_GET['status']; }
@@ -617,6 +746,7 @@ if ($method === 'GET' && $uri === '/cobrancas') {
 // POST /cobrancas — cria cobrança via Asaas
 if ($method === 'POST' && $uri === '/cobrancas') {
     $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
     $tid = $p['tenant_id'] ?? tenant_id();
     required_fields(['associado_id', 'valor', 'data_vencimento', 'modalidade']);
     $b = body();
@@ -743,6 +873,7 @@ if ($method === 'POST' && $uri === '/cobrancas') {
 // DELETE /cobrancas/{id}
 if ($method === 'DELETE' && preg_match('#^/cobrancas/(\d+)$#', $uri, $m)) {
     $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
     $tid = $p['tenant_id'] ?? tenant_id();
 
     $stmt = pdo()->prepare('SELECT * FROM cobrancas WHERE id = ? AND tenant_id = ? LIMIT 1');
@@ -863,6 +994,7 @@ if ($method === 'POST' && $uri === '/webhooks/asaas') {
 // ============================================================
 if ($method === 'GET' && $uri === '/dashboard') {
     $p   = auth_required();
+    require_role($p, ['superadmin', 'gestor']);
     $tid = $p['tenant_id'] ?? tenant_id();
 
     $q = function(string $sql, array $params = []) {
@@ -996,9 +1128,10 @@ if ($method === 'PATCH' && preg_match('#^/usuarios/(\d+)$#', $uri, $m)) {
 // GATEWAY CONFIG
 // ============================================================
 
-// GET /gateway — retorna config atual do tenant
+// GET /gateway — retorna config atual do tenant (superadmin only)
 if ($method === 'GET' && $uri === '/gateway') {
     $p   = auth_required();
+    require_role($p, ['superadmin']);
     $tid = $p['tenant_id'] ?? tenant_id();
 
     $stmt = pdo()->prepare(
@@ -1022,10 +1155,10 @@ if ($method === 'GET' && $uri === '/gateway') {
     json_out($config ?: ['configurado' => false]);
 }
 
-// POST /gateway — salva ou atualiza config
+// POST /gateway — salva ou atualiza config (superadmin only)
 if ($method === 'POST' && $uri === '/gateway') {
     $p   = auth_required();
-    require_role($p, ['superadmin', 'gestor']);
+    require_role($p, ['superadmin']);
     $tid = $p['tenant_id'] ?? tenant_id();
     $b   = body();
 
@@ -1090,10 +1223,10 @@ if ($method === 'POST' && $uri === '/gateway') {
     json_out(['message' => 'Configuração salva', 'id' => $configId, 'webhook_token' => $webhookToken]);
 }
 
-// POST /gateway/testar — testa conexão com Asaas
+// POST /gateway/testar — testa conexão com Asaas (superadmin only)
 if ($method === 'POST' && $uri === '/gateway/testar') {
     $p   = auth_required();
-    require_role($p, ['superadmin', 'gestor']);
+    require_role($p, ['superadmin']);
     $tid = $p['tenant_id'] ?? tenant_id();
 
     $data = asaasReq('GET', '/myAccount');
