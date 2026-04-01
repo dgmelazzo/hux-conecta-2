@@ -924,7 +924,7 @@ if ($method === 'GET' && preg_match('#^/planos/(\d+)/itens$#', $uri, $m)) {
     }
 
     $stmt = pdo()->prepare(
-        'SELECT pi.nome, pi.tipo_cobranca, pi.valor_adesao, pi.valor_recorrencia, pa.nome AS parceiro_nome
+        'SELECT pi.id, pi.nome, pi.tipo_cobranca, pi.valor_adesao, pi.valor_recorrencia, pi.conecta_produto_id, pi.conecta_produto_nome, pa.nome AS parceiro_nome
          FROM plano_itens pi
          LEFT JOIN parceiros pa ON pa.id = pi.parceiro_id
          WHERE pi.plano_id = ? AND pi.tenant_id = ?
