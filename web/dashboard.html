@@ -640,7 +640,7 @@ function setCategoria(cat,btn){
 async function la(p2=1){
   acp=p2;const q=document.getElementById('sq')?.value||'';const st=document.getElementById('ss')?.value||'';
   document.getElementById('at').innerHTML='<div class="ld"><div class="sp"></div></div>';
-  const catFilt=_assocCategoria||'';const d=await api(`/associados?page=${p2}&q=${encodeURIComponent(q)}&status=${st}&categoria=${catFilt}`);if(!d)return;
+  const catFilt=_assocCategoria||'';const d=await api(`/associados?page=${p2}&busca=${encodeURIComponent(q)}&status=${st}&categoria=${catFilt}`);if(!d)return;
   document.getElementById('nb').textContent=d.total;assocs=d.data;
   const rows=Array.isArray(d.data)?d.data:(d.data?.data||[]);assocs=rows;_assocCache={};rows.forEach(x=>_assocCache[x.id]=x);
   if(rows.length===0){document.getElementById('at').innerHTML='<div class="em">Nenhum associado encontrado.</div>';document.getElementById('apg').style.display='none';return;}

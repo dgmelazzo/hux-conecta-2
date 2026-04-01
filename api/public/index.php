@@ -312,6 +312,10 @@ if ($method === 'GET' && $uri === '/associados') {
         $where   .= ' AND a.plano_id = ?';
         $params[] = $_GET['plano_id'];
     }
+    if (!empty($_GET['categoria'])) {
+        $where   .= ' AND a.categoria = ?';
+        $params[] = $_GET['categoria'];
+    }
 
     $page  = max(1, (int)($_GET['page'] ?? 1));
     $limit = min(100, (int)($_GET['limit'] ?? 20));
