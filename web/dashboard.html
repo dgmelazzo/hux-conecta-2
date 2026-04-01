@@ -74,9 +74,20 @@ select.fl{height:40px;padding:0 32px 0 12px;background:var(--sf);border:1.5px so
 .mo{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:1000;align-items:center;justify-content:center;padding:24px}
 .mo.on{display:flex}
 .mb{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative}
-.mc{position:absolute;top:12px;right:12px;z-index:10;width:32px;height:32px;border-radius:8px;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mc{position:absolute;top:12px;right:12px;z-index:1001;width:36px;height:36px;border-radius:8px;border:none;background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .mc:hover{background:var(--bd)}
 .mc svg{width:16px;height:16px;stroke:var(--t2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* Mobile card layout */
+.m-cards{display:none}
+.m-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px;transition:box-shadow .15s}
+.m-card:active{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.m-card-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.m-card-row:last-child{margin-bottom:0}
+.m-card-main{font-size:14px;font-weight:600;color:var(--tx)}
+.m-card-sub{font-size:12px;color:var(--t3);margin-top:2px}
+.m-card-val{font-size:16px;font-weight:700;color:var(--or)}
+.m-card-acts{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)}
+.m-card-acts .btn-o,.m-card-acts .btn-r{padding:5px 10px;font-size:11px}
 .mt2{font-size:18px;font-weight:700;color:var(--tx);margin-bottom:4px;padding-right:40px}
 .ms2{font-size:13px;color:var(--t3);margin-bottom:24px}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -131,51 +142,44 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
   .kg{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
   .g2{grid-template-columns:1fr}
   .fr{grid-template-columns:1fr}
-  .mo{padding:0 12px;align-items:flex-end}
-  .mb{border-radius:16px 16px 0 0;max-height:92vh;padding:20px 16px;width:100%;max-width:100%;margin:0}
+  /* Modal: full-screen on mobile, no backdrop close */
+  .mo{padding:0}
+  .mb{border-radius:0;max-height:100vh;height:100vh;padding:20px 16px;width:100%;max-width:100%;margin:0;overflow-y:auto}
+  .mc{position:fixed;top:12px;right:12px;z-index:1001;background:var(--sf);box-shadow:0 2px 8px rgba(0,0,0,.15)}
   .kc{padding:14px}
   .kv{font-size:20px}
-  .sbr{flex-wrap:wrap}
-  .sw2{min-width:100%}
+  .sbr{flex-direction:column;gap:8px}
+  .sw2{min-width:100%;width:100%}
   select.fl{width:100%}
+  .si{width:100%}
   .gw-grid2{grid-template-columns:1fr}
   .gw-field[style*="grid-column"]{grid-column:span 1!important}
   .assoc-tabs,.assoc-tab-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:4px}
   .assoc-tab{white-space:nowrap;flex-shrink:0}
   .pl-grid{grid-template-columns:1fr 1fr}
-  /* Associados: hide Categoria(2), Contato(3), Plano(5) — keep Empresa(1), Status(4), Ações(6) */
-  #at table th:nth-child(2),#at table td:nth-child(2),
-  #at table th:nth-child(3),#at table td:nth-child(3),
-  #at table th:nth-child(5),#at table td:nth-child(5){display:none}
-  /* Cobranças: hide Descrição(2) — keep Associado(1), Valor(3), Vencimento(4), Status(5), Ações(6) */
-  #cob-t table th:nth-child(2),#cob-t table td:nth-child(2){display:none}
-  /* Usuários: hide Último login cols if present — keep Nome(1), E-mail(2), Papel(3), Status(4), Ações(5) */
-  /* Comunicados templates: hide Gatilho(2) */
-  #com-tpl-t table th:nth-child(2),#com-tpl-t table td:nth-child(2){display:none}
-  /* Inscrições: hide Empresa(3), E-mail(5) */
-  #insc-t table th:nth-child(3),#insc-t table td:nth-child(3),
-  #insc-t table th:nth-child(5),#insc-t table td:nth-child(5){display:none}
-  /* Detail modal cobrancas responsive */
-  #det-dados>div{grid-template-columns:1fr!important}
+  /* Hide tables, show mobile cards */
+  #at table,#cob-t table,#usr-t table,#insc-t table,#com-tpl-t table{display:none}
+  .m-cards{display:block}
+  /* Detail modal grids responsive */
+  #det-dados>div,#insc-d-dados>div{grid-template-columns:1fr!important}
+  /* Pagination */
+  .pag{flex-direction:column;gap:8px;align-items:center}
+  .pag-btn{padding:6px 12px}
 }
 /* Responsive: Mobile */
 @media(max-width:480px){
   .tb{height:52px}
-  .pt{font-size:14px}.ps{font-size:11px}
+  .pt{font-size:14px}.ps{font-size:11px;display:none}
   .ct{padding:12px}
   .kg{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
   .kc{padding:12px}.kv{font-size:18px}.ki{width:30px;height:30px;margin-bottom:10px}
   .ki svg{width:14px;height:14px}
   .btn{padding:6px 12px;font-size:12px}
+  #bl{display:none}
   .btn-o{padding:5px 10px;font-size:11px}
-  th{padding:8px 10px;font-size:10px}
-  td{padding:10px;font-size:12px}
-  .mb{padding:16px}
+  .mb{padding:16px 12px;padding-top:52px}
   .mt2{font-size:16px}
   .pl-grid{grid-template-columns:1fr}
-  .pag{flex-direction:column;gap:8px;align-items:flex-start}
-  /* Cobranças: also hide Vencimento(4) on small screens */
-  #cob-t table th:nth-child(4),#cob-t table td:nth-child(4){display:none}
 }
 /* Gateway */
 .gw-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:24px;margin-bottom:16px}
@@ -364,7 +368,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 </main>
 
 <!-- Modal Detalhe Inscrição -->
-<div class="mo" id="minsc" onclick="if(event.target===this)cm('minsc')">
+<div class="mo" id="minsc" >
   <div class="mb" style="max-width:540px">
     <button class="mc" onclick="cm('minsc')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="mt2" id="insc-d-nome">Inscrição</div>
@@ -375,7 +379,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 </div>
 
 <!-- Modal Converter em Cobrança -->
-<div class="mo" id="mconv" onclick="if(event.target===this)cm('mconv')">
+<div class="mo" id="mconv" >
   <div class="mb" style="max-width:460px">
     <button class="mc" onclick="cm('mconv')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="mt2">Converter em Cobrança</div>
@@ -565,8 +569,7 @@ function logout(){localStorage.clear();location.href='/';}
 function toast(msg,type='ok'){const t=document.createElement('div');t.className='toast '+(type==='ok'?'ok':'err');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
 function om(i){document.getElementById(i).classList.add('on');}
 function cm(i){document.getElementById(i).classList.remove('on');editId=null;}
-// Close modal on overlay click
-document.addEventListener('click',function(e){if(e.target.classList.contains('mo')&&e.target.classList.contains('on')){e.target.classList.remove('on');editId=null;}});
+// Modals close only via X button (no backdrop click)
 
 // Navegação
 const PM={d:{t:'Dashboard',s:'Visão geral do sistema',b:'Novo Associado'},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
@@ -652,7 +655,12 @@ async function la(p2=1){
       <button class="btn-o" onclick="editAssocById(${x.id})" style="margin-right:4px">Editar</button>
       <button class="btn-r" onclick="delAssoc(${x.id},'${(x.razao_social||x.nome_responsavel||'').replace(/'/g,"\\'")}')">Excluir</button>
     </td>
-  </tr>`).join('')}</tbody></table>`;
+  </tr>`).join('')}</tbody></table>
+  <div class="m-cards">${d.data.map(x=>`<div class="m-card" onclick="verDetalhe(${x.id})">
+    <div class="m-card-row"><div><div class="m-card-main">${x.razao_social||x.nome_responsavel||'-'}</div><div class="m-card-sub">${x.cnpj||x.cpf||''}</div></div>${bs(x.status)}</div>
+    <div class="m-card-row"><span style="font-size:12px;color:var(--t2)">${x.plano_nome||'Sem plano'}</span></div>
+    <div class="m-card-acts"><button class="btn-o" onclick="event.stopPropagation();verDetalhe(${x.id})">Ver</button><button class="btn-o" onclick="event.stopPropagation();editAssocById(${x.id})">Editar</button><button class="btn-r" onclick="event.stopPropagation();delAssoc(${x.id},'${(x.razao_social||x.nome_responsavel||'').replace(/'/g,"\\'")}')">Excluir</button></div>
+  </div>`).join('')}</div>`;
   const info=`${(p2-1)*d.limit+1}–${Math.min(p2*d.limit,d.total)} de ${d.total} associados`;
   const btns=Array.from({length:d.pages},(_,i)=>`<button class="pag-btn${i+1===p2?' on':''}" onclick="la(${i+1})">${i+1}</button>`).join('');
   document.getElementById('apg-info').textContent=info;
@@ -814,7 +822,11 @@ async function lc(p2=1){
     <td style="white-space:nowrap">
       ${x.status==='pendente'?`<button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button>`:''}
     </td>
-  </tr>`).join('')}</tbody></table>`;
+  </tr>`).join('')}</tbody></table>
+  <div class="m-cards">${d.data.map(x=>`<div class="m-card">
+    <div class="m-card-row"><div class="m-card-main">${x.razao_social||x.nome_responsavel||'-'}</div><div class="m-card-val">${money(x.valor)}</div></div>
+    <div class="m-card-row"><span style="font-size:12px;color:var(--t3)">Venc: ${x.vencimento||'-'}</span>${bs(x.status)}</div>
+    ${x.status==='pendente'?`<div class="m-card-acts"><button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button></div>`:''}</div>`).join('')}</div>`;
   const info=`${(p2-1)*20+1}–${Math.min(p2*20,d.total)} de ${d.total}`;
   const btns=Array.from({length:d.pages},(_,i)=>`<button class="pag-btn${i+1===p2?' on':''}" onclick="lc(${i+1})">${i+1}</button>`).join('');
   document.getElementById('cpg-info').textContent=info;document.getElementById('cpg-btns').innerHTML=btns;document.getElementById('cpg').style.display='flex';
@@ -853,7 +865,11 @@ async function lu(){
     <td><button class="btn-r" onclick="toggleUsr(${x.id},${x.ativo},'${x.nome.replace(/'/g,"\\'")}')">
       ${x.ativo?'Desativar':'Ativar'}
     </button></td>
-  </tr>`).join('')}</tbody></table>`;
+  </tr>`).join('')}</tbody></table>
+  <div class="m-cards">${d.data.map(x=>`<div class="m-card">
+    <div class="m-card-row"><div><div class="m-card-main">${x.nome}</div><div class="m-card-sub">${x.email}</div></div><span class="role-badge ${roles[x.role]||'role-a'}">${rl[x.role]||x.role}</span></div>
+    <div class="m-card-row">${x.ativo?'<span class="bx bg">Ativo</span>':'<span class="bx bgr">Inativo</span>'}<button class="btn-r" onclick="toggleUsr(${x.id},${x.ativo},'${x.nome.replace(/'/g,"\\'")}')"> ${x.ativo?'Desativar':'Ativar'}</button></div>
+  </div>`).join('')}</div>`;
 }
 async function susr(){
   const b={nome:document.getElementById('u-nome').value,email:document.getElementById('u-email').value,role:document.getElementById('u-role').value,senha:document.getElementById('u-senha').value||'Acic@2026'};
@@ -892,7 +908,12 @@ async function lcomTpl(){
     <td>${canalBadges(x.canal)}</td>
     <td>${x.ativo?'<span class="bx bg">Ativo</span>':'<span class="bx bgr">Inativo</span>'}</td>
     <td><button class="btn-o" onclick="editTpl(${x.id})">Editar</button></td>
-  </tr>`).join('')}</tbody></table>`;
+  </tr>`).join('')}</tbody></table>
+  <div class="m-cards">${d.data.map(x=>`<div class="m-card">
+    <div class="m-card-row"><div class="m-card-main">${x.nome||'-'}</div>${x.ativo?'<span class="bx bg">Ativo</span>':'<span class="bx bgr">Inativo</span>'}</div>
+    <div class="m-card-row">${canalBadges(x.canal)}</div>
+    <div class="m-card-acts"><button class="btn-o" onclick="editTpl(${x.id})">Editar</button></div>
+  </div>`).join('')}</div>`;
 }
 function canalBadges(c){
   if(c==='ambos')return'<span class="bx bb" style="margin-right:4px">email</span><span class="bx bg">whatsapp</span>';
@@ -980,7 +1001,12 @@ async function linsc(){
       ${x.status==='pendente'?`<button class="btn-o" style="margin-right:4px;border-color:var(--or);color:var(--or)" onclick="abrirConversao(${x.id})">Cobrar</button><button class="btn-r" onclick="reprovarInsc(${x.id})">Reprovar</button>`:''}
       ${x.status==='aprovado'?`<button class="btn-o" style="border-color:var(--or);color:var(--or)" onclick="abrirConversao(${x.id})">Cobrar</button>`:''}
     </td>
-  </tr>`).join('')}</tbody></table>`;
+  </tr>`).join('')}</tbody></table>
+  <div class="m-cards">${d.data.map(x=>`<div class="m-card" onclick="verInsc(${x.id})">
+    <div class="m-card-row"><div><div class="m-card-main">${x.nome_contato||'-'}</div><div class="m-card-sub">${x.nome_empresa||'-'}</div></div>${bs(x.status)}</div>
+    <div class="m-card-row"><span style="font-size:12px;color:var(--t2)">${x.plano_nome||'-'}</span><span style="font-size:11px;color:var(--t3)">${x.criado_em?new Date(x.criado_em).toLocaleDateString('pt-BR'):''}</span></div>
+    <div class="m-card-acts"><button class="btn-o" onclick="event.stopPropagation();verInsc(${x.id})">Ver</button>${x.status==='pendente'?`<button class="btn-o" style="border-color:var(--or);color:var(--or)" onclick="event.stopPropagation();abrirConversao(${x.id})">Cobrar</button><button class="btn-r" onclick="event.stopPropagation();reprovarInsc(${x.id})">Reprovar</button>`:x.status==='aprovado'?`<button class="btn-o" style="border-color:var(--or);color:var(--or)" onclick="event.stopPropagation();abrirConversao(${x.id})">Cobrar</button>`:''}</div>
+  </div>`).join('')}</div>`;
 }
 
 // Inscrição — ações
