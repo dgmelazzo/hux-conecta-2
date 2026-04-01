@@ -9,6 +9,15 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
+
+set_exception_handler(function(\Throwable $e) {
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(500);
+    }
+    echo json_encode(['ok' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
+    exit;
+});
 header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Tenant');
 
