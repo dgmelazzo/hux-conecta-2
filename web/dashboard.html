@@ -233,6 +233,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <button class="ni" data-nav="a" onclick="go('a')"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Associados<span class="nb" id="nb">0</span></button>
     <div class="sc">Financeiro</div>
     <button class="ni" data-nav="p" onclick="go('p')"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Planos e Taxas</button>
+    <button class="ni" data-nav="cart" onclick="go('cart')" style="display:none"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="3"/><line x1="2" y1="9" x2="22" y2="9"/><circle cx="7" cy="15" r="1.5"/></svg>Minha Carteirinha</button>
     <button class="ni" data-nav="c" onclick="go('c')"><svg class="ic" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Cobranças</button>
     <div class="sc">Comunicação</div>
     <button class="ni" data-nav="com" onclick="go('com')"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Comunicados</button>
@@ -293,6 +294,11 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <!-- Planos -->
     <div class="pg2" id="pp">
       <div class="pl-grid" id="pg3"><div class="ld"><div class="sp"></div></div></div>
+    </div>
+
+    <!-- Carteirinha -->
+    <div class="pg2" id="pcart">
+      <div id="cart-content"><div class="ld"><div class="sp"></div></div></div>
     </div>
 
     <!-- Cobranças -->
@@ -686,7 +692,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 const A='https://api.acicdf.org.br';
 let tk=localStorage.getItem('crm_token'),usr=JSON.parse(localStorage.getItem('crm_user')||'{}');
 let pls=[],_plCache={},assocs=[],acp=1,ccp=1,st3,editId=null;
-const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{t:'Dashboard',s:'Visão geral do sistema',b:''},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
+const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{t:'Dashboard',s:'Visão geral do sistema',b:''},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'},cart:{t:'Minha Carteirinha',s:'Carteirinha digital do associado',b:''}};
 let _assocCategoria='',_assocCache={};
 if(!tk)location.href='/';
 // Inicializar usuário + permissões por role
@@ -723,6 +729,7 @@ if(usr.nome){
     document.querySelector('.ni[data-nav="a"]').insertAdjacentHTML('beforeend','<svg class="ic" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Meu Perfil');
     document.querySelector('.ni[data-nav="p"]').textContent='';
     document.querySelector('.ni[data-nav="p"]').insertAdjacentHTML('beforeend','<svg class="ic" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Minhas Taxas');
+    document.querySelector('.ni[data-nav="cart"]').style.display='';
     document.querySelector('.ni[data-nav="c"]').style.display='none';
     document.querySelector('.ni[data-nav="par"]').style.display='none';
     document.querySelector('.ni[data-nav="com"]').style.display='none';
@@ -787,7 +794,7 @@ function go(n){
   const isAdmin=usr.role==='superadmin'||usr.role==='gestor';
   if(p.b && isAdmin){btnTop.style.display='';document.getElementById('bl').textContent=p.b;}
   else{btnTop.style.display='none';}
-  if(n==='d')ld();if(n==='a')la();if(n==='p'){if(usr.role==='associado_empresa')lpAssociado();else lp();}if(n==='c')lc();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();if(n==='insc')linsc();if(n==='par')lpar();
+  if(n==='d')ld();if(n==='a')la();if(n==='p'){if(usr.role==='associado_empresa')lpAssociado();else lp();}if(n==='c')lc();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();if(n==='insc')linsc();if(n==='par')lpar();if(n==='cart')lcart();
 }
 function act(){const on=document.querySelector('.pg2.on')?.id;
   if(on==='pd'||on==='pa'){editId=null;_restoreModal();document.getElementById('ma-title').textContent='Novo Associado';limpaCampos(['frz','fnf','fd','fe','ftel','fw','fobs']);document.getElementById('fst').value='prospecto';document.getElementById('fvc').value='';document.getElementById('fcat').disabled=false;om('ma');}
@@ -838,11 +845,27 @@ async function ldAssociado(){
   const plano=me?.plano_nome||'Sem plano';
   const status=me?bs(me.status):'';
   const venc=me?.data_vencimento?new Date(me.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR'):'—';
+  // Check for overdue or upcoming payments
+  let alertHtml='';
+  if(me){
+    try{
+      const assocId=usr.associado_id||usr.sub;
+      const cob=await api('/associados/'+assocId+'/cobrancas');
+      if(cob?.data){
+        const hoje=new Date();hoje.setHours(0,0,0,0);
+        const vencidas=cob.data.filter(x=>x.status==='vencido'||x.status==='pendente'&&new Date(x.data_vencimento+'T00:00:00')<hoje);
+        const proximas=cob.data.filter(x=>{if(x.status!=='pendente')return false;const dv=new Date(x.data_vencimento+'T00:00:00');const diff=Math.ceil((dv-hoje)/(1000*60*60*24));return diff>=0&&diff<=7;});
+        if(vencidas.length)alertHtml+=`<div style="grid-column:1/-1;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:10px;color:#991b1b;font-size:13px"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#dc2626;fill:none;stroke-width:2;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span><strong>Cobrança vencida.</strong> Você tem ${vencidas.length} cobrança${vencidas.length>1?'s':''} vencida${vencidas.length>1?'s':''}. Regularize sua situação.</span></div>`;
+        else if(proximas.length){const diff=Math.ceil((new Date(proximas[0].data_vencimento+'T00:00:00')-hoje)/(1000*60*60*24));alertHtml+=`<div style="grid-column:1/-1;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:10px;color:#92400e;font-size:13px"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#ca8a04;fill:none;stroke-width:2;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Sua próxima cobrança vence em <strong>${diff===0?'hoje':diff+' dia'+(diff>1?'s':'')}</strong>.</span></div>`;}
+      }
+    }catch(e){}
+  }
   document.getElementById('kg').innerHTML=`
     <div style="grid-column:1/-1;background:linear-gradient(135deg,var(--blue),#2d3a8c);border-radius:14px;padding:28px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
       <div><div style="font-size:20px;font-weight:700">Bem-vindo, ${usr.nome||'Associado'}</div><div style="font-size:13px;opacity:.75;margin-top:4px">Painel do associado ACICDF</div></div>
       <button onclick="abrirPortal()" style="background:var(--or);color:#fff;border:none;border-radius:8px;padding:12px 22px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;font-family:var(--f);transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Acessar Portal do Associado &rarr;</button>
     </div>
+    ${alertHtml}
     ${me?`<div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:4px">
       <div style="background:var(--w);border:1px solid var(--bd);border-radius:12px;padding:20px">
         <div style="font-size:12px;color:var(--t3);margin-bottom:6px">Status</div>
@@ -1090,6 +1113,23 @@ async function lpAssociado(){
   let itensHtml='';
   try{const it=await api('/planos/'+a.plano_id+'/itens');if(it?.data?.length){itensHtml='<div style="margin-top:12px"><div style="font-size:12px;font-weight:600;color:var(--t3);margin-bottom:8px">Benefícios incluídos</div>'+it.data.map(i=>'<div style="font-size:13px;color:var(--t2);padding:4px 0;display:flex;align-items:center;gap:6px"><span style="color:var(--gn)">✓</span> '+i.nome+'</div>').join('')+'</div>';}}catch(e){}
   const venc=a.data_vencimento?new Date(a.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR'):'Não definido';
+  // Fetch payment history
+  let cobHtml='';
+  try{
+    const cob=await api('/associados/'+assocId+'/cobrancas');
+    if(cob?.data?.length){
+      const rows=cob.data.slice(0,10);
+      cobHtml=`<div style="max-width:480px;margin-top:20px">
+        <div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:12px">Histórico de Pagamentos</div>
+        <div class="tbl-s"><table><thead><tr><th>Vencimento</th><th>Valor</th><th>Status</th></tr></thead><tbody>${rows.map(x=>`<tr>
+          <td style="font-size:12px">${x.data_vencimento?new Date(x.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR'):'-'}</td>
+          <td style="font-weight:600">${money(x.valor)}</td>
+          <td>${bs(x.status)}</td>
+        </tr>`).join('')}</tbody></table></div>
+        ${cob.data.length>10?'<div style="text-align:center;font-size:12px;color:var(--t3);margin-top:8px">Mostrando 10 de '+cob.data.length+' cobranças</div>':''}
+      </div>`;
+    }
+  }catch(e){}
   document.getElementById('pg3').innerHTML=`<div style="max-width:480px">
     <div class="pl-card" style="border-color:var(--or);display:flex;flex-direction:column">
       <div class="pl-tipo" style="color:var(--or)">Seu plano ativo</div>
@@ -1102,8 +1142,57 @@ async function lpAssociado(){
       ${itensHtml}
     </div>
     <p style="font-size:12px;color:var(--t3);margin-top:12px;text-align:center">Para alterar seu plano, entre em contato com a ACIC-DF.</p>
-  </div>`;
+  </div>${cobHtml}`;
 }
+// Carteirinha Digital
+async function lcart(){
+  document.getElementById('cart-content').innerHTML='<div class="ld"><div class="sp"></div></div>';
+  const assocId=usr.associado_id||usr.sub;
+  const a=await api('/associados/'+assocId);
+  if(!a||!a.id){document.getElementById('cart-content').innerHTML='<div class="em">Dados não encontrados.</div>';return;}
+  const nome=a.razao_social||a.nome_fantasia||a.nome_responsavel||'Associado';
+  const doc=a.cnpj||a.cpf||'';
+  const statusLabel={ativo:'ATIVO',inadimplente:'INADIMPLENTE',suspenso:'SUSPENSO',cancelado:'CANCELADO',prospecto:'PROSPECTO'}[a.status]||a.status;
+  const statusColor={ativo:'#16a34a',inadimplente:'#dc2626',suspenso:'#ca8a04',cancelado:'#6b7280',prospecto:'#3b82f6'}[a.status]||'#6b7280';
+  const qrData=JSON.stringify({id:a.id,cnpj:a.cnpj||null,cpf:a.cpf||null,nome:nome,status:a.status,plano:a.plano_nome||null,ts:Date.now()});
+  document.getElementById('cart-content').innerHTML=`
+    <div style="max-width:400px;margin:0 auto">
+      <div id="cart-card" style="background:linear-gradient(135deg,var(--blue),#2d3a8c);border-radius:16px;padding:28px 24px;color:#fff;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,.06);border-radius:50%"></div>
+        <div style="position:absolute;bottom:-30px;left:-20px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%"></div>
+        <div style="font-size:11px;opacity:.7;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px">Associação Comercial — ACICDF</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">${nome}</div>
+        <div style="font-size:13px;opacity:.7;margin-bottom:16px">${doc}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.5px">Status</div>
+            <div style="font-size:14px;font-weight:700;color:${statusColor==='#16a34a'?'#4ade80':statusColor==='#dc2626'?'#fca5a5':'#fde68a'}">${statusLabel}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.5px">Plano</div>
+            <div style="font-size:13px;font-weight:600">${a.plano_nome||'—'}</div>
+          </div>
+          <div id="qr-wrap" style="background:#fff;border-radius:8px;padding:8px;width:96px;height:96px;display:flex;align-items:center;justify-content:center"></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn" onclick="downloadCart()" style="font-size:13px"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Baixar como imagem</button>
+      </div>
+    </div>`;
+  // Generate QR Code
+  if(typeof QRCode!=='undefined'){
+    new QRCode(document.getElementById('qr-wrap'),{text:qrData,width:80,height:80,colorDark:'var(--blue)',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+  } else {
+    document.getElementById('qr-wrap').innerHTML='<span style="font-size:10px;color:var(--t3)">QR indisponível</span>';
+  }
+}
+function downloadCart(){
+  const el=document.getElementById('cart-card');
+  if(typeof html2canvas!=='undefined'){
+    html2canvas(el,{scale:2,backgroundColor:null}).then(c=>{const a=document.createElement('a');a.download='carteirinha-acicdf.png';a.href=c.toDataURL();a.click();});
+  } else {
+    toast('Recurso de download indisponível','err');
+  }
 
 // Plan modal — product picker state
 let _plSelectedItems=[],_plConectaCache=[];
@@ -1696,5 +1785,7 @@ async function gwSalvar(){var key=document.getElementById('gw-key').value.trim()
 go('d');
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js" onload="if(typeof lp==='function'&&document.getElementById('pg3')?.children.length>1)lp()"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 </html>
