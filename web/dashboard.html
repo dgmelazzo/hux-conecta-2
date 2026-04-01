@@ -560,16 +560,29 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 
 <!-- Modal Itens do Plano -->
 <div class="mo" id="mitens" onclick="if(event.target===this)cm('mitens')">
-  <div class="mb" style="max-width:660px">
+  <div class="mb" style="max-width:680px">
     <button class="mc" onclick="cm('mitens')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     <div class="mt2" id="itens-title">Itens do Plano</div>
     <div class="ms2">Produtos e serviços incluídos neste plano</div>
     <!-- Lista de itens existentes -->
     <div class="tbl-s" id="itens-list" style="margin-bottom:16px"><div class="ld"><div class="sp"></div></div></div>
-    <!-- Formulário adicionar — visualmente separado -->
+    <!-- Adicionar: tabs Conecta / Manual -->
     <div style="background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:16px">
-      <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:10px">Adicionar Produto</div>
-      <div class="fg"><label class="fl3">Nome *</label><input type="text" class="fc" id="item-nome" placeholder="Nome do produto ou serviço" style="background:#fff"></div>
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <button class="assoc-tab on" onclick="setItemTab('conecta',this)" id="tab-conecta">Produtos Conecta</button>
+        <button class="assoc-tab" onclick="setItemTab('manual',this)" id="tab-manual">Produto Externo</button>
+      </div>
+      <!-- Tab Conecta: product picker -->
+      <div id="item-tab-conecta">
+        <div class="fg"><input type="text" class="fc" id="conecta-busca" placeholder="Buscar produto do Conecta 2.0..." oninput="filtrarConecta()" style="background:#fff"></div>
+        <div id="conecta-lista" style="max-height:200px;overflow-y:auto;margin-bottom:12px"><div class="ld" style="padding:20px"><div class="sp"></div></div></div>
+        <input type="hidden" id="item-conecta-id"><input type="hidden" id="item-conecta-nome">
+      </div>
+      <!-- Tab Manual: input nome -->
+      <div id="item-tab-manual" style="display:none">
+        <div class="fg"><label class="fl3">Nome *</label><input type="text" class="fc" id="item-nome" placeholder="Nome do produto externo" style="background:#fff"></div>
+      </div>
+      <!-- Campos comuns -->
       <div class="fr">
         <div class="fg"><label class="fl3">Adesão (R$)</label><input type="number" class="fc" id="item-adesao" step="0.01" placeholder="0,00" style="background:#fff"></div>
         <div class="fg"><label class="fl3">Recorrência (R$)</label><input type="number" class="fc" id="item-recorr" step="0.01" placeholder="0,00" style="background:#fff"></div>
@@ -937,24 +950,24 @@ async function lp(){
   document.getElementById('pg3').innerHTML=d.data.length===0
     ?'<div class="em">Nenhum plano configurado.</div>'
     :d.data.map(p=>{
-  const itemCount=(p.itens||[]).length;
-  const totalAdesao=(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_adesao||0),0);
-  const totalRecorr=parseFloat(p.valor||0)+(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_recorrencia||0),0);
-  return`<div class="pl-card">
-      <div class="pl-tipo">${tp[p.tipo]||p.tipo}</div>
-      <div class="pl-nome">${p.nome}</div>
-      <div style="font-size:13px;color:var(--t2);margin-bottom:8px">
-        Adesão: <strong>${money(totalAdesao)}</strong> · Recorrência: <strong>${money(totalRecorr)}</strong>/${p.periodicidade}
-      </div>
-      <div style="font-size:12px;color:var(--t3);margin-bottom:12px">${itemCount} produto${itemCount!==1?'s':''} incluído${itemCount!==1?'s':''}</div>
-      <div class="plan-badges" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
-        ${p.split_ativo?'<span class="bx bb" style="font-size:10px">Split</span>':''}
+  const items=p.itens||[];const ic=items.length;const isCombo=p.tipo==='combo';
+  const totalRecorr=parseFloat(p.valor||0)+items.reduce((s,i)=>s+parseFloat(i.valor_recorrencia||0),0);
+  return`<div class="pl-card" style="${isCombo?'border-color:var(--or);box-shadow:0 0 0 1px var(--or)':''}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="bx ${isCombo?'by':'bb'}" style="font-size:10px">${tp[p.tipo]||p.tipo}</span>
         ${p.tem_conecta?'<span class="bx bg" style="font-size:10px">Conecta</span>':''}
+        ${p.split_ativo?'<span class="bx bb" style="font-size:10px">Split</span>':''}
       </div>
-      ${p.slug_link?'<div class="pl-link">\ud83d\udd17 /associe-se/'+p.slug_link+'</div>':''}
-      <div class="pl-acts">
+      <div class="pl-nome">${p.nome}</div>
+      <div class="pl-val">${money(totalRecorr)} <span>/${p.periodicidade}</span></div>
+      ${ic>0?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)">
+        <div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px">${ic} produto${ic>1?'s':''} incluído${ic>1?'s':''}</div>
+        <div style="display:flex;flex-direction:column;gap:3px">${items.slice(0,4).map(i=>`<div style="font-size:12px;color:var(--t2);display:flex;align-items:center;gap:4px"><span style="color:var(--gn)">✓</span> ${i.nome}${i.conecta_produto_nome?' <span style="font-size:10px;color:var(--t3)">(Conecta)</span>':''}</div>`).join('')}${ic>4?`<div style="font-size:11px;color:var(--t3)">+${ic-4} mais</div>`:''}</div>
+      </div>`:''}
+      ${p.slug_link?`<div class="pl-link" style="margin-top:8px">🔗 /associe-se/${p.slug_link}</div>`:''}
+      <div class="pl-acts" style="margin-top:auto">
         <button class="btn-o" onclick="_plCache&&editPlano(_plCache[${p.id}])" style="margin-right:4px">Editar</button>
-        <button class="btn-o" onclick="editPlanoItens(${p.id})" style="margin-right:4px">Itens</button>
+        ${isCombo||ic>0?`<button class="btn-o" onclick="editPlanoItens(${p.id})" style="margin-right:4px;border-color:var(--or);color:var(--or)">Itens</button>`:''}
         <button class="btn-r" onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Desativar</button>
       </div>
     </div>`}).join('');
@@ -1386,17 +1399,53 @@ async function delPar(id,nome){
   else toast(r?.error||'Erro','err');
 }
 
-// Plan Items
-let _itensPlanoId=null;
+// Plan Items + Conecta integration
+let _itensPlanoId=null,_conectaProdutos=[],_itemTab='conecta';
+function setItemTab(tab,btn){
+  _itemTab=tab;
+  document.querySelectorAll('#mitens .assoc-tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('item-tab-conecta').style.display=tab==='conecta'?'':'none';
+  document.getElementById('item-tab-manual').style.display=tab==='manual'?'':'none';
+}
 async function editPlanoItens(planoId){
   _itensPlanoId=planoId;
   document.getElementById('itens-title').textContent='Itens do Plano #'+planoId;
   om('mitens');
   loadItens();
+  // Load parceiros
   const pars=await api('/parceiros');
-  const sel=document.getElementById('item-parceiro');
-  sel.innerHTML='<option value="">Nenhum</option>'+((pars?.data||[]).map(p=>'<option value="'+p.id+'">'+p.nome+'</option>').join(''));
+  document.getElementById('item-parceiro').innerHTML='<option value="">Nenhum</option>'+((pars?.data||[]).map(p=>'<option value="'+p.id+'">'+p.nome+'</option>').join(''));
+  // Load Conecta products
+  document.getElementById('conecta-lista').innerHTML='<div class="ld" style="padding:20px"><div class="sp"></div></div>';
+  try{
+    const cp=await api('/conecta/produtos');
+    _conectaProdutos=(cp?.data?.data||cp?.data||cp||[]);
+    if(!Array.isArray(_conectaProdutos))_conectaProdutos=[];
+  }catch(e){_conectaProdutos=[];}
+  renderConectaProdutos();
+  // Reset selection
+  document.getElementById('item-conecta-id').value='';
+  document.getElementById('item-conecta-nome').value='';
+  document.getElementById('conecta-busca').value='';
+  setItemTab('conecta',document.getElementById('tab-conecta'));
 }
+function renderConectaProdutos(filter){
+  const q=(filter||'').toLowerCase();
+  const items=q?_conectaProdutos.filter(p=>(p.nome||'').toLowerCase().includes(q)||(p.categoria_nome||'').toLowerCase().includes(q)):_conectaProdutos;
+  const selId=document.getElementById('item-conecta-id').value;
+  if(!items.length){document.getElementById('conecta-lista').innerHTML='<div style="padding:16px;text-align:center;font-size:13px;color:var(--t3)">'+(q?'Nenhum produto encontrado':'Nenhum produto disponível no Conecta')+'</div>';return;}
+  document.getElementById('conecta-lista').innerHTML=items.map(p=>`<div onclick="selecionarConecta(${p.id},'${(p.nome||'').replace(/'/g,"\\'")}')" style="padding:10px 12px;border-bottom:1px solid var(--bd);cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s;${p.id==selId?'background:rgba(232,112,26,.08);border-left:3px solid var(--or)':''}" onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background='${p.id==selId?'rgba(232,112,26,.08)':''}'">`+
+    `<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--tx)">${p.nome||'-'}</div>`+
+    `${p.categoria_nome?'<span class="bx bb" style="font-size:9px;margin-top:2px">'+p.categoria_nome+'</span>':''}</div>`+
+    `<div style="font-size:11px;color:var(--t3)">${p.id==selId?'✓ Selecionado':''}</div></div>`).join('');
+}
+function selecionarConecta(id,nome){
+  document.getElementById('item-conecta-id').value=id;
+  document.getElementById('item-conecta-nome').value=nome;
+  renderConectaProdutos(document.getElementById('conecta-busca').value);
+}
+function filtrarConecta(){renderConectaProdutos(document.getElementById('conecta-busca').value);}
 async function loadItens(){
   if(!_itensPlanoId)return;
   document.getElementById('itens-list').innerHTML='<div class="ld"><div class="sp"></div></div>';
@@ -1405,7 +1454,7 @@ async function loadItens(){
   const tipoBadge={incluso:'bg',split:'bb',separado:'bgr'};
   const tipoLabel={incluso:'Incluso',split:'Split',separado:'Separado'};
   document.getElementById('itens-list').innerHTML=`<table><thead><tr><th>Item</th><th>Adesão</th><th>Recorrência</th><th>Tipo</th><th>Parceiro</th><th></th></tr></thead><tbody>${d.data.map(x=>`<tr>
-    <td><strong>${x.nome}</strong>${x.conecta_produto_nome?'<br><span style="font-size:10px;color:var(--t3)">Conecta: '+x.conecta_produto_nome+'</span>':''}</td>
+    <td><strong>${x.nome}</strong>${x.conecta_produto_nome?'<br><span class="bx bb" style="font-size:9px">Conecta</span>':''}</td>
     <td style="font-size:12px">${money(x.valor_adesao)}</td>
     <td style="font-size:12px">${money(x.valor_recorrencia)}</td>
     <td><span class="bx ${tipoBadge[x.tipo_cobranca]||'bgr'}" style="font-size:10px">${tipoLabel[x.tipo_cobranca]||x.tipo_cobranca}</span></td>
@@ -1415,11 +1464,19 @@ async function loadItens(){
 }
 async function addItem(){
   if(!_itensPlanoId)return;
-  const nome=document.getElementById('item-nome').value.trim();
-  if(!nome){toast('Informe o nome do item','err');return;}
-  const b={nome,valor_adesao:parseFloat(document.getElementById('item-adesao').value)||0,valor_recorrencia:parseFloat(document.getElementById('item-recorr').value)||0,tipo_cobranca:document.getElementById('item-tipo').value,parceiro_id:document.getElementById('item-parceiro').value||null};
+  let nome='',conecta_produto_id=null,conecta_produto_nome=null;
+  if(_itemTab==='conecta'){
+    conecta_produto_id=document.getElementById('item-conecta-id').value;
+    conecta_produto_nome=document.getElementById('item-conecta-nome').value;
+    nome=conecta_produto_nome;
+    if(!conecta_produto_id||!nome){toast('Selecione um produto do Conecta','err');return;}
+  }else{
+    nome=document.getElementById('item-nome').value.trim();
+    if(!nome){toast('Informe o nome do produto','err');return;}
+  }
+  const b={nome,conecta_produto_id:conecta_produto_id?parseInt(conecta_produto_id):null,conecta_produto_nome,valor_adesao:parseFloat(document.getElementById('item-adesao').value)||0,valor_recorrencia:parseFloat(document.getElementById('item-recorr').value)||0,tipo_cobranca:document.getElementById('item-tipo').value,parceiro_id:document.getElementById('item-parceiro').value||null};
   const r=await api('/planos/'+_itensPlanoId+'/itens',{method:'POST',body:JSON.stringify(b)});
-  if(r?.id||r?.message){document.getElementById('item-nome').value='';document.getElementById('item-adesao').value='';document.getElementById('item-recorr').value='';loadItens();toast('Item adicionado!');}
+  if(r?.id||r?.message){document.getElementById('item-nome').value='';document.getElementById('item-adesao').value='';document.getElementById('item-recorr').value='';document.getElementById('item-conecta-id').value='';document.getElementById('item-conecta-nome').value='';renderConectaProdutos();loadItens();lp();toast('Item adicionado!');}
   else toast(r?.error||'Erro','err');
 }
 async function delItem(itemId){
