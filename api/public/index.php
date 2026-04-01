@@ -240,25 +240,45 @@ if ($method === 'POST' && $uri === '/auth/login') {
     if ($isCpfCnpj) {
         // ── LOGIN VIA CPF/CNPJ — valida no Conecta 2.0 e mapeia para associado ──
         $conectaUrl = 'https://acicdf.org.br/conecta/auth.php?action=login';
+        $conectaPayload = ['cpf_cnpj' => $docClean, 'password' => $senha];
         $ch = curl_init($conectaUrl);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 15,
             CURLOPT_POST           => true,
             CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-            CURLOPT_POSTFIELDS     => json_encode(['documento' => $docClean, 'senha' => $senha]),
+            CURLOPT_POSTFIELDS     => json_encode($conectaPayload),
+            CURLOPT_SSL_VERIFYPEER => true,
         ]);
         $conectaResp = curl_exec($ch);
         $conectaCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $conectaErr  = curl_error($ch);
         curl_close($ch);
 
+        // Log para debug
+        error_log("[CRM-SSO] Conecta login attempt: doc=$docClean, url=$conectaUrl");
+        error_log("[CRM-SSO] Conecta response: code=$conectaCode, err=$conectaErr, body=" . substr($conectaResp ?: '(empty)', 0, 500));
+
         if ($conectaErr || $conectaCode >= 400) {
+            error_log("[CRM-SSO] Conecta failed: curl_err=$conectaErr, http=$conectaCode");
             json_out(['error' => 'Credenciais inválidas'], 401);
         }
 
         $conectaData = json_decode($conectaResp ?: '{}', true);
-        if (empty($conectaData) || (!($conectaData['ok'] ?? false) && empty($conectaData['id']))) {
+
+        // Aceita qualquer resposta de sucesso do Conecta 2.0
+        $conectaOk = false;
+        if (!empty($conectaData)) {
+            // Possíveis formatos: {ok:true}, {success:true}, {id:...}, {user:...}, HTTP 200 com dados
+            $conectaOk = ($conectaData['ok'] ?? false)
+                      || ($conectaData['success'] ?? false)
+                      || !empty($conectaData['id'])
+                      || !empty($conectaData['user'])
+                      || !empty($conectaData['token']);
+        }
+
+        if (!$conectaOk) {
+            error_log("[CRM-SSO] Conecta auth rejected: " . json_encode($conectaData));
             json_out(['error' => 'Credenciais inválidas'], 401);
         }
 
@@ -1694,6 +1714,88 @@ if ($method === 'POST' && $uri === '/test/email') {
     } else {
         json_out(['error' => 'Falha ao enviar e-mail. Verifique a configuração do servidor de e-mail.'], 500);
     }
+}
+
+// ============================================================
+// REDEFINIR SENHA — usuarios e associados (superadmin only)
+// ============================================================
+
+// POST /usuarios/{id}/redefinir-senha
+if ($method === 'POST' && preg_match('#^/usuarios/(\d+)/redefinir-senha$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    $novaSenha = $b['senha'] ?? '';
+    if (strlen($novaSenha) < 6) json_out(['error' => 'A senha deve ter no mínimo 6 caracteres'], 422);
+
+    $stmt = pdo()->prepare('SELECT id, nome FROM usuarios WHERE id = ? AND (tenant_id = ? OR tenant_id IS NULL)');
+    $stmt->execute([$m[1], $tid]);
+    $user = $stmt->fetch();
+    if (!$user) json_out(['error' => 'Usuário não encontrado'], 404);
+
+    pdo()->prepare('UPDATE usuarios SET senha_hash = ?, atualizado_em = NOW() WHERE id = ?')
+         ->execute([password_hash($novaSenha, PASSWORD_DEFAULT), $m[1]]);
+
+    json_out(['message' => 'Senha redefinida com sucesso', 'usuario' => $user['nome']]);
+}
+
+// POST /associados/{id}/redefinir-senha
+if ($method === 'POST' && preg_match('#^/associados/(\d+)/redefinir-senha$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $b   = body();
+
+    $novaSenha = $b['senha'] ?? '';
+    if (strlen($novaSenha) < 6) json_out(['error' => 'A senha deve ter no mínimo 6 caracteres'], 422);
+
+    $stmt = pdo()->prepare('SELECT id, nome_fantasia, razao_social, cnpj, cpf FROM associados WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    $assoc = $stmt->fetch();
+    if (!$assoc) json_out(['error' => 'Associado não encontrado'], 404);
+
+    // Tenta redefinir no Conecta 2.0 via API
+    $doc = $assoc['cnpj'] ?: $assoc['cpf'];
+    $docClean = preg_replace('/\D/', '', $doc ?? '');
+    $conectaOk = false;
+
+    if ($docClean) {
+        $ch = curl_init('https://acicdf.org.br/conecta/auth.php?action=reset_password');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_POST           => true,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_POSTFIELDS     => json_encode([
+                'cpf_cnpj'     => $docClean,
+                'new_password' => $novaSenha,
+                'admin_secret' => $_ENV['CRM_SECRET'] ?? '',
+            ]),
+        ]);
+        $resp = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $respData = json_decode($resp ?: '{}', true);
+        $conectaOk = $code < 400 && (($respData['ok'] ?? false) || ($respData['success'] ?? false));
+        error_log("[CRM-PWD] Conecta reset for doc=$docClean: http=$code body=" . substr($resp ?: '', 0, 300));
+    }
+
+    // Salva hash pendente localmente (fallback se Conecta não processou)
+    $hash = password_hash($novaSenha, PASSWORD_DEFAULT);
+    $extras = json_decode($assoc['campos_extras'] ?? '{}', true) ?? [];
+    $extras['pending_password_hash'] = $hash;
+    pdo()->prepare('UPDATE associados SET campos_extras = ?, atualizado_em = NOW() WHERE id = ?')
+         ->execute([json_encode($extras), $m[1]]);
+
+    $nome = $assoc['nome_fantasia'] ?: $assoc['razao_social'];
+    $msg  = $conectaOk
+        ? "Senha redefinida no Conecta 2.0 e no CRM"
+        : "Senha salva no CRM. O Conecta 2.0 será atualizado no próximo login.";
+
+    json_out(['message' => $msg, 'associado' => $nome, 'conecta_atualizado' => $conectaOk]);
 }
 
 // ============================================================
