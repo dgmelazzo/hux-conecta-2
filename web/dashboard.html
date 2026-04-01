@@ -994,7 +994,7 @@ async function lp(){
       <div class="pl-acts" style="margin-top:auto">
         <button class="btn-o" onclick="_plCache&&editPlano(_plCache[${p.id}])" style="margin-right:4px">Editar</button>
         ${isCombo||ic>0?`<button class="btn-o" onclick="editPlanoItens(${p.id})" style="margin-right:4px;border-color:var(--or);color:var(--or)">Itens</button>`:''}
-        <button class="btn-r" onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Desativar</button>
+        <button onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')" style="margin-left:auto;background:none;border:none;font-size:11px;color:var(--t3);cursor:pointer;text-decoration:underline;padding:4px 6px" onmouseenter="this.style.color='var(--rd)'" onmouseleave="this.style.color='var(--t3)'">Arquivar</button>
       </div>
     </div>`}).join('');
   // Init Sortable drag & drop
@@ -1081,10 +1081,10 @@ async function editPlano(p){
   om('mpl');
 }
 async function delPlano(id,nome){
-  if(!confirm(`Desativar plano "${nome}"?`))return;
+  if(!confirm(`Arquivar plano "${nome}"? O plano ficará oculto mas pode ser reativado.`))return;
   const r=await api(`/planos/${id}`,{method:'DELETE'});
-  if(r?.success||r?.message){lp();toast('Plano desativado!');}
-  else toast(r?.error||'Erro ao desativar','err');
+  if(r?.success||r?.message){lp();toast('Plano arquivado!');}
+  else toast(r?.error||'Erro ao arquivar','err');
 }
 
 // Cobranças
