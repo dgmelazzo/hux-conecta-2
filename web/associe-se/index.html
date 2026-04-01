@@ -82,6 +82,36 @@ img{max-width:100%;display:block}
 .sp{display:inline-block;width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--or);border-radius:50%;animation:sp .6s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 
+/* ─── CONECTA ─── */
+.conecta{background:linear-gradient(180deg,#fff 0%,#F0F4FF 100%)}
+.conecta-inner{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.conecta-feat{list-style:none;margin:24px 0 32px;display:flex;flex-direction:column;gap:14px}
+.conecta-feat li{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:#374151;line-height:1.5}
+.conecta-feat li svg{width:20px;height:20px;stroke:var(--gn);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;margin-top:1px}
+.conecta-cta{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:var(--or);color:#fff;border:none;border-radius:10px;font-family:var(--f);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none}
+.conecta-cta:hover{background:var(--ordk)}
+.mockup{background:var(--blue);border-radius:16px;padding:20px;box-shadow:0 16px 48px rgba(27,43,107,.2);position:relative;overflow:hidden}
+.mockup::before{content:'';position:absolute;top:-60px;right:-60px;width:160px;height:160px;background:radial-gradient(circle,rgba(232,112,26,.1) 0%,transparent 70%);border-radius:50%}
+.mockup-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.mockup-dots{display:flex;gap:5px}
+.mockup-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15)}
+.mockup-dots span:first-child{background:#EF4444}
+.mockup-dots span:nth-child(2){background:#F59E0B}
+.mockup-dots span:last-child{background:#10B981}
+.mockup-title{font-size:12px;font-weight:600;color:rgba(255,255,255,.6);margin-left:8px}
+.mockup-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.mockup-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px 12px;text-align:center;transition:all .2s}
+.mockup-card:hover{background:rgba(255,255,255,.12)}
+.mockup-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.mockup-ic svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mockup-ic.o{background:rgba(232,112,26,.2)}.mockup-ic.o svg{stroke:var(--or)}
+.mockup-ic.b{background:rgba(96,165,250,.2)}.mockup-ic.b svg{stroke:#60A5FA}
+.mockup-ic.g{background:rgba(16,185,129,.2)}.mockup-ic.g svg{stroke:var(--gn)}
+.mockup-card span{font-size:11px;font-weight:600;color:rgba(255,255,255,.7)}
+.mockup-footer{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+.mockup-footer span{font-size:10px;color:rgba(255,255,255,.35)}
+.mockup-footer div{width:48px;height:6px;background:var(--or);border-radius:99px;opacity:.6}
+
 /* ─── FAQ ─── */
 .faq{background:var(--bg)}
 .faq-list{max-width:720px}
@@ -142,6 +172,10 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   .hero-stats{max-width:400px;margin:0 auto}
   .ben-grid{grid-template-columns:1fr 1fr}
   .plans-grid{grid-template-columns:1fr 1fr}
+  .conecta-inner{grid-template-columns:1fr;text-align:center}
+  .conecta-feat{align-items:center}
+  .conecta-feat li{text-align:left}
+  .mockup{max-width:400px;margin:0 auto}
 }
 @media(max-width:768px){
   .hdr-nav .hdr-link{display:none}
@@ -174,6 +208,7 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <img src="/assets/logo-conecta-crm-white.png" alt="ACIC-DF" class="hdr-logo">
     <nav class="hdr-nav">
       <a href="#beneficios" class="hdr-link">Benefícios</a>
+      <a href="#conecta" class="hdr-link">Conecta</a>
       <a href="#planos" class="hdr-link">Planos</a>
       <a href="#duvidas" class="hdr-link">Dúvidas</a>
       <a href="#planos" class="hdr-cta">Associe-se agora</a>
@@ -235,6 +270,52 @@ select.fc{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
         <div class="ben-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
         <h3>Portal Digital (Conecta 2.0)</h3>
         <p>Acesse seu painel online com boletos, certificados, convênios e tudo sobre sua associação.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CONECTA 2.0 ═══ -->
+<section class="sec conecta" id="conecta">
+  <div class="sec-inner">
+    <div class="conecta-inner">
+      <div>
+        <div class="sec-tag">Exclusivo para associados</div>
+        <h2 class="sec-title">Conecta 2.0 — Seu clube de benefícios na palma da mão</h2>
+        <p class="sec-sub" style="margin-bottom:0">Ao se associar à ACIC-DF, você e seus colaboradores ganham acesso ao Conecta 2.0 — o portal digital exclusivo de benefícios da associação. Tudo em um só lugar, no celular ou computador.</p>
+        <ul class="conecta-feat">
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Catálogo de produtos e serviços exclusivos para associados</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Comunicados e novidades da ACIC-DF em tempo real</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Acesso para todos os colaboradores da sua empresa</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Login único com o mesmo CPF/CNPJ da associação</li>
+        </ul>
+        <a href="#planos" class="conecta-cta">Ver planos com Conecta 2.0</a>
+      </div>
+      <div>
+        <div class="mockup">
+          <div class="mockup-bar">
+            <div class="mockup-dots"><span></span><span></span><span></span></div>
+            <span class="mockup-title">Conecta 2.0</span>
+          </div>
+          <div class="mockup-grid">
+            <div class="mockup-card">
+              <div class="mockup-ic o"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+              <span>Produtos</span>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-ic b"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+              <span>Comunicados</span>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-ic g"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+              <span>Benefícios</span>
+            </div>
+          </div>
+          <div class="mockup-footer">
+            <span>acicdf.org.br/conecta</span>
+            <div></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
