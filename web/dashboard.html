@@ -768,7 +768,7 @@ async function api(u,o={}){
 function logout(){localStorage.clear();location.href='/';}
 function toast(msg,type='ok'){const t=document.createElement('div');t.className='toast '+(type==='ok'?'ok':'err');t.innerHTML=(type==='ok'?'<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>')+' '+msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
 function om(i){document.getElementById(i).classList.add('on');}
-function cm(i){document.getElementById(i).classList.remove('on');editId=null;}
+function cm(i){document.getElementById(i).classList.remove('on');editId=null;if(i==='ma')_restoreModal();}
 // Modals close only via X button (no backdrop click)
 
 // Navegação
@@ -790,7 +790,7 @@ function go(n){
   if(n==='d')ld();if(n==='a')la();if(n==='p'){if(usr.role==='associado_empresa')lpAssociado();else lp();}if(n==='c')lc();if(n==='u')lu();if(n==='gw')lgw();if(n==='com')lcomTpl();if(n==='insc')linsc();if(n==='par')lpar();
 }
 function act(){const on=document.querySelector('.pg2.on')?.id;
-  if(on==='pd'||on==='pa'){editId=null;document.getElementById('ma-title').textContent='Novo Associado';limpaCampos(['frz','fnf','fd','fe','ftel','fw','fobs']);document.getElementById('fst').value='prospecto';document.getElementById('fvc').value='';document.getElementById('fcat').disabled=false;om('ma');}
+  if(on==='pd'||on==='pa'){editId=null;_restoreModal();document.getElementById('ma-title').textContent='Novo Associado';limpaCampos(['frz','fnf','fd','fe','ftel','fw','fobs']);document.getElementById('fst').value='prospecto';document.getElementById('fvc').value='';document.getElementById('fcat').disabled=false;om('ma');}
   else if(on==='pp'){document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';limpaCampos(['pl-nome','pl-val','pl-anual','pl-desc','pl-val-adesao']);document.getElementById('pl-split-ativo').checked=false;document.getElementById('pl-split-pct-wrap').style.display='none';_plSelectedItems=[];renderPlChips();loadPlConecta().then(()=>renderPlConectaGrid());om('mpl');}
   else if(on==='pc'){carregaAssocs();om('mcob');}
   else if(on==='pu')om('musr');
@@ -868,28 +868,31 @@ function setCategoria(cat,btn){
   la(1);
 }
 async function la(p2=1){
-  acp=p2;const q=document.getElementById('sq')?.value||'';const st=document.getElementById('ss')?.value||'';
+  const isSelf=usr.role==='associado_empresa'||usr.role==='colaborador';
+  // Hide tabs and search for associado (they see only their own record)
+  const tabsEl=document.querySelector('#pa .assoc-tabs');if(tabsEl)tabsEl.style.display=isSelf?'none':'';
+  const sbrEl=document.querySelector('#pa .sbr');if(sbrEl)sbrEl.style.display=isSelf?'none':'';
+  acp=p2;const q=isSelf?'':(document.getElementById('sq')?.value||'');const st=isSelf?'':(document.getElementById('ss')?.value||'');
   document.getElementById('at').innerHTML='<div class="ld"><div class="sp"></div></div>';
-  const catFilt=_assocCategoria||'';const d=await api(`/associados?page=${p2}&busca=${encodeURIComponent(q)}&status=${st}&categoria=${catFilt}`);if(!d)return;
+  const catFilt=isSelf?'':(_assocCategoria||'');const d=await api(`/associados?page=${p2}&busca=${encodeURIComponent(q)}&status=${st}&categoria=${catFilt}`);if(!d)return;
   const nbEl=document.getElementById('nb');if(nbEl)nbEl.textContent=d.total;assocs=d.data;
   const rows=Array.isArray(d.data)?d.data:(d.data?.data||[]);assocs=rows;_assocCache={};rows.forEach(x=>_assocCache[x.id]=x);
   if(rows.length===0){document.getElementById('at').innerHTML='<div class="em"><svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--bd);fill:none;stroke-width:1.5;margin:0 auto 12px;display:block"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><div style="font-weight:600;margin-bottom:4px">Nenhum associado encontrado</div><div style="font-size:12px;color:var(--t3);margin-bottom:12px">Cadastre o primeiro associado para começar</div><button class="btn" onclick="act()" style="margin:0 auto">Novo Associado</button></div>';document.getElementById('apg').style.display='none';return;}
-  document.getElementById('at').innerHTML=`<table><thead><tr><th>Empresa</th><th>Categoria</th><th>Contato</th><th>Status</th><th>Plano</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
-    <td><strong>${x.razao_social||x.nome_responsavel||'-'}</strong><br><span style="font-size:11px;color:var(--t3)">${x.cnpj||x.cpf||''}</span>${x.vinculo_id?`<br><span style="font-size:10px;color:var(--blue)">↳ vinculado #${x.vinculo_id}</span>`:''}</td>
-    <td style="font-size:11px">${{'empresa':'Empresa','colaborador':'Colaborador','dependente':'Dependente'}[x.categoria]||'-'}</td>
+  const actBtns=x=>isSelf
+    ?`<button class="btn-o" onclick="editarMeuPerfil(${x.id})" style="margin-right:4px">Editar</button>`
+    :`<button class="btn-o" onclick="verDetalhe(${x.id})" style="margin-right:4px">Ver</button><button class="btn-o" onclick="editAssocById(${x.id})" style="margin-right:4px">Editar</button><button class="btn-r" onclick="delAssoc(${x.id},'${(x.razao_social||x.nome_responsavel||'').replace(/'/g,"\\'")}')">Excluir</button>`;
+  document.getElementById('at').innerHTML=`<table><thead><tr><th>Empresa</th>${isSelf?'':'<th>Categoria</th>'}<th>Contato</th><th>Status</th><th>Plano</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
+    <td><strong>${x.razao_social||x.nome_responsavel||'-'}</strong><br><span style="font-size:11px;color:var(--t3)">${x.cnpj||x.cpf||''}</span></td>
+    ${isSelf?'':`<td style="font-size:11px">${{'empresa':'Empresa','colaborador':'Colaborador','dependente':'Dependente'}[x.categoria]||'-'}</td>`}
     <td><span style="font-size:12px">${x.email||'-'}</span><br><span style="font-size:11px;color:var(--t3)">${x.whatsapp||x.telefone||''}</span></td>
     <td>${bs(x.status)}</td>
     <td style="font-size:12px">${x.plano_nome||'-'}</td>
-    <td style="white-space:nowrap">
-      <button class="btn-o" onclick="verDetalhe(${x.id})" style="margin-right:4px">Ver</button>
-      <button class="btn-o" onclick="editAssocById(${x.id})" style="margin-right:4px">Editar</button>
-      <button class="btn-r" onclick="delAssoc(${x.id},'${(x.razao_social||x.nome_responsavel||'').replace(/'/g,"\\'")}')">Excluir</button>
-    </td>
+    <td style="white-space:nowrap">${actBtns(x)}</td>
   </tr>`).join('')}</tbody></table>
-  <div class="m-cards">${d.data.map(x=>`<div class="m-card" onclick="verDetalhe(${x.id})">
+  <div class="m-cards">${d.data.map(x=>`<div class="m-card" onclick="${isSelf?`editarMeuPerfil(${x.id})`:`verDetalhe(${x.id})`}">
     <div class="m-card-row"><div><div class="m-card-main">${x.razao_social||x.nome_responsavel||'-'}</div><div class="m-card-sub">${x.cnpj||x.cpf||''}</div></div>${bs(x.status)}</div>
     <div class="m-card-row"><span style="font-size:12px;color:var(--t2)">${x.plano_nome||'Sem plano'}</span></div>
-    <div class="m-card-acts"><button class="btn-o" onclick="event.stopPropagation();verDetalhe(${x.id})">Ver</button><button class="btn-o" onclick="event.stopPropagation();editAssocById(${x.id})">Editar</button><button class="btn-r" onclick="event.stopPropagation();delAssoc(${x.id},'${(x.razao_social||x.nome_responsavel||'').replace(/'/g,"\\'")}')">Excluir</button></div>
+    <div class="m-card-acts">${actBtns(x)}</div>
   </div>`).join('')}</div>`;
   const info=`${(p2-1)*d.limit+1}–${Math.min(p2*d.limit,d.total)} de ${d.total} associados`;
   const btns=Array.from({length:d.pages},(_,i)=>`<button class="pag-btn${i+1===p2?' on':''}" onclick="la(${i+1})">${i+1}</button>`).join('');
@@ -953,6 +956,7 @@ async function editAssocById(id){
   editAssoc(x);
 }
 function editAssoc(x){
+  _restoreModal();
   editId=x.id;
   document.getElementById('ma-title').textContent='Editar Associado';
   document.getElementById('ft').value=x.tipo_pessoa||'pj';
@@ -972,7 +976,48 @@ function editAssoc(x){
   onCatChange().then(()=>{if(x.vinculo_id)document.getElementById('fvinc').value=x.vinculo_id;});
   om('ma');
 }
+async function editarMeuPerfil(id){
+  id=parseInt(id);
+  let x=_assocCache[id];
+  if(!x){const r=await api('/associados/'+id);x=r?.id?r:null;}
+  if(!x)return;
+  editId=x.id;
+  document.getElementById('ma-title').textContent='Meu Perfil';
+  document.querySelector('#ma .ms2').innerHTML='Atualize seus dados de contato';
+  // Hide admin-only fields
+  ['ft','fst','fpl','fvc','fnf'].forEach(fid=>{const el=document.getElementById(fid);if(el&&el.closest('.fg'))el.closest('.fg').style.display='none';});
+  const ftRow=document.getElementById('ft')?.closest('.fr');if(ftRow)ftRow.style.display='none';
+  const plRow=document.getElementById('fpl')?.closest('.fr');if(plRow)plRow.style.display='none';
+  const catRow=document.getElementById('fg-cat-vinc');if(catRow)catRow.style.display='none';
+  // Razão Social / CNPJ — show as readonly
+  const frzEl=document.getElementById('frz');frzEl.value=x.razao_social||x.nome_responsavel||'';frzEl.readOnly=true;frzEl.style.background='var(--bg)';frzEl.style.color='var(--t3)';
+  const fdEl=document.getElementById('fd');fdEl.value=x.cnpj||x.cpf||'';fdEl.readOnly=true;fdEl.style.background='var(--bg)';fdEl.style.color='var(--t3)';
+  // Editable fields
+  document.getElementById('fe').value=x.email||'';
+  document.getElementById('ftel').value=x.telefone||'';
+  document.getElementById('fw').value=x.whatsapp||'';
+  document.getElementById('fobs').value=x.observacoes||'';
+  om('ma');
+}
+function _restoreModal(){
+  // Restore all fields to default visibility (undo editarMeuPerfil changes)
+  ['ft','fst','fpl','fvc','fnf'].forEach(fid=>{const el=document.getElementById(fid);if(el&&el.closest('.fg'))el.closest('.fg').style.display='';});
+  const ftRow=document.getElementById('ft')?.closest('.fr');if(ftRow)ftRow.style.display='';
+  const plRow=document.getElementById('fpl')?.closest('.fr');if(plRow)plRow.style.display='';
+  const catRow=document.getElementById('fg-cat-vinc');if(catRow)catRow.style.display='';
+  const frzEl=document.getElementById('frz');frzEl.readOnly=false;frzEl.style.background='';frzEl.style.color='';
+  const fdEl=document.getElementById('fd');fdEl.readOnly=false;fdEl.style.background='';fdEl.style.color='';
+}
 async function sa(){
+  const isSelf=usr.role==='associado_empresa'||usr.role==='colaborador';
+  if(isSelf&&editId){
+    const b={email:document.getElementById('fe').value,telefone:document.getElementById('ftel').value,whatsapp:document.getElementById('fw').value,observacoes:document.getElementById('fobs').value};
+    if(b.email&&!b.email.includes('@')){toast('E-mail inválido','err');return;}
+    const r=await api(`/associados/${editId}`,{method:'PUT',body:JSON.stringify(b)});
+    if(r?.message){cm('ma');_restoreModal();la(acp);toast('Perfil atualizado!');}
+    else toast(r?.error||'Erro ao salvar','err');
+    return;
+  }
   const t=document.getElementById('ft').value;
   const cat=document.getElementById('fcat').value;
   const vincId=document.getElementById('fvinc').value;
@@ -1432,7 +1477,9 @@ async function verDetalhe(id){
   if(!a||!a.id){cm('mdet');toast('Erro ao carregar associado','err');return;}
   document.getElementById('det-nome').textContent=a.razao_social||a.nome_fantasia||a.nome_responsavel||'-';
   document.getElementById('det-info').textContent=[a.cnpj||a.cpf,a.email,a.whatsapp].filter(Boolean).join(' · ')||'-';
+  const isAssoc=usr.role==='associado_empresa'||usr.role==='colaborador';
   document.getElementById('det-btn-pwd').style.display=usr.role==='superadmin'?'':'none';
+  document.querySelector('#mdet .mf .btn[onclick="actCobDet()"]').style.display=isAssoc?'none':'';
   document.getElementById('det-dados').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;font-size:13px;color:var(--t2)">
     <div><span style="font-weight:600;color:var(--tx)">Status:</span> ${bs(a.status)}</div>
     <div><span style="font-weight:600;color:var(--tx)">Plano:</span> ${a.plano_nome||'Nenhum'}</div>

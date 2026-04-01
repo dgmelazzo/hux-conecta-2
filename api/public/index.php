@@ -671,13 +671,24 @@ if ($method === 'POST' && $uri === '/associados') {
 // PUT /associados/{id}
 if ($method === 'PUT' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     $p   = auth_required();
-    require_role($p, ['superadmin', 'gestor']);
     $tid = $p['tenant_id'] ?? tenant_id();
-    $b   = body();
+    $isAdmin = in_array($p['role'] ?? '', ['superadmin', 'gestor']);
+    $isSelf  = isset($p['associado_id']) && (int)$p['associado_id'] === (int)$m[1];
 
-    $allowed = ['razao_social','nome_fantasia','nome_responsavel','email','telefone','whatsapp',
-                'cep','logradouro','numero','complemento','bairro','cidade','uf',
-                'status','plano_id','data_associacao','data_vencimento','conecta_user_id'];
+    if (!$isAdmin && !$isSelf) {
+        json_out(['error' => 'Permissão insuficiente'], 403);
+    }
+
+    $b = body();
+
+    if ($isSelf && !$isAdmin) {
+        $allowed = ['email','telefone','whatsapp','observacoes'];
+    } else {
+        $allowed = ['razao_social','nome_fantasia','nome_responsavel','email','telefone','whatsapp',
+                    'cep','logradouro','numero','complemento','bairro','cidade','uf',
+                    'status','plano_id','data_associacao','data_vencimento','conecta_user_id','observacoes'];
+    }
+
     $set = []; $vals = [];
     foreach ($allowed as $f) {
         if (array_key_exists($f, $b)) { $set[] = "$f = ?"; $vals[] = $b[$f]; }
@@ -709,6 +720,14 @@ if ($method === 'DELETE' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
 if ($method === 'GET' && preg_match('#^/associados/(\d+)/cobrancas$#', $uri, $m)) {
     $p   = auth_required();
     $tid = $p['tenant_id'] ?? tenant_id();
+
+    // associado_empresa e colaborador: apenas suas próprias cobranças
+    if (in_array($p['role'] ?? '', ['associado_empresa', 'colaborador'])) {
+        $ownId = $p['associado_id'] ?? $p['sub'];
+        if ((int)$m[1] !== (int)$ownId) {
+            json_out(['error' => 'Permissão insuficiente'], 403);
+        }
+    }
 
     // Verifica se associado existe e pertence ao tenant
     $stmtA = pdo()->prepare('SELECT id FROM associados WHERE id = ? AND tenant_id = ? LIMIT 1');
