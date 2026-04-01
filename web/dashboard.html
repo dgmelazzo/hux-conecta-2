@@ -686,6 +686,8 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 const A='https://api.acicdf.org.br';
 let tk=localStorage.getItem('crm_token'),usr=JSON.parse(localStorage.getItem('crm_user')||'{}');
 let pls=[],_plCache={},assocs=[],acp=1,ccp=1,st3,editId=null;
+const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{t:'Dashboard',s:'Visão geral do sistema',b:''},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
+let _assocCategoria='',_assocCache={};
 if(!tk)location.href='/';
 // Inicializar usuário + permissões por role
 if(usr.nome){
@@ -775,7 +777,6 @@ function cm(i){document.getElementById(i).classList.remove('on');editId=null;}
 // Modals close only via X button (no backdrop click)
 
 // Navegação
-const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{t:'Dashboard',s:'Visão geral do sistema',b:''},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'}};
 // Sidebar mobile
 function openSb(){document.getElementById('sb').classList.add('open');document.getElementById('sb-ov').classList.add('on');document.body.style.overflow='hidden';}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('sb-ov').classList.remove('on');document.body.style.overflow='';}
@@ -843,7 +844,6 @@ async function ld(){
 }
 
 // Associados
-let _assocCategoria='',_assocCache={};
 function setCategoria(cat,btn){
   _assocCategoria=cat;
   document.querySelectorAll('#pa .assoc-tab').forEach(t=>t.classList.remove('on'));
