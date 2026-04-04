@@ -2,7 +2,7 @@
  * ACIC CONECTA — Camada de API
  * ==============================
  * Toda comunicação passa pelo auth.php (backend PHP na Hostgator).
- * O frontend nunca fala diretamente com o HiGestor.
+ * O frontend nunca fala diretamente com o CRM - sempre via auth.php bridge.
  *
  * ★ ÚNICA CONFIGURAÇÃO NECESSÁRIA: defina AUTH_URL abaixo ★
  */
@@ -66,7 +66,7 @@ async function apiPrimeiroAcesso(cpfCnpj, senha, confirmarSenha) {
   setToken(data.token);
   sessionStorage.setItem('acic_session', JSON.stringify({
     tipo:       data.tipo,
-    higestorId: data.higestor_id,
+    crm_associado_id: data.crm_associado_id,
     cpf:        cpfCnpj,
     nome:       data.nome,
     is_admin:      data.is_admin || false,
@@ -83,7 +83,7 @@ async function apiLogin(cpfCnpj, senha) {
   setToken(data.token);
   sessionStorage.setItem('acic_session', JSON.stringify({
     tipo:        data.tipo,
-    higestorId:  data.higestor_id,
+    crm_associado_id: data.crm_associado_id,
     cpf:         cpfCnpj,
     nome:        data.nome,
     is_admin:      data.is_admin || false,
@@ -106,16 +106,16 @@ function getSession() {
 }
 
 // ============================================================
-// DADOS DO ASSOCIADO (via proxy auth.php → HiGestor)
+// DADOS DO ASSOCIADO (via proxy auth.php -> Conecta CRM ACIC)
 // ============================================================
 async function apiGetAssociado() {
   const token   = getToken();
   const session = getSession();
 
-  // Busca dados do HiGestor via auth.php
+  // Busca dados do CRM via auth.php
   const data = await authPost('dados', { token });
 
-  // Admin retorna dados simples sem HiGestor
+  // Admin retorna dados simples sem consulta ao CRM
   if (session?.is_admin === true) {
     return {
       tipo:           data.tipo || 'contribuinte',
@@ -206,7 +206,7 @@ function mapContribuinte(attrs, id) {
 }
 
 // ============================================================
-// BENEFÍCIOS — gerenciados aqui (sem endpoint no HiGestor)
+// BENEFICIOS - gerenciados localmente (sem endpoint no CRM)
 // ============================================================
 async function apiGetBeneficios() {
   // Benefícios = produtos cadastrados no banco (destaque primeiro)
@@ -1386,7 +1386,7 @@ function renderAssociado(d) {
   document.getElementById('empresa-loading').classList.add('hidden');
   document.getElementById('empresa-content').classList.remove('hidden');
 
-  // Para admin: CPF do config (não CNPJ da sessão HiGestor)
+  // Para admin: CPF do config (nao CNPJ da sessao CRM)
   const isAdminUser = getSession()?.is_admin === true;
   document.getElementById('emp-avatar-big').textContent = initial;
   document.getElementById('emp-razao').textContent      = isAdminUser ? 'Administrador ACIC-DF' : d.razaoSocial;
@@ -2367,7 +2367,7 @@ async function verDetalheUsuario(id) {
   try {
     const d    = await adminApi('usuario', { id }, 'GET');
     const u    = d.usuario;
-    const hg   = d.higestor || d.usuario || {};
+    const hg   = d.crm_dados || d.usuario || {};
     const logs = d.acessos  || [];
 
     content.innerHTML = `

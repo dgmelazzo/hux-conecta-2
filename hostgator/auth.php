@@ -1,305 +1,455 @@
-﻿<?php
+<?php
 /**
- * auth.php â€” Conecta 2.0 Authentication API (HostGator)
+ * auth.php - Conecta 2.0 Authentication API (HostGator)
  * Location: https://acicdf.org.br/conecta/auth.php
  *
- * Actions: login, first, check, register_from_crm, reset_password
+ * Fonte unica de verdade: Conecta CRM ACIC (api-crm.acicdf.org.br).
  *
- * This file should be uploaded manually to HostGator via WinSCP/cPanel.
- * It replaces or extends the existing auth.php on the Conecta 2.0 platform.
+ * Actions: check, first, login, dados, validate, logout, admin_check
  *
- * CRM_SECRET must match between this file and the CRM .env
+ * Bridge para CRM protegida por X-Conecta-Secret (CRM_BRIDGE_SECRET).
  */
 declare(strict_types=1);
 
+require_once __DIR__ . '/config.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-CRM-Secret');
+header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
-
-// â”€â”€ CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// HostGator MySQL credentials
-$DB_HOST = 'localhost';
-$DB_NAME = 'hg531e07_conecta2';
-$DB_USER = 'hg531e07_conecta2';
-$DB_PASS = '';                 // âš ï¸ PREENCHER â€” senha do MySQL HostGator (ver cPanel > MySQL Databases)
-
-$CRM_SECRET  = 'cd1ea530c9d364f13e4b6911dcf7a59a431d023b3ab6db62d62acbfd8453ddfb';
-$CRM_API_URL = 'https://api.acicdf.org.br';
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 $action = $_GET['action'] ?? '';
 $body   = json_decode(file_get_contents('php://input') ?: '{}', true) ?? [];
 
+// ------------------------------------------------------------
+// DB
+// ------------------------------------------------------------
 try {
     $pdo = new PDO(
-        "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4",
-        $DB_USER, $DB_PASS,
+        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
+        DB_USER, DB_PASS,
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
     );
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database connection error']);
+    echo json_encode(['ok' => false, 'error' => 'DB connection error']);
     exit;
 }
 
-function respond(array $data, int $code = 200): never {
+// Schema upgrade - garante colunas novas sem quebrar existentes
+$pdo->exec("ALTER TABLE conecta_users
+    ADD COLUMN IF NOT EXISTS crm_associado_id INT NULL,
+    ADD COLUMN IF NOT EXISTS crm_dados JSON NULL");
+
+// ------------------------------------------------------------
+// Helpers
+// ------------------------------------------------------------
+function ok(array $data = [], int $code = 200): never {
     http_response_code($code);
-    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    echo json_encode(array_merge(['ok' => true], $data), JSON_UNESCAPED_UNICODE);
     exit;
 }
+function err(int $code, string $msg): never {
+    http_response_code($code);
+    echo json_encode(['ok' => false, 'error' => $msg], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+function normalizeDoc(string $raw): string {
+    return preg_replace('/\D/', '', $raw);
+}
 
-function notifyCRM(string $action, array $data): void {
-    global $CRM_SECRET, $CRM_API_URL;
-    $data['action'] = $action;
-    $ch = curl_init($CRM_API_URL . '/sync/conecta');
+function crmPost(string $endpoint, array $body): array {
+    $ch = curl_init(CRM_API_URL . $endpoint);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 10,
         CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($body, JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER     => [
             'Content-Type: application/json',
-            'X-CRM-Secret: ' . $CRM_SECRET,
+            'X-Conecta-Secret: ' . CRM_BRIDGE_SECRET,
         ],
-        CURLOPT_POSTFIELDS     => json_encode($data),
     ]);
-    curl_exec($ch);
+    $res  = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    if ($res === false) return ['ok' => false, '_http' => $code, 'error' => 'CRM indisponivel'];
+    $data = json_decode($res, true);
+    if (!is_array($data)) $data = ['ok' => false, 'error' => 'Resposta invalida do CRM'];
+    $data['_http'] = $code;
+    return $data;
 }
 
-// ============================================================
-// ACTION: login
-// ============================================================
-if ($action === 'login') {
-    $doc    = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
-    $passwd = $body['password'] ?? '';
+function crmGetPublic(string $endpoint): array {
+    $ch = curl_init(CRM_API_URL . $endpoint);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_HTTPHEADER     => [
+            'X-Conecta-Secret: ' . CRM_BRIDGE_SECRET,
+        ],
+    ]);
+    $res  = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($res === false) return ['ok' => false, '_http' => $code, 'error' => 'CRM indisponivel'];
+    $data = json_decode($res, true);
+    if (!is_array($data)) $data = ['ok' => false, 'error' => 'Resposta invalida do CRM'];
+    $data['_http'] = $code;
+    return $data;
+}
 
-    if (!$doc || !$passwd) {
-        respond(['success' => false, 'message' => 'CPF/CNPJ e senha obrigatÃ³rios'], 422);
-    }
+function crmGet(string $endpoint, string $token): ?array {
+    $ch = curl_init(CRM_API_URL . $endpoint);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_HTTPHEADER     => [
+            'Authorization: Bearer ' . $token,
+        ],
+    ]);
+    $res = curl_exec($ch);
+    curl_close($ch);
+    return $res ? json_decode($res, true) : null;
+}
 
-    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
-    $stmt  = $pdo->prepare("SELECT * FROM conecta_users WHERE $field = ? LIMIT 1");
-    $stmt->execute([$doc]);
-    $user = $stmt->fetch();
+function makeToken(): string { return bin2hex(random_bytes(32)); }
 
-    if (!$user) {
-        respond(['success' => false, 'message' => 'Credenciais invalidas.'], 401);
-    }
+// ------------------------------------------------------------
+// ACTION: check - verifica associado no CRM (sem senha)
+// ------------------------------------------------------------
+if ($action === 'check') {
+    $doc = normalizeDoc($body['cpf_cnpj'] ?? '');
+    if (!$doc) err(422, 'CPF/CNPJ obrigatorio');
 
-    // Primeiro acesso: user exists but has no password yet
-    if (!empty($user['primeiro_acesso']) || empty($user['senha_hash'])) {
-        respond([
-            'success'        => true,
-            'primeiro_acesso' => true,
-            'data'           => [
-                'primeiro_acesso' => true,
-                'nome'           => $user['nome'] ?? '',
-            ],
+    // Admin: fluxo local, nao consulta CRM
+    if ($doc === ADMIN_DOC) {
+        $st = $pdo->prepare('SELECT id, nome, senha_hash, primeiro_acesso FROM conecta_users WHERE cpf = ? OR cnpj = ? LIMIT 1');
+        $st->execute([$doc, $doc]);
+        $u = $st->fetch();
+        $primeiro = !$u || empty($u['senha_hash']) || !empty($u['primeiro_acesso']);
+        ok([
+            'existe'          => true,
+            'primeiro_acesso' => $primeiro,
+            'nome'            => $u['nome'] ?? 'Administrador',
+            'status'          => 'ativo',
+            'plano'           => 'Admin',
+            'is_admin'        => true,
         ]);
     }
 
-    // Verify password
-    if (!password_verify($passwd, $user['senha_hash'])) {
-        respond(['success' => false, 'message' => 'Credenciais invalidas.'], 401);
+    // Associado: consulta CRM
+    $crm = crmGetPublic('/auth/check-associado?documento=' . urlencode($doc));
+    if (!$crm['ok']) {
+        err(404, 'CPF/CNPJ nao encontrado como associado da ACIC-DF.');
+    }
+    $d = $crm['data'] ?? [];
+    if (($d['status'] ?? '') !== 'ativo') {
+        err(403, 'Associado inativo. Contate a ACIC-DF.');
     }
 
-    // Update last login
-    $pdo->prepare('UPDATE conecta_users SET ultimo_login = NOW() WHERE id = ?')->execute([$user['id']]);
+    // Garante user local (cache/sessao)
+    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+    $stU = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+    $stU->execute([$doc]);
+    if (!$stU->fetch()) {
+        $pdo->prepare("INSERT INTO conecta_users ($field, nome, primeiro_acesso, criado_em) VALUES (?, ?, 1, NOW())")
+            ->execute([$doc, $d['nome'] ?? '']);
+    }
 
-    // Notify CRM of successful login
-    notifyCRM('upsert', [
-        'documento'       => $doc,
-        'nome'            => $user['nome'] ?? '',
-        'email'           => $user['email'] ?? '',
-        'conecta_user_id' => $user['id'],
-    ]);
-
-    // Generate simple session token
-    $token = bin2hex(random_bytes(32));
-    $pdo->prepare(
-        'INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
-         VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))'
-    )->execute([$user['id'], $token]);
-
-    respond([
-        'success' => true,
-        'token'   => $token,
-        'user'    => [
-            'id'   => $user['id'],
-            'nome' => $user['nome'] ?? '',
-        ],
+    ok([
+        'existe'          => true,
+        'primeiro_acesso' => (bool)($d['primeiro_acesso'] ?? true),
+        'nome'            => $d['nome'] ?? '',
+        'status'          => $d['status'] ?? '',
+        'plano'           => $d['plano'] ?? '',
+        'is_admin'        => false,
     ]);
 }
 
-// ============================================================
-// ACTION: first â€” primeiro acesso, define senha
-// ============================================================
+// ------------------------------------------------------------
+// ACTION: first - primeiro acesso, define senha
+// ------------------------------------------------------------
 if ($action === 'first') {
-    $doc    = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
+    $doc    = normalizeDoc($body['cpf_cnpj'] ?? '');
     $passwd = $body['password'] ?? '';
-
-    if (!$doc) respond(['success' => false, 'message' => 'CPF/CNPJ obrigatÃ³rio'], 422);
-    if (strlen($passwd) < 8) respond(['success' => false, 'message' => 'Senha mÃ­nima 8 caracteres'], 422);
+    if (!$doc) err(422, 'CPF/CNPJ obrigatorio');
+    if (strlen($passwd) < 6) err(422, 'Senha minima de 6 caracteres');
 
     $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
-    $stmt  = $pdo->prepare("SELECT * FROM conecta_users WHERE $field = ? LIMIT 1");
-    $stmt->execute([$doc]);
-    $user = $stmt->fetch();
+    $isAdmin = ($doc === ADMIN_DOC);
 
-    if (!$user) {
-        respond(['success' => false, 'message' => 'UsuÃ¡rio nÃ£o encontrado'], 404);
+    if ($isAdmin) {
+        // Admin: so local
+        $hash = password_hash($passwd, PASSWORD_BCRYPT);
+        $st = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+        $st->execute([$doc]);
+        $u = $st->fetch();
+        if (!$u) {
+            $pdo->prepare("INSERT INTO conecta_users ($field, nome, senha_hash, primeiro_acesso, criado_em)
+                           VALUES (?, 'Administrador', ?, 0, NOW())")->execute([$doc, $hash]);
+            $uid = (int)$pdo->lastInsertId();
+        } else {
+            $uid = (int)$u['id'];
+            $pdo->prepare("UPDATE conecta_users SET senha_hash = ?, primeiro_acesso = 0, atualizado_em = NOW() WHERE id = ?")
+                ->execute([$hash, $uid]);
+        }
+        $tok = makeToken();
+        $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+                       VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([$uid, $tok]);
+        ok([
+            'token'            => $tok,
+            'tipo'             => 'admin',
+            'cpf_cnpj'         => $doc,
+            'nome'             => 'Administrador',
+            'is_admin'         => true,
+            'is_superadmin'    => true,
+            'crm_associado_id' => null,
+            'primeiro_acesso'  => false,
+        ]);
     }
 
+    // Associado: define senha no CRM (fonte de verdade)
+    $crm = crmPost('/auth/set-senha-associado', ['documento' => $doc, 'senha' => $passwd]);
+    if (!($crm['ok'] ?? false)) {
+        err($crm['_http'] ?: 500, $crm['error'] ?? 'Falha ao definir senha no CRM');
+    }
+    $d = $crm['data'] ?? [];
+
+    // Cache local + sessao
     $hash = password_hash($passwd, PASSWORD_BCRYPT);
-    $pdo->prepare('UPDATE conecta_users SET senha_hash = ?, primeiro_acesso = 0, atualizado_em = NOW() WHERE id = ?')
-         ->execute([$hash, $user['id']]);
-
-    // Notify CRM
-    notifyCRM('password_set', ['documento' => $doc]);
-    notifyCRM('upsert', [
-        'documento'       => $doc,
-        'nome'            => $user['nome'] ?? '',
-        'conecta_user_id' => $user['id'],
-    ]);
-
-    // Generate token
-    $token = bin2hex(random_bytes(32));
-    $pdo->prepare(
-        'INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
-         VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))'
-    )->execute([$user['id'], $token]);
-
-    respond([
-        'success' => true,
-        'token'   => $token,
-        'nome'    => $user['nome'] ?? '',
-        'user'    => ['id' => $user['id'], 'nome' => $user['nome'] ?? ''],
-    ]);
-}
-
-// ============================================================
-// ACTION: check â€” verifica se CPF/CNPJ existe
-// ============================================================
-if ($action === 'check') {
-    $secret = $body['secret'] ?? '';
-    if ($secret !== $CRM_SECRET) respond(['success' => false, 'message' => 'Unauthorized'], 401);
-
-    $doc   = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
-    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
-    $stmt  = $pdo->prepare("SELECT id, nome FROM conecta_users WHERE $field = ? LIMIT 1");
-    $stmt->execute([$doc]);
-    $user = $stmt->fetch();
-
-    respond([
-        'success' => true,
-        'exists'  => (bool)$user,
-        'user_id' => $user['id'] ?? null,
-        'nome'    => $user['nome'] ?? null,
-    ]);
-}
-
-// ============================================================
-// ACTION: register_from_crm â€” CRM cria usuÃ¡rio no Conecta
-// ============================================================
-if ($action === 'register_from_crm') {
-    $secret = $body['secret'] ?? '';
-    if ($secret !== $CRM_SECRET) respond(['success' => false, 'message' => 'Unauthorized'], 401);
-
-    $doc  = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
-    $nome = $body['nome'] ?? 'Associado';
-
-    if (!$doc) respond(['success' => false, 'message' => 'CPF/CNPJ obrigatÃ³rio'], 422);
-
-    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
-
-    // Check if already exists
-    $stmt = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
-    $stmt->execute([$doc]);
-    if ($stmt->fetch()) {
-        respond(['success' => true, 'message' => 'UsuÃ¡rio jÃ¡ existe', 'primeiro_acesso' => true]);
+    $st = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+    $st->execute([$doc]);
+    $u = $st->fetch();
+    if (!$u) {
+        $pdo->prepare("INSERT INTO conecta_users ($field, nome, senha_hash, primeiro_acesso, crm_associado_id, crm_dados, criado_em)
+                       VALUES (?, ?, ?, 0, ?, ?, NOW())")
+            ->execute([$doc, $d['razao_social'] ?? $d['nome_fantasia'] ?? '', $hash, $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE)]);
+        $uid = (int)$pdo->lastInsertId();
+    } else {
+        $uid = (int)$u['id'];
+        $pdo->prepare("UPDATE conecta_users SET senha_hash = ?, primeiro_acesso = 0, crm_associado_id = ?, crm_dados = ?, atualizado_em = NOW() WHERE id = ?")
+            ->execute([$hash, $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE), $uid]);
     }
 
-    // Create with primeiro_acesso=1
-    $pdo->prepare(
-        "INSERT INTO conecta_users ($field, nome, primeiro_acesso, criado_em)
-         VALUES (?, ?, 1, NOW())"
-    )->execute([$doc, $nome]);
+    $tok = makeToken();
+    $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+                   VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([$uid, $tok]);
 
-    respond([
-        'success'         => true,
-        'message'         => 'UsuÃ¡rio criado',
-        'primeiro_acesso' => true,
-        'id'              => (int)$pdo->lastInsertId(),
-    ], 201);
+    ok([
+        'token'            => $tok,
+        'tipo'             => $d['cnpj'] ? 'empresa' : 'contribuinte',
+        'cpf_cnpj'         => $d['cnpj'] ?: $d['cpf'] ?: $doc,
+        'nome'             => $d['razao_social'] ?: $d['nome_fantasia'] ?: '',
+        'status'           => $d['status'] ?? '',
+        'plano'            => $d['plano_nome'] ?? '',
+        'plano_valor'      => $d['plano_valor'] ?? 0,
+        'data_associacao'  => $d['data_associacao'] ?? null,
+        'data_vencimento'  => $d['data_vencimento'] ?? null,
+        'crm_associado_id' => $d['associado_id'] ?? null,
+        'primeiro_acesso'  => false,
+        'is_admin'         => false,
+        'is_superadmin'    => false,
+    ]);
 }
 
-// ============================================================
-// ACTION: reset_password â€” superadmin redefine senha
-// ============================================================
-if ($action === 'reset_password') {
-    $secret = $body['admin_secret'] ?? '';
-    if ($secret !== $CRM_SECRET) respond(['success' => false, 'message' => 'Unauthorized'], 401);
-
-    $doc      = preg_replace('/\D/', '', $body['cpf_cnpj'] ?? '');
-    $newPass  = $body['new_password'] ?? '';
-
-    if (!$doc) respond(['success' => false, 'message' => 'CPF/CNPJ obrigatÃ³rio'], 422);
-    if (strlen($newPass) < 6) respond(['success' => false, 'message' => 'Senha mÃ­nima 6 caracteres'], 422);
+// ------------------------------------------------------------
+// ACTION: login
+// ------------------------------------------------------------
+if ($action === 'login') {
+    $doc    = normalizeDoc($body['cpf_cnpj'] ?? '');
+    $passwd = $body['password'] ?? '';
+    if (!$doc || !$passwd) err(422, 'CPF/CNPJ e senha obrigatorios');
 
     $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
-    $stmt  = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
-    $stmt->execute([$doc]);
-    $user = $stmt->fetch();
+    $isAdmin = ($doc === ADMIN_DOC);
 
-    if (!$user) respond(['success' => false, 'message' => 'UsuÃ¡rio nÃ£o encontrado'], 404);
+    if ($isAdmin) {
+        // Admin: verifica senha local
+        $st = $pdo->prepare("SELECT * FROM conecta_users WHERE $field = ? LIMIT 1");
+        $st->execute([$doc]);
+        $u = $st->fetch();
+        if (!$u || empty($u['senha_hash'])) err(401, 'Primeiro acesso - defina sua senha.');
+        if (!password_verify($passwd, $u['senha_hash'])) err(401, 'Senha incorreta.');
 
-    $hash = password_hash($newPass, PASSWORD_BCRYPT);
-    $pdo->prepare('UPDATE conecta_users SET senha_hash = ?, primeiro_acesso = 0, atualizado_em = NOW() WHERE id = ?')
-         ->execute([$hash, $user['id']]);
+        $pdo->prepare('UPDATE conecta_users SET ultimo_login = NOW() WHERE id = ?')->execute([$u['id']]);
+        $tok = makeToken();
+        $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+                       VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([$u['id'], $tok]);
+        ok([
+            'token'            => $tok,
+            'tipo'             => 'admin',
+            'cpf_cnpj'         => $doc,
+            'nome'             => $u['nome'] ?: 'Administrador',
+            'is_admin'         => true,
+            'is_superadmin'    => true,
+            'crm_associado_id' => null,
+            'primeiro_acesso'  => false,
+        ]);
+    }
 
-    // Notify CRM
-    notifyCRM('password_set', ['documento' => $doc]);
+    // Associado: valida no CRM
+    $crm = crmPost('/auth/login-associado', ['documento' => $doc, 'senha' => $passwd]);
+    if (!($crm['ok'] ?? false)) {
+        if (!empty($crm['primeiro_acesso'])) err(401, 'Primeiro acesso - defina sua senha.');
+        if ((int)($crm['_http'] ?? 0) === 401) err(401, 'Senha incorreta.');
+        err((int)($crm['_http'] ?? 500) ?: 500, $crm['error'] ?? 'Falha ao autenticar');
+    }
+    $d = $crm['data'] ?? [];
 
-    respond(['success' => true, 'message' => 'Senha redefinida']);
+    // Cache local + sessao
+    $st = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+    $st->execute([$doc]);
+    $u = $st->fetch();
+    if (!$u) {
+        $pdo->prepare("INSERT INTO conecta_users ($field, nome, primeiro_acesso, crm_associado_id, crm_dados, criado_em)
+                       VALUES (?, ?, 0, ?, ?, NOW())")
+            ->execute([$doc, $d['razao_social'] ?? '', $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE)]);
+        $uid = (int)$pdo->lastInsertId();
+    } else {
+        $uid = (int)$u['id'];
+        $pdo->prepare("UPDATE conecta_users SET crm_associado_id = ?, crm_dados = ?, ultimo_login = NOW() WHERE id = ?")
+            ->execute([$d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE), $uid]);
+    }
+
+    $tok = makeToken();
+    $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+                   VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([$uid, $tok]);
+
+    ok([
+        'token'            => $tok,
+        'tipo'             => $d['cnpj'] ? 'empresa' : 'contribuinte',
+        'cpf_cnpj'         => $d['cnpj'] ?: $d['cpf'] ?: $doc,
+        'nome'             => $d['razao_social'] ?: $d['nome_fantasia'] ?: '',
+        'status'           => $d['status'] ?? '',
+        'plano'            => $d['plano_nome'] ?? '',
+        'plano_valor'      => $d['plano_valor'] ?? 0,
+        'data_associacao'  => $d['data_associacao'] ?? null,
+        'data_vencimento'  => $d['data_vencimento'] ?? null,
+        'crm_associado_id' => $d['associado_id'] ?? null,
+        'primeiro_acesso'  => false,
+        'is_admin'         => false,
+        'is_superadmin'    => false,
+    ]);
 }
 
-// ============================================================
-// ACTION: verify â€” valida token de sessÃ£o e retorna dados do usuÃ¡rio
-// ============================================================
-if ($action === 'verify') {
+// ------------------------------------------------------------
+// ACTION: dados - retorna dados do associado (cache local, fallback CRM)
+// ------------------------------------------------------------
+if ($action === 'dados') {
     $token = $body['token'] ?? '';
-    if (!$token) respond(['success' => false, 'message' => 'Token obrigatÃ³rio'], 422);
+    if (!$token) err(422, 'token obrigatorio');
 
-    $stmt = $pdo->prepare(
-        'SELECT u.id, u.cpf, u.cnpj, u.nome, u.email
+    $st = $pdo->prepare(
+        'SELECT u.id, u.cpf, u.cnpj, u.nome, u.crm_associado_id, u.crm_dados
          FROM conecta_sessions s
          JOIN conecta_users u ON u.id = s.user_id
-         WHERE s.token = ? AND s.expira_em > NOW()
-         LIMIT 1'
+         WHERE s.token = ? AND s.expira_em > NOW() LIMIT 1'
     );
-    $stmt->execute([$token]);
-    $user = $stmt->fetch();
+    $st->execute([$token]);
+    $u = $st->fetch();
+    if (!$u) err(401, 'Sessao invalida ou expirada');
 
-    if (!$user) {
-        respond(['success' => false, 'message' => 'Token invÃ¡lido ou expirado'], 401);
+    $doc = $u['cnpj'] ?: $u['cpf'] ?: '';
+    $isAdmin = ($doc === ADMIN_DOC);
+
+    if ($isAdmin) {
+        ok([
+            'tipo'     => 'admin',
+            'nome'     => $u['nome'] ?? 'Administrador',
+            'cpf_cnpj' => $doc,
+            'is_admin' => true,
+        ]);
     }
 
-    respond([
-        'success' => true,
-        'data'    => [
-            'id'       => (int)$user['id'],
-            'cpf_cnpj' => $user['cnpj'] ?: $user['cpf'] ?: '',
-            'nome'     => $user['nome'] ?? '',
-            'email'    => $user['email'] ?? '',
+    // Retorna dados do CRM (sem JWT - usa cache local, CRM publico precisa do bridge)
+    // O endpoint /associados/{id}/resumo precisa JWT do CRM - usa o cache crm_dados
+    $cached = $u['crm_dados'] ? json_decode($u['crm_dados'], true) : null;
+    if (!$cached) err(404, 'Dados do associado nao encontrados no cache');
+
+    // Monta resposta no formato mapEmpresa/mapContribuinte esperado pelo app-bundle
+    $tipo = $cached['cnpj'] ? 'empresa' : 'contribuinte';
+    $attrs = [
+        'razao_social'             => $cached['razao_social'] ?? '',
+        'nome'                     => $cached['nome_fantasia'] ?: $cached['razao_social'] ?: '',
+        'cnpj'                     => $cached['cnpj'] ?? '',
+        'cpf_cnpj'                 => $cached['cnpj'] ?: $cached['cpf'] ?: '',
+        'email'                    => $cached['email'] ?? '',
+        'telefone'                 => $cached['telefone'] ?? '',
+        'celular'                  => $cached['whatsapp'] ?? '',
+        'associado'                => ($cached['status'] ?? '') === 'ativo' ? 1 : 0,
+        'ativo'                    => ($cached['status'] ?? '') === 'ativo' ? 1 : 0,
+        'status'                   => $cached['status'] ?? '',
+        'associado_data_registro'  => $cached['data_associacao'] ?? null,
+        'associado_registro'       => $cached['plano_nome'] ?? '',
+        'categoria'                => $cached['plano_nome'] ?? '',
+    ];
+    ok([
+        'tipo' => $tipo,
+        'data' => [
+            'id'         => $cached['associado_id'] ?? null,
+            'attributes' => $attrs,
         ],
     ]);
 }
 
-// ============================================================
-// Unknown action
-// ============================================================
-respond(['success' => false, 'message' => 'Action nÃ£o reconhecida: ' . $action], 400);
+// ------------------------------------------------------------
+// ACTION: validate - valida token e retorna dados basicos
+// ------------------------------------------------------------
+if ($action === 'validate') {
+    $token = $body['token'] ?? '';
+    if (!$token) err(422, 'token obrigatorio');
+    $st = $pdo->prepare(
+        'SELECT u.id, u.cpf, u.cnpj, u.nome, u.crm_associado_id
+         FROM conecta_sessions s
+         JOIN conecta_users u ON u.id = s.user_id
+         WHERE s.token = ? AND s.expira_em > NOW() LIMIT 1'
+    );
+    $st->execute([$token]);
+    $u = $st->fetch();
+    if (!$u) err(401, 'Sessao invalida ou expirada');
+    ok([
+        'data' => [
+            'id'               => (int)$u['id'],
+            'cpf_cnpj'         => $u['cnpj'] ?: $u['cpf'] ?: '',
+            'nome'             => $u['nome'] ?? '',
+            'crm_associado_id' => $u['crm_associado_id'] ? (int)$u['crm_associado_id'] : null,
+        ],
+    ]);
+}
 
+// ------------------------------------------------------------
+// ACTION: logout
+// ------------------------------------------------------------
+if ($action === 'logout') {
+    $token = $body['token'] ?? '';
+    if ($token) {
+        $pdo->prepare('DELETE FROM conecta_sessions WHERE token = ?')->execute([$token]);
+    }
+    ok();
+}
+
+// ------------------------------------------------------------
+// ACTION: admin_check - verifica se sessao atual e admin
+// ------------------------------------------------------------
+if ($action === 'admin_check') {
+    $token = $body['token'] ?? '';
+    if (!$token) err(422, 'token obrigatorio');
+    $st = $pdo->prepare(
+        'SELECT u.cpf, u.cnpj FROM conecta_sessions s
+         JOIN conecta_users u ON u.id = s.user_id
+         WHERE s.token = ? AND s.expira_em > NOW() LIMIT 1'
+    );
+    $st->execute([$token]);
+    $u = $st->fetch();
+    if (!$u) err(401, 'Sessao invalida ou expirada');
+    $doc = $u['cnpj'] ?: $u['cpf'] ?: '';
+    ok(['is_admin' => $doc === ADMIN_DOC]);
+}
+
+// ------------------------------------------------------------
+// Unknown action
+// ------------------------------------------------------------
+err(400, 'Action nao reconhecida: ' . $action);
