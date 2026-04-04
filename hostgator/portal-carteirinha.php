@@ -58,7 +58,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg,#F8FAFC);color:var(
 </head>
 <body>
 <div class="topbar">
-  <img src="https://acicdf.org.br/conecta/wp-content/uploads/2026/02/1-1.png" alt="ACIC Conecta">
+  <img src="https://acicdf.org.br/conecta/uploads/logo-light-320.png" alt="ACIC Conecta">
   <a href="/conecta/" class="btn-back">&larr; Voltar ao Portal</a>
 </div>
 <div class="page-header">

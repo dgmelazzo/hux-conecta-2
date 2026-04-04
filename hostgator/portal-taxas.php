@@ -56,7 +56,7 @@ td{padding:8px 10px;border-bottom:1px solid var(--border,#E2E8F0);color:var(--te
 </head>
 <body>
 <div class="topbar">
-  <img src="https://acicdf.org.br/conecta/wp-content/uploads/2026/02/1-1.png" alt="ACIC Conecta">
+  <img src="https://acicdf.org.br/conecta/uploads/logo-light-320.png" alt="ACIC Conecta">
   <a href="/conecta/" class="btn-back">&larr; Voltar ao Portal</a>
 </div>
 <div class="page-header">
