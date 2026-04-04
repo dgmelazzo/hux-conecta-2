@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ACIC Conecta — Portal do Associado</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css"/>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="uploads/favicon-32x32.png"/>
+  <link rel="shortcut icon" href="uploads/favicon-32x32.png"/>
+  <script>
+    // Aplica tema antes do render para evitar flash
+    (function(){
+      var t = localStorage.getItem('acic_theme') ||
+        (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+</head>
+<body id="app-body">
+
+<!-- ═══════════════════════════════════
+     TELA DE LOGIN
+     ═══════════════════════════════════ -->
+<div id="login-screen" class="screen active">
+
+  <!-- Background fullscreen -->
+  <div class="login-hero">
+    <img class="login-hero-img" src="uploads/bg-df.jpeg" alt="Congresso Nacional — Brasília DF"/>
+    <div class="login-hero-overlay"></div>
+    <div class="login-hero-badge">Brasília · DF</div>
+  </div>
+  <span class="login-photo-credit">Foto: Congresso Nacional · Brasília DF</span>
+
+  <!-- Card de login flutuando -->
+  <div class="login-card">
+    <div class="login-brand">
+      <img id="login-logo" src="uploads/logo-light-320.png?v=2" alt="ACIC Conecta" class="brand-logo-img"/>
+      <button class="login-theme-btn" onclick="toggleTheme()" title="Alternar tema">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </div>
+    <div class="login-divider"></div>
+
+    <h1 class="login-title" id="login-title">Bem-vindo</h1>
+    <p class="login-desc" id="login-desc">Acesse com seu CPF ou CNPJ cadastrado na ACIC&#8209;DF.</p>
+
+    <div id="login-error" class="alert alert-error hidden">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="login-error-msg">Erro.</span>
+    </div>
+
+    <!-- Etapa 1: CPF/CNPJ -->
+    <form id="step-doc" class="login-form" onsubmit="handleCheckDoc(event)">
+      <div class="field">
+        <label>CPF ou CNPJ</label>
+        <input type="text" id="login-doc" placeholder="000.000.000-00 ou 00.000.000/0001-00" required autocomplete="username" oninput="maskDoc(this)"/>
+      </div>
+      <button type="submit" class="btn-primary" id="btn-check">
+        <span class="btn-text">Continuar</span>
+        <span class="btn-loader hidden"></span>
+      </button>
+    </form>
+
+    <!-- Etapa 2a: senha -->
+    <form id="step-senha" class="login-form hidden" onsubmit="handleLogin(event)">
+      <div class="login-back">
+        <button type="button" class="btn-back" onclick="voltarEtapa()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Voltar
+        </button>
+        <span id="doc-display" class="doc-pill"></span>
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <div class="input-wrap">
+          <input type="password" id="login-pass" placeholder="••••••••" required autocomplete="current-password"/>
+          <button type="button" class="toggle-pw" onclick="togglePw('login-pass')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" id="btn-login">
+        <span class="btn-text">Entrar</span>
+        <span class="btn-loader hidden"></span>
+      </button>
+    </form>
+
+    <!-- Etapa 2b: primeiro acesso -->
+    <form id="step-novo" class="login-form hidden" onsubmit="handlePrimeiroAcesso(event)">
+      <div class="login-back">
+        <button type="button" class="btn-back" onclick="voltarEtapa()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Voltar
+        </button>
+        <span id="doc-display-novo" class="doc-pill"></span>
+      </div>
+      <div class="alert" style="background:rgba(255,160,50,.12);border:1px solid rgba(255,160,50,.35);color:#e8922a;margin-bottom:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Primeiro acesso — defina sua senha para o portal.</span>
+      </div>
+      <div class="field">
+        <label>Nova senha <small style="color:var(--text3)">(mín. 8 caracteres)</small></label>
+        <div class="input-wrap">
+          <input type="password" id="nova-senha" placeholder="••••••••" required minlength="8"/>
+          <button type="button" class="toggle-pw" onclick="togglePw('nova-senha')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Confirmar senha</label>
+        <div class="input-wrap">
+          <input type="password" id="conf-senha" placeholder="••••••••" required minlength="8"/>
+          <button type="button" class="toggle-pw" onclick="togglePw('conf-senha')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="senha-strength" class="senha-strength hidden">
+        <div class="strength-bar"><div id="strength-fill"></div></div>
+        <span id="strength-label"></span>
+      </div>
+      <button type="submit" class="btn-primary" id="btn-novo">
+        <span class="btn-text">Criar senha e entrar</span>
+        <span class="btn-loader hidden"></span>
+      </button>
+    </form>
+
+    <p class="login-help">Problemas para acessar? <a href="/cdn-cgi/l/email-protection#e99a8c8a9b8c9d889b8088a9888a808a8d8fc7869b8ec78b9b">Fale conosco</a></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════
+     PORTAL
+     ═══════════════════════════════════ -->
+<div id="portal-screen" class="screen">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img id="sidebar-logo" src="uploads/logo-light-320.png?v=2" alt="ACIC Conecta" class="sidebar-logo-img"/>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showSection('dashboard')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" onclick="showSection('empresa')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Minha Empresa
+      </button>
+
+      <button class="nav-item" onclick="showSection('catalogo')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Catálogo
+      </button>
+      <a class="nav-item" href="/conecta/portal-taxas.php" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Minhas Taxas
+      </a>
+      <a class="nav-item" href="/conecta/portal-carteirinha.php" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="18" y2="15"/></svg>
+        Minha Carteirinha
+      </a>
+      <!-- Visível só para admin — JS controla -->
+      <button class="nav-item hidden" id="nav-comunicados" onclick="showSection('admin-comunicados')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Comunicados
+      </button>
+      <button class="nav-item hidden" id="nav-admin" onclick="showSection('admin-produtos')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Gerenciar Produtos
+      </button>
+      <button class="nav-item hidden" id="nav-usuarios" onclick="showSection('admin-usuarios')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Usuários
+      </button>
+      <button class="nav-item hidden" id="nav-metricas" onclick="showSection('admin-metricas')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Métricas
+      </button>
+      <button class="nav-item hidden" id="nav-admins" onclick="showSection('admin-admins')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Admins
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div style="padding:0 8px 8px;font-size:10px;color:var(--text3);text-align:center;letter-spacing:.5px">
+        ACIC Conecta <span id="sistema-versao" style="color:var(--accent)">v1.1.0</span>
+      </div>
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">A</div>
+        <div class="sb-user-text">
+          <span class="sb-company" id="sb-company-name">Carregando...</span>
+          <span class="sb-status" id="sb-status-badge">Associado Ativo</span>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- Overlay mobile para fechar sidebar -->
+  <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Main -->
+  <main class="main-content">
+
+    <header class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <!-- Sino de notificações -->
+        <div class="notif-wrap" id="notif-wrap">
+          <button class="notif-bell" id="notif-bell" onclick="toggleNotifPanel()" aria-label="Comunicados">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+          </button>
+          <div class="notif-overlay" id="notif-overlay" onclick="fecharNotifPanel()"></div>
+          <div class="notif-panel hidden" id="notif-panel">
+            <div class="notif-panel-header">
+              <span class="notif-panel-title">Comunicados</span>
+              <button class="notif-marcar-todas" onclick="marcarTodasLidas()">Marcar todas como lidas</button>
+            </div>
+            <div class="notif-lista" id="notif-lista">
+              <div class="notif-empty">Carregando...</div>
+            </div>
+          </div>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Alternar tema">
+          <div class="theme-toggle-track" id="theme-track">
+            <div class="theme-toggle-knob"></div>
+          </div>
+          <span id="theme-label">Dark</span>
+        </button>
+        <div class="topbar-tag" id="topbar-tag">Associado Ativo</div>
+      </div>
+    </header>
+
+    <!-- ── DASHBOARD ── -->
+    <section id="section-dashboard" class="portal-section active">
+      <div class="section-header">
+        <div>
+          <h2 id="dash-greeting">Olá! 👋</h2>
+          <p class="section-sub">Seu painel de benefícios e informações da associação.</p>
+        </div>
+      </div>
+
+      <!-- Linha 1: Carrossel de Destaques (full width) -->
+      <div class="dash-top">
+        <div class="dash-card dash-card-carousel" style="grid-column:1/-1">
+          <div class="carousel-header">
+            <h3 class="dash-card-title" style="margin:0">Destaques do catálogo</h3>
+            <div class="carousel-controls">
+              <button class="carousel-btn" id="carousel-prev" onclick="carouselNav(-1)" aria-label="Anterior"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <div class="carousel-dots" id="carousel-dots"></div>
+              <button class="carousel-btn" id="carousel-next" onclick="carouselNav(1)" aria-label="Próximo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
+          </div>
+          <div class="carousel-track-wrap">
+            <div class="carousel-track" id="featured-benefits">
+              <div class="skeleton-carousel"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Links Importantes -->
+      <div class="dash-top" style="grid-template-columns:1fr">
+        <div class="dash-card dash-links">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <h3 class="dash-card-title" style="margin:0">Links Importantes</h3>
+            <button id="btn-novo-link" class="btn-table-action" style="display:none" onclick="abrirFormLink()">+ Novo link</button>
+          </div>
+          <div id="links-importantes-lista" class="featured-list">
+            <div class="skeleton-row"></div><div class="skeleton-row short"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Linha 2: Stats (sem Benefícios) -->
+      <div class="stats-grid stats-grid-dash">
+        <div class="stat-card accent">
+          <div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="stat-content"><span class="stat-label">Status</span><span class="stat-value" id="stat-status">—</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          <div class="stat-content"><span class="stat-label">Associado desde</span><span class="stat-value" id="stat-since">—</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <div class="stat-content"><span class="stat-label">Tipo</span><span class="stat-value" id="stat-category">—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MINHA EMPRESA ── -->
+    <section id="section-empresa" class="portal-section">
+      <div class="section-header"><div><h2>Minha Empresa</h2><p class="section-sub">Dados cadastrais na ACIC-DF.</p></div></div>
+      <div id="empresa-loading" class="loading-state"><div class="spinner"></div><span>Carregando dados...</span></div>
+      <div id="empresa-content" class="hidden">
+        <div class="empresa-grid">
+          <div class="empresa-card main-card">
+            <div class="empresa-header">
+              <div class="empresa-avatar" id="emp-avatar-big">E</div>
+              <div><h3 id="emp-razao">—</h3><p id="emp-fantasia" class="emp-sub">—</p><span class="badge" id="emp-status-badge">—</span></div>
+            </div>
+            <div class="empresa-divider"></div>
+            <div class="empresa-fields" id="empresa-fields"></div>
+          </div>
+          <div class="empresa-side">
+            <div class="empresa-card"><h4 class="card-section-title">Situação</h4><div id="responsavel-fields" class="empresa-fields small"></div></div>
+          </div>
+          <div class="empresa-card" style="grid-column:1/-1"><h4 class="card-section-title">Endereço</h4><div id="endereco-fields" class="empresa-fields small" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div></div>
+        </div>
+      </div>
+      <div id="empresa-error" class="alert alert-error hidden">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Não foi possível carregar os dados da empresa.</span>
+      </div>
+    </section>
+
+    <!-- ── BENEFÍCIOS ACIC ── -->
+    <section id="section-beneficios" class="portal-section">
+      <div class="section-header"><div><h2>Benefícios</h2><p class="section-sub">Vantagens exclusivas para empresas associadas à ACIC-DF.</p></div></div>
+      <div class="catalog-toolbar">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" placeholder="Buscar benefício..." oninput="filterBenefits()"/>
+        </div>
+        <div class="filter-tags" id="filter-tags"><button class="filter-tag active" onclick="filterByTag('todos', this)">Todos</button></div>
+      </div>
+      <div id="benefits-loading" class="loading-state"><div class="spinner"></div><span>Carregando...</span></div>
+      <div id="benefits-grid" class="benefits-grid hidden"></div>
+      <div id="benefits-empty" class="empty-state hidden">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <p>Nenhum benefício encontrado.</p>
+      </div>
+    </section>
+
+    <!-- ── CATÁLOGO DE PRODUTOS ── -->
+    <section id="section-catalogo" class="portal-section">
+      <div class="section-header"><div><h2>Catálogo de Produtos</h2><p class="section-sub">Produtos e serviços das empresas associadas à ACIC-DF.</p></div></div>
+      <div class="catalog-toolbar">
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="produtos-busca" placeholder="Buscar produtos..." oninput="buscarProdutos()"/>
+        </div>
+        <div class="filter-tags" id="produtos-filtro-cats"></div>
+      </div>
+      <div id="produtos-loading" class="loading-state"><div class="spinner"></div><span>Carregando catálogo...</span></div>
+      <div id="produtos-grid" class="produtos-grid"></div>
+    </section>
+
+    <!-- ── ADMIN: GERENCIAR PRODUTOS ── -->
+    <section id="section-admin-produtos" class="portal-section">
+      <div class="section-header">
+        <div><h2>Gerenciar Produtos</h2><p class="section-sub">Cadastre e gerencie os produtos do catálogo.</p></div>
+        <button class="btn-primary" style="width:auto;padding:10px 20px" onclick="abrirFormProduto()">+ Novo Produto</button>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Produto</th><th>Categoria</th><th>Tipo</th><th>Status</th><th style="text-align:center">Views</th><th style="text-align:center">Clicks</th><th>Ações</th></tr></thead>
+          <tbody id="admin-produtos-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <!-- SEÇÃO: Usuários (Superadmin) -->
+  <section class="portal-section" id="section-admin-usuarios">
+    <div class="section-header">
+      <div><h2>Usuários</h2><p class="section-sub">Associados cadastrados no portal.</p></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn-enviar-notif" onclick="abrirModalNotif()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Enviar notificação
+        </button>
+        <input type="text" id="usuarios-busca" placeholder="Buscar por CPF/CNPJ..." oninput="filtrarUsuarios()" class="admin-search-input"/>
+        <button class="btn-primary" style="width:auto;padding:9px 16px;font-size:13px" onclick="carregarUsuarios()">↺ Atualizar</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr>
+          <th>Associado</th><th>Tipo</th><th>Cadastro</th>
+          <th>Último acesso</th><th>Sessões</th><th>Status</th><th>Ações</th>
+        </tr></thead>
+        <tbody id="usuarios-tbody">
+          <tr><td colspan="7" class="table-empty">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-overlay hidden" id="modal-usuario">
+      <div class="modal-box modal-box-lg">
+        <button class="modal-close" onclick="fecharModalUsuario()">✕</button>
+        <div id="modal-usuario-content"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEÇÃO: Métricas (Superadmin) -->
+  <section class="portal-section" id="section-admin-metricas">
+    <div class="section-header">
+      <div><h2>Métricas</h2><p class="section-sub">Visão geral do uso do portal.</p></div>
+      <button class="btn-primary" style="width:auto;padding:9px 16px;font-size:13px" onclick="carregarMetricas()">↺ Atualizar</button>
+    </div>
+    <div class="stats-grid" style="margin-bottom:24px">
+      <div class="stat-card accent"><div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="stat-content"><span class="stat-label">Associados</span><span class="stat-value" id="met-total">—</span></div></div>
+      <div class="stat-card"><div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-content"><span class="stat-label">Sem acesso</span><span class="stat-value" id="met-sem-acesso">—</span></div></div>
+      <div class="stat-card"><div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div><div class="stat-content"><span class="stat-label">Total views</span><span class="stat-value" id="met-views">—</span></div></div>
+      <div class="stat-card"><div class="stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="stat-content"><span class="stat-label">Total cliques</span><span class="stat-value" id="met-clicks">—</span></div></div>
+    </div>
+    <div class="metricas-grid">
+      <div class="dash-card"><div class="dash-card-title">Acessos — últimos 30 dias</div><canvas id="chart-acessos" height="180"></canvas></div>
+      <div class="dash-card"><div class="dash-card-title">Produtos mais clicados</div><div id="top-clicks-list"></div></div>
+    </div>
+    <div class="dash-card" style="margin-top:18px">
+      <div class="dash-card-title" style="color:var(--danger)">Associados sem acesso ao portal</div>
+      <div id="sem-acesso-list"></div>
+    </div>
+  </section>
+
+  </section>
+
+  <!-- SEÇÃO: Gestão de Admins -->
+  <section class="portal-section" id="section-admin-admins">
+    <div class="section-header">
+      <div><h2>Gestão de Admins</h2><p class="section-sub">Gerencie quem tem acesso administrativo ao portal.</p></div>
+    </div>
+
+    <!-- Adicionar novo admin -->
+    <div class="dash-card" style="margin-bottom:20px">
+      <h4 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px">Promover novo admin</h4>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Informe o CPF ou CNPJ do associado que já tem acesso ao portal.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input type="text" id="novo-admin-doc" placeholder="000.000.000-00 ou 00.000.000/0001-00"
+               style="flex:1;min-width:220px" oninput="maskDoc(this)"/>
+        <button class="btn-primary" style="width:auto;padding:10px 20px;font-size:13px" onclick="promoverAdmin()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Promover
+        </button>
+      </div>
+    </div>
+
+    <!-- Lista de admins -->
+    <div class="dash-card">
+      <h4 style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px">Administradores ativos</h4>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:8px 0;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Usuário</th>
+            <th style="text-align:left;padding:8px 0;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Nível</th>
+            <th style="text-align:left;padding:8px 0;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Status</th>
+            <th style="text-align:right;padding:8px 0;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="admins-tbody">
+          <tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3)">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SEÇÃO: Comunicados (Superadmin) -->
+  <section class="portal-section" id="section-admin-comunicados">
+    <div class="section-header">
+      <div><h2>Comunicados</h2><p class="section-sub">Escreva e envie mensagens para os associados.</p></div>
+      <button class="btn-primary" style="width:auto;padding:9px 18px;font-size:13px" onclick="novoRascunho()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo comunicado
+      </button>
+    </div>
+
+    <!-- Layout: Editor + Histórico -->
+    <div id="comunicados-layout" style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start">
+
+      <!-- Editor -->
+      <div class="dash-card" id="comunicado-editor-card" style="padding:0;overflow:hidden">
+        <!-- Header do editor -->
+        <div style="padding:18px 24px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--accent)"></div>
+          <span style="font-size:13px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif" id="editor-status-label">Novo comunicado</span>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn-table-action" id="btn-salvar-rascunho" onclick="salvarRascunho()" style="font-size:12px">Salvar rascunho</button>
+          </div>
+        </div>
+
+        <div style="padding:20px 24px">
+          <!-- Para: destinatários -->
+          <div style="margin-bottom:16px">
+            <label style="font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:8px">Para</label>
+            <div id="dest-tags-wrap" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:36px;padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:text" onclick="document.getElementById('dest-busca').focus()">
+              <span id="tag-todos" class="dest-tag dest-tag-todos" onclick="toggleTodos(event)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Todos os associados
+                <button type="button" onclick="removerTodos(event)" style="background:none;border:none;color:inherit;cursor:pointer;padding:0;margin-left:4px;opacity:.7;font-size:13px">×</button>
+              </span>
+              <input type="text" id="dest-busca" placeholder="Buscar associado..." autocomplete="off"
+                style="border:none;background:transparent;outline:none;font-size:13px;color:var(--text);flex:1;min-width:150px;padding:2px 0"
+                oninput="buscarDestinatarios(this.value)" onfocus="mostrarSugestoes()" />
+            </div>
+            <!-- Dropdown de sugestões -->
+            <div id="dest-sugestoes" style="display:none;position:relative;z-index:100">
+              <div style="position:absolute;top:4px;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:200px;overflow-y:auto" id="dest-lista"></div>
+            </div>
+          </div>
+
+          <!-- Tipo -->
+          <div style="margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:8px">Tipo</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap" id="tipo-selector">
+                <button type="button" class="tipo-btn active" data-tipo="info" onclick="selecionarTipo('info',this)">ℹ️ Info</button>
+                <button type="button" class="tipo-btn" data-tipo="aviso" onclick="selecionarTipo('aviso',this)">⚠️ Aviso</button>
+                <button type="button" class="tipo-btn" data-tipo="alerta" onclick="selecionarTipo('alerta',this)">🔔 Alerta</button>
+                <button type="button" class="tipo-btn" data-tipo="sucesso" onclick="selecionarTipo('sucesso',this)">✅ Sucesso</button>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:8px">Canais</label>
+              <div style="display:flex;gap:12px;align-items:center;padding-top:4px">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:0;color:var(--text)">
+                  <input type="checkbox" id="canal-portal" checked style="width:14px;height:14px;accent-color:var(--accent)"/> Portal
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;text-transform:none;letter-spacing:0;color:var(--text)">
+                  <input type="checkbox" id="canal-email" style="width:14px;height:14px;accent-color:var(--accent)"/> E-mail
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Assunto -->
+          <div style="margin-bottom:16px">
+            <label style="font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:8px">Assunto *</label>
+            <input type="text" id="com-titulo" placeholder="Ex: Novo benefício disponível para associados!" maxlength="200"
+              style="width:100%;box-sizing:border-box;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);outline:none;font-family:inherit"
+              oninput="atualizarPreview()"/>
+          </div>
+
+          <!-- Corpo -->
+          <div style="margin-bottom:16px">
+            <label style="font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:8px">Mensagem *</label>
+            <textarea id="com-mensagem" rows="7" placeholder="Escreva a mensagem aqui..."
+              style="width:100%;box-sizing:border-box;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);resize:vertical;outline:none;font-family:inherit;line-height:1.6"
+              oninput="atualizarPreview()"></textarea>
+          </div>
+
+          <!-- Link opcional -->
+          <div style="margin-bottom:20px">
+            <label style="font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:8px">Link (opcional)</label>
+            <input type="url" id="com-link" placeholder="https://..."
+              style="width:100%;box-sizing:border-box;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);outline:none;font-family:inherit"
+              oninput="atualizarPreview()"/>
+          </div>
+
+          <!-- Ações -->
+          <div style="display:flex;gap:10px;align-items:center;padding-top:4px;border-top:1px solid var(--border);padding-top:16px">
+            <button class="btn-primary" style="width:auto;padding:11px 24px" id="btn-enviar-comunicado" onclick="enviarComunicado()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Enviar agora
+            </button>
+            <span id="com-dest-count" style="font-size:13px;color:var(--text3)">— destinatários</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Painel direito: Preview + Histórico -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Preview -->
+        <div class="dash-card" style="padding:0;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span style="font-size:12px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif">Preview</span>
+          </div>
+          <div id="com-preview" style="padding:16px 18px;font-size:13px;color:var(--text2);min-height:120px">
+            <p style="color:var(--text3);font-style:italic;font-size:12px">Preencha o assunto e a mensagem para ver o preview...</p>
+          </div>
+        </div>
+
+        <!-- Histórico -->
+        <div class="dash-card" style="padding:0;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span style="font-size:12px;font-weight:600;color:var(--text);font-family:'Syne',sans-serif">Enviados recentes</span>
+            </div>
+            <button class="btn-table-action" style="font-size:11px" onclick="carregarHistoricoComunicados()">↺</button>
+          </div>
+          <div id="comunicados-historico" style="max-height:320px;overflow-y:auto">
+            <div style="padding:16px;font-size:13px;color:var(--text3);text-align:center">Carregando...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════
+     MODAIS
+     ═══════════════════════════════════ -->
+
+<!-- Modal: Comunicado Individual -->
+<div id="comunicado-modal" class="modal-overlay hidden" onclick="if(event.target===this)fecharModalComunicado()">
+  <div class="modal-box comunicado-modal-box">
+    <div class="comunicado-modal-header" id="comunicado-modal-header">
+      <div class="comunicado-modal-tipo-badge" id="comunicado-modal-tipo"></div>
+      <button class="modal-close" onclick="fecharModalComunicado()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="comunicado-modal-body" style="padding:0 28px 28px"></div>
+  </div>
+</div>
+
+<!-- Modal: Benefício ACIC -->
+<div id="benefit-modal" class="modal-overlay hidden" onclick="closeBenefitModal(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeBenefitModal()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div class="modal-tag" id="modal-tag">categoria</div>
+    <h2 class="modal-title" id="modal-title">Título</h2>
+    <p class="modal-desc" id="modal-desc">Descrição</p>
+    <div class="modal-meta" id="modal-meta"></div>
+    <a id="modal-cta" href="#" target="_blank" class="btn-primary modal-btn">Quero este benefício</a>
+  </div>
+</div>
+
+<!-- Modal: Detalhe Produto -->
+<div id="produto-modal" class="modal-overlay hidden" onclick="fecharProdutoModal(event)">
+  <div class="modal-box modal-box-lg">
+    <button class="modal-close" onclick="document.getElementById('produto-modal').classList.add('hidden');document.body.style.overflow=''"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <div id="produto-modal-body"></div>
+  </div>
+</div>
+
+<!-- Modal: Form Produto (admin) -->
+
+
+  <div id="form-produto-modal" class="modal-overlay hidden">
+  <div class="modal-box modal-box-lg" style="max-height:90vh;overflow-y:auto">
+    <button class="modal-close" onclick="fecharFormProduto()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <h2 class="modal-title" id="form-produto-titulo">Novo Produto</h2>
+    <form onsubmit="salvarProduto(event)">
+      <input type="hidden" id="fp-id"/>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="fp-nome" required placeholder="Ex: Plano Odontológico Empresarial"/></div>
+        <div class="field"><label>Tipo *</label><select id="fp-tipo"><option value="produto">Produto</option><option value="servico">Serviço</option><option value="beneficio">Benefício</option></select></div>
+        <div class="field"><label>Status</label><select id="fp-status"><option value="pendente">Pendente</option><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div>
+        <div class="field"><label>Categoria</label><select id="fp-categoria"><option value="">Carregando...</option></select></div>
+        <div class="field"><label>Marca</label><input type="text" id="fp-marca" placeholder="Ex: HapVida"/></div>
+        <div class="field" style="grid-column:1/-1"><label>Descrição curta <small>(exibida no card)</small></label><input type="text" id="fp-descricao-curta" maxlength="200" placeholder="Máx. 200 caracteres"/></div>
+        <div class="field" style="grid-column:1/-1">
+          <label>Descrição completa</label>
+          <div id="fp-descricao-editor" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);min-height:120px"></div>
+          <textarea id="fp-descricao" style="display:none"></textarea>
+        </div>
+        <input type="hidden" id="fp-imagem" value=""/>
+        <input type="file" id="fp-img-file" accept="image/*" style="display:none" onchange="handleImageUpload(this)"/>
+        <div class="field" style="grid-column:1/-1">
+          <label>Empresa / Marca <small style="text-transform:none;letter-spacing:0">(exibido no catálogo)</small></label>
+          <input type="text" id="fp-associado-nome" placeholder="Ex: ACIC-DF, HapVida, Nome da empresa..."/>
+          <input type="hidden" id="fp-associado-id" value="0"/>
+          <input type="hidden" id="fp-associado-busca"/>
+          <div id="fp-associado-display" style="display:none"></div>
+          <select id="fp-associado-result" style="display:none"></select>
+        </div>
+        <div class="field" style="grid-column:1/-1"><label>Tipo de link de venda *</label><select id="fp-link-tipo" onchange="toggleLinkFields()"><option value="">Selecione</option><option value="whatsapp">WhatsApp</option><option value="externo">Link externo</option></select></div>
+        <div class="field" id="fp-wrap-whats" style="grid-column:1/-1"><label>Número WhatsApp <small>(somente números com DDD)</small></label><input type="text" id="fp-whatsapp" placeholder="61999999999"/></div>
+        <div class="field" id="fp-wrap-url" style="grid-column:1/-1"><label>URL de venda</label><input type="url" id="fp-link-url" placeholder="https://..."/></div>
+        <div class="field" style="grid-column:1/-1;display:flex;align-items:center;gap:10px"><input type="checkbox" id="fp-destaque" style="width:auto;accent-color:var(--accent)"/><label for="fp-destaque" style="text-transform:none;font-size:14px;color:var(--text)">Exibir como destaque</label></div>
+      </div>
+      <!-- Galeria unificada — capa + fotos adicionais -->
+      <div id="admin-galeria-wrap" class="galeria-unificada">
+        <!-- Preview da capa atual -->
+        <div class="capa-preview-wrap">
+          <div class="capa-preview-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Imagem de capa
+          </div>
+          <div class="capa-preview-box" id="capa-preview-box" onclick="document.getElementById('fp-img-file').click()">
+            <img id="fp-img-preview" src="" alt="capa" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px"/>
+            <div class="capa-preview-empty" id="capa-preview-empty">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span>Clique para adicionar capa</span>
+            </div>
+            <div class="capa-preview-overlay">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Trocar imagem
+            </div>
+          </div>
+          <div id="upload-progress" class="upload-progress hidden" style="margin-top:8px">
+            <div class="upload-bar"><div id="upload-fill"></div></div>
+            <span id="upload-status">Enviando...</span>
+          </div>
+        </div>
+
+        <!-- Galeria adicional -->
+        <div class="galeria-adicional">
+          <div class="galeria-admin-header">
+            <h4>Fotos adicionais</h4>
+            <label class="btn-upload-galeria">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              + Adicionar
+              <input type="file" id="fp-galeria-file" accept="image/*" multiple style="display:none" onchange="handleGaleriaUpload(this)"/>
+            </label>
+          </div>
+          <div id="galeria-upload-progress" class="hidden" style="margin-bottom:8px">
+            <div class="upload-bar"><div id="galeria-upload-fill"></div></div>
+            <span id="galeria-upload-status" style="font-size:11px;color:var(--text2)">Enviando...</span>
+          </div>
+          <div id="admin-galeria-grid"></div>
+          <small style="color:var(--text3);font-size:11px;margin-top:6px;display:block">
+            Clique em "Capa" em qualquer foto para usá-la como imagem principal.
+          </small>
+        </div>
+      </div>
+
+      <div id="sub-admin-wrap" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-top:20px;display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h4 style="font-family:'Syne',sans-serif;font-size:14px;color:var(--text)">Subprodutos / Planos</h4>
+          <button type="button" class="btn-table-action" id="btn-novo-sub">+ Adicionar plano</button>
+        </div>
+        <div id="sub-lista"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:24px">
+        <button type="submit" class="btn-primary" id="btn-salvar-produto">Salvar produto</button>
+        <button type="button" class="btn-logout" onclick="fecharFormProduto()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Form Subproduto -->
+<div id="fsub-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <button class="modal-close" onclick="fecharFormSub()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <h2 class="modal-title">Subproduto / Plano</h2>
+    <form onsubmit="salvarSub(event)">
+      <input type="hidden" id="fsub-id"/><input type="hidden" id="fsub-produto-id"/>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="fsub-nome" required placeholder="Ex: Plano Básico"/></div>
+        <div class="field" style="grid-column:1/-1"><label>Descrição</label><textarea id="fsub-descricao" rows="2"></textarea></div>
+        <div class="field"><label>Preço</label><input type="number" id="fsub-preco" step="0.01" placeholder="0.00"/></div>
+        <div class="field"><label>Cobrança</label><select id="fsub-cobranca"><option value="unico">Único</option><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="recorrente">Recorrente</option></select></div>
+        <div class="field"><label>Status</label><select id="fsub-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div>
+        <div class="field"><label>Ordem</label><input type="number" id="fsub-ordem" value="0" min="0"/></div>
+        <div class="field" style="grid-column:1/-1"><label>Link de venda <small>(deixe vazio para herdar do produto)</small></label><select id="fsub-link-tipo"><option value="">Herdar do produto</option><option value="whatsapp">WhatsApp</option><option value="externo">Link externo</option></select></div>
+        <div class="field"><label>WhatsApp</label><input type="text" id="fsub-whatsapp" placeholder="61999999999"/></div>
+        <div class="field"><label>URL externa</label><input type="url" id="fsub-link-url" placeholder="https://..."/></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:20px">
+        <button type="submit" class="btn-primary" id="btn-salvar-sub">Salvar</button>
+        <button type="button" class="btn-logout" onclick="fecharFormSub()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- Modal: Enviar Notificação (Admin) -->
+<div id="modal-enviar-notif" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:500px">
+    <button class="modal-close" onclick="fecharModalNotif()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <h2 class="modal-title" style="margin-bottom:20px">📢 Enviar Notificação</h2>
+    <form onsubmit="enviarNotificacao(event)">
+      <div class="field" style="margin-bottom:14px">
+        <label>Tipo</label>
+        <select id="notif-tipo" style="width:100%">
+          <option value="info">ℹ️ Informação</option>
+          <option value="aviso">⚠️ Aviso</option>
+          <option value="alerta">🔔 Alerta</option>
+          <option value="sucesso">✅ Sucesso</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Destinatário</label>
+        <select id="notif-dest" style="width:100%">
+          <option value="todos">Todos os associados</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Título *</label>
+        <input type="text" id="notif-titulo" required placeholder="Ex: Novo benefício disponível!" maxlength="200"/>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Mensagem *</label>
+        <textarea id="notif-mensagem" required rows="4" placeholder="Detalhes da notificação..."></textarea>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Link (opcional)</label>
+        <input type="url" id="notif-link" placeholder="https://..."/>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
+        <input type="checkbox" id="notif-email" style="width:16px;height:16px;cursor:pointer">
+        <label for="notif-email" style="margin:0;cursor:pointer;font-size:13px">Enviar também por e-mail</label>
+      </div>
+      <div style="display:flex;gap:12px">
+        <button type="submit" class="btn-primary" id="btn-enviar-notif">Enviar notificação</button>
+        <button type="button" class="btn-logout" onclick="fecharModalNotif()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Form Link Importante (admin) -->
+<div id="modal-link-form" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:480px">
+    <button class="modal-close" onclick="fecharFormLink()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <h2 class="modal-title" id="link-form-titulo-modal">Novo Link</h2>
+    <form onsubmit="salvarLink(event)">
+      <input type="hidden" id="link-id"/>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1">
+          <label>Título *</label>
+          <input type="text" id="link-titulo" required placeholder="Ex: Seu plano de saúde Hapvida"/>
+        </div>
+        <div class="field" style="grid-column:1/-1">
+          <label>URL *</label>
+          <input type="url" id="link-url" required placeholder="https://..."/>
+        </div>
+        <div class="field">
+          <label>Ícone <small>(emoji opcional)</small></label>
+          <input type="text" id="link-icone" placeholder="🔗" maxlength="4"/>
+        </div>
+        <div class="field">
+          <label>Ordem</label>
+          <input type="number" id="link-ordem" value="0" min="0"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:20px">
+        <button type="submit" class="btn-primary" id="btn-salvar-link">Salvar</button>
+        <button type="button" class="btn-logout" onclick="fecharFormLink()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script src="app-bundle.js"></script>
+</body>
+</html>
