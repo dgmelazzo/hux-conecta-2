@@ -706,16 +706,11 @@ const _tkP=_jwtPayload(tk);
 // Token expirado → tela de login do CRM
 if(_tkP.exp&&_tkP.exp*1000<Date.now()){_goLogin();throw new Error('expired');}
 const _tokenRole=_tkP.role||'';
-// Redirect por role
-if(['associado_empresa','colaborador'].includes(_tokenRole)){
-  // Associado → Conecta 2.0 (JWT CRM disponível para portal-taxas/carteirinha)
-  sessionStorage.setItem('conecta_crm_token',tk);
-  window.location.href='https://acicdf.org.br/conecta/';
-  throw new Error('redirect');
-}
+// CRM é exclusivo da equipe ACIC. Associados usam o Conecta 2.0.
 if(!['superadmin','gestor','atendente'].includes(_tokenRole)){
-  // Role desconhecido → logout
-  _goLogin();throw new Error('unknown role');
+  localStorage.removeItem('crm_token');localStorage.removeItem('crm_user');
+  document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#F5F6FA;font-family:Sora,sans-serif"><div style="max-width:460px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:40px 32px;text-align:center"><div style="font-size:18px;font-weight:700;color:#1B2B6B;margin-bottom:12px">Portal exclusivo da equipe ACIC</div><p style="color:#6B7280;font-size:14px;line-height:1.6;margin-bottom:24px">Este sistema e de uso interno da ACIC-DF. Associados devem acessar o Portal do Associado.</p><a href="https://acicdf.org.br/conecta/" style="display:inline-block;background:#E8701A;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px">Ir para o Portal do Associado</a><div style="margin-top:20px"><a href="/" style="color:#94A3B8;font-size:13px">Voltar ao login</a></div></div></div>';
+  throw new Error('not an internal user');
 }
 // Inicializar usuário + permissões por role
 if(usr.nome){

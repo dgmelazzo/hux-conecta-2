@@ -134,24 +134,14 @@ function updateThemeUI(){
 }
 updateThemeUI();
 
-// SSO
-async function ensureCrmToken(){
-  if(token)return true;
-  const ct=sessionStorage.getItem('acic_conecta_token')||localStorage.getItem('acic_conecta_token')||'';
-  if(!ct)return false;
-  try{
-    const r=await fetch(CRM_API+'/auth/sso-conecta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conecta_token:ct})});
-    const d=await r.json();
-    const tk=d.data?.token||d.token;
-    if(tk){token=tk;sessionStorage.setItem('conecta_crm_token',token);return true;}
-  }catch(e){}
-  return false;
-}
+// Token do Conecta 2.0 (autenticacao propria, sem SSO com CRM)
+token=sessionStorage.getItem('acic_conecta_token')||localStorage.getItem('acic_conecta_token')||'';
 
 async function apiFetch(ep){
+  if(!token)return{_auth:false};
   try{
     const r=await fetch(CRM_API+ep,{headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}});
-    if(r.status===401)return null;
+    if(r.status===401)return{_auth:false};
     const d=await r.json();return d.data!==undefined?d.data:d;
   }catch(e){return null;}
 }
@@ -174,9 +164,13 @@ function updateSidebarUser(me){
 }
 
 (async()=>{
-  if(!token){const ok=await ensureCrmToken();if(!ok){document.getElementById('page-content').innerHTML='<div class="empty-state">Sessao expirada. <a href="/conecta/">Faca login novamente</a></div>';return;}}
+  if(!token){document.getElementById('page-content').innerHTML='<div class="empty-state">Sessao expirada. <a href="/conecta/">Faca login novamente</a></div>';return;}
   const[me,cobs]=await Promise.all([apiFetch('/associado/me'),apiFetch('/associado/cobrancas')]);
-  if(!me){document.getElementById('page-content').innerHTML='<div class="empty-state">Erro ao carregar dados. <a href="/conecta/">Voltar</a></div>';return;}
+  // Fallback gracioso: dados financeiros ainda nao integrados com token Conecta
+  if(!me||me._auth===false){
+    document.getElementById('page-content').innerHTML='<div class="dash-card" style="text-align:center;padding:48px 24px"><div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Dados financeiros em breve</div><p style="color:var(--text2);font-size:13px;line-height:1.6;max-width:400px;margin:0 auto">A integracao financeira estara disponivel em breve. Para duvidas sobre cobrancas e mensalidades, entre em contato com a ACIC-DF.</p></div>';
+    return;
+  }
   updateSidebarUser(me);
 
   let html='';

@@ -128,20 +128,14 @@ function toggleTheme(){const c=document.documentElement.getAttribute('data-theme
 function updateThemeUI(){const t=document.documentElement.getAttribute('data-theme');const tr=document.getElementById('themeTrack');const lb=document.getElementById('theme-label');if(t==='dark'){tr.classList.add('active');lb.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Dark';}else{tr.classList.remove('active');lb.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Light';}}
 updateThemeUI();
 
-async function ensureCrmToken(){
-  if(token)return true;
-  const ct=sessionStorage.getItem('acic_conecta_token')||localStorage.getItem('acic_conecta_token')||'';
-  if(!ct)return false;
-  try{const r=await fetch(CRM_API+'/auth/sso-conecta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conecta_token:ct})});const d=await r.json();const tk=d.data?.token||d.token;if(tk){token=tk;sessionStorage.setItem('conecta_crm_token',token);return true;}}catch(e){}
-  return false;
-}
+token=sessionStorage.getItem('acic_conecta_token')||localStorage.getItem('acic_conecta_token')||'';
 async function apiFetch(ep){try{const r=await fetch(CRM_API+ep,{headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}});if(r.status===401)return null;const d=await r.json();return d.data!==undefined?d.data:d;}catch(e){return null;}}
 function fmtDoc(d){if(!d)return'-';d=d.replace(/\D/g,'');if(d.length===14)return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');if(d.length===11)return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');return d}
 function fmtDate(d){if(!d)return'-';return new Date(d+'T00:00:00').toLocaleDateString('pt-BR')}
 function updateSidebarUser(me){const nm=me?.nome_fantasia||me?.razao_social||me?.nome_responsavel||'Associado';document.getElementById('sb-company').textContent=nm;document.getElementById('sb-avatar').textContent=(nm[0]||'?').toUpperCase();document.getElementById('sb-status').textContent=me?.status==='ativo'?'Associado Ativo':me?.status||'Associado'}
 
 (async()=>{
-  if(!token){const ok=await ensureCrmToken();if(!ok){const c=localStorage.getItem(CACHE_KEY);if(c){renderFromCache(JSON.parse(c));}else{document.getElementById('page-content').innerHTML='<div class="empty-state">Sessao expirada. <a href="/conecta/">Faca login novamente</a></div>';}return;}}
+  if(!token){const c=localStorage.getItem(CACHE_KEY);if(c){renderFromCache(JSON.parse(c));}else{document.getElementById('page-content').innerHTML='<div class="empty-state">Sessao expirada. <a href="/conecta/">Faca login novamente</a></div>';}return;}
   const[me,cart]=await Promise.all([apiFetch('/associado/me'),apiFetch('/associado/carteirinha')]);
   if(!me&&!cart){const c=localStorage.getItem(CACHE_KEY);if(c){renderFromCache(JSON.parse(c));}else{document.getElementById('page-content').innerHTML='<div class="empty-state">Erro ao carregar dados.</div>';}return;}
   if(me)updateSidebarUser(me);
