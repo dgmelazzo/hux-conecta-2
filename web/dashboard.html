@@ -697,12 +697,25 @@ let tk=localStorage.getItem('crm_token'),usr=JSON.parse(localStorage.getItem('cr
 let pls=[],_plCache={},assocs=[],acp=1,ccp=1,st3,editId=null;
 const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{t:'Dashboard',s:'Visão geral do sistema',b:''},a:{t:'Associados',s:'Gestão de associados',b:'Novo Associado'},p:{t:'Planos e Taxas',s:'Configuração de planos',b:'Novo Plano'},c:{t:'Cobranças',s:'Gestão financeira',b:'Nova Cobrança'},gw:{t:'Gateway',s:'Configuração de pagamentos',b:''},com:{t:'Comunicados',s:'Templates e histórico de envios',b:''},insc:{t:'Inscrições',s:'Inscrições do formulário público',b:''},u:{t:'Usuários',s:'Gestão de usuários',b:'Novo Usuário'},cart:{t:'Minha Carteirinha',s:'Carteirinha digital do associado',b:''}};
 let _assocCategoria='',_assocCache={};
-if(!tk)location.href='/';
-// Associados e colaboradores: redirecionar para o Conecta 2.0
-// APENAS se o role no token principal do CRM for de associado (nunca para superadmin/gestor/atendente)
-if(usr.role && ['associado_empresa','colaborador'].includes(usr.role) && !['superadmin','gestor','atendente'].includes(usr.role)){
+// ── Auth: validar token e redirecionar por role ──
+function _jwtPayload(t){try{return JSON.parse(atob(t.split('.')[1]));}catch(e){return null;}}
+function _goLogin(){localStorage.removeItem('crm_token');localStorage.removeItem('crm_user');location.href='/';}
+// Sem token ou token malformado → tela de login do CRM
+if(!tk||!_jwtPayload(tk)){_goLogin();throw new Error('no token');}
+const _tkP=_jwtPayload(tk);
+// Token expirado → tela de login do CRM
+if(_tkP.exp&&_tkP.exp*1000<Date.now()){_goLogin();throw new Error('expired');}
+const _tokenRole=_tkP.role||'';
+// Redirect por role
+if(['associado_empresa','colaborador'].includes(_tokenRole)){
+  // Associado → Conecta 2.0 (JWT CRM disponível para portal-taxas/carteirinha)
   sessionStorage.setItem('conecta_crm_token',tk);
   window.location.href='https://acicdf.org.br/conecta/';
+  throw new Error('redirect');
+}
+if(!['superadmin','gestor','atendente'].includes(_tokenRole)){
+  // Role desconhecido → logout
+  _goLogin();throw new Error('unknown role');
 }
 // Inicializar usuário + permissões por role
 if(usr.nome){
