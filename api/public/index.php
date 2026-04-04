@@ -512,7 +512,7 @@ if ($method === 'GET' && $uri === '/associados') {
     if (in_array($p['role'] ?? '', ['associado_empresa', 'colaborador'])) {
         $assocId = $p['associado_id'] ?? $p['sub'];
         $stmt = pdo()->prepare(
-            'SELECT a.id, a.tipo_pessoa, a.categoria, a.razao_social, a.nome_fantasia,
+            'SELECT a.id, a.tipo_pessoa, a.categoria, a.vinculo_id, a.razao_social, a.nome_fantasia,
                     a.cpf, a.cnpj, a.email, a.telefone, a.whatsapp,
                     a.cidade, a.uf, a.status, a.data_associacao, a.data_vencimento,
                     a.conecta_user_id, a.criado_em,
@@ -543,6 +543,10 @@ if ($method === 'GET' && $uri === '/associados') {
     if (!empty($_GET['status'])) {
         $where   .= ' AND a.status = ?';
         $params[] = $_GET['status'];
+    } else {
+        // Por padrão, oculta arquivados
+        $where .= ' AND a.status != ?';
+        $params[] = 'arquivado';
     }
     if (!empty($_GET['plano_id'])) {
         $where   .= ' AND a.plano_id = ?';
@@ -551,6 +555,10 @@ if ($method === 'GET' && $uri === '/associados') {
     if (!empty($_GET['categoria'])) {
         $where   .= ' AND a.categoria = ?';
         $params[] = $_GET['categoria'];
+    }
+    if (isset($_GET['vinculo_id']) && $_GET['vinculo_id'] !== '') {
+        $where   .= ' AND a.vinculo_id = ?';
+        $params[] = (int)$_GET['vinculo_id'];
     }
 
     $page  = max(1, (int)($_GET['page'] ?? 1));
@@ -562,7 +570,7 @@ if ($method === 'GET' && $uri === '/associados') {
     $total = (int)$stmtT->fetchColumn();
 
     $stmt = pdo()->prepare(
-        "SELECT a.id, a.tipo_pessoa, a.categoria, a.razao_social, a.nome_fantasia,
+        "SELECT a.id, a.tipo_pessoa, a.categoria, a.vinculo_id, a.razao_social, a.nome_fantasia,
                 a.cpf, a.cnpj, a.email, a.telefone, a.whatsapp,
                 a.cidade, a.uf, a.status, a.data_associacao, a.data_vencimento,
                 a.conecta_user_id, a.criado_em,
@@ -628,14 +636,15 @@ if ($method === 'POST' && $uri === '/associados') {
 
     pdo()->prepare(
         'INSERT INTO associados
-         (tenant_id, tipo_pessoa, categoria, razao_social, nome_fantasia, nome_responsavel,
+         (tenant_id, tipo_pessoa, categoria, vinculo_id, razao_social, nome_fantasia, nome_responsavel,
           cpf, cnpj, email, telefone, whatsapp, cep, logradouro, numero, complemento,
           bairro, cidade, uf, status, plano_id, data_associacao, conecta_user_id, criado_por, criado_em)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())'
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())'
     )->execute([
         $tid,
         $b['tipo_pessoa']     ?? 'pj',
         $b['categoria']       ?? 'empresa',
+        $b['vinculo_id']      ?? null,
         $b['razao_social']    ?? null,
         $b['nome_fantasia'],
         $b['nome_responsavel']?? null,
@@ -686,7 +695,15 @@ if ($method === 'PUT' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     } else {
         $allowed = ['razao_social','nome_fantasia','nome_responsavel','email','telefone','whatsapp',
                     'cep','logradouro','numero','complemento','bairro','cidade','uf',
-                    'status','plano_id','data_associacao','data_vencimento','conecta_user_id','observacoes'];
+                    'status','plano_id','vinculo_id','data_associacao','data_vencimento','conecta_user_id','observacoes'];
+    }
+
+    // Validar status se presente
+    if (isset($b['status'])) {
+        $statusValidos = ['ativo','inadimplente','prospecto','suspenso','cancelado','arquivado'];
+        if (!in_array($b['status'], $statusValidos)) {
+            json_out(['error' => 'Status inválido: ' . $b['status']], 422);
+        }
     }
 
     $set = []; $vals = [];
@@ -696,24 +713,31 @@ if ($method === 'PUT' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     if (!$set) json_out(['error' => 'Nenhum campo para atualizar'], 422);
 
     $vals[] = $m[1]; $vals[] = $tid;
-    pdo()->prepare('UPDATE associados SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?')
+    pdo()->prepare('UPDATE associados SET ' . implode(', ', $set) . ', atualizado_em = NOW() WHERE id = ? AND tenant_id = ?')
          ->execute($vals);
     json_out(['message' => 'Associado atualizado']);
 }
 
-// DELETE /associados/{id} — soft delete (status='cancelado')
+// DELETE /associados/{id} — exclusão permanente (só superadmin, só sem cobranças)
 if ($method === 'DELETE' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     $p   = auth_required();
-    require_role($p, ['superadmin', 'gestor']);
+    require_role($p, ['superadmin']);
     $tid = $p['tenant_id'] ?? tenant_id();
+    $id  = $m[1];
 
     $stmt = pdo()->prepare('SELECT id FROM associados WHERE id = ? AND tenant_id = ?');
-    $stmt->execute([$m[1], $tid]);
+    $stmt->execute([$id, $tid]);
     if (!$stmt->fetch()) json_out(['error' => 'Associado não encontrado'], 404);
 
-    pdo()->prepare('UPDATE associados SET status = "cancelado", atualizado_em = NOW() WHERE id = ? AND tenant_id = ?')
-         ->execute([$m[1], $tid]);
-    json_out(['success' => true, 'message' => 'Associado cancelado']);
+    // Bloquear se tiver cobranças
+    $count = pdo()->prepare('SELECT COUNT(*) FROM cobrancas WHERE associado_id = ? AND tenant_id = ?');
+    $count->execute([$id, $tid]);
+    if ($count->fetchColumn() > 0) {
+        json_out(['error' => 'Não é possível excluir: associado possui cobranças registradas. Use "Arquivar" para ocultá-lo.'], 422);
+    }
+
+    pdo()->prepare('DELETE FROM associados WHERE id = ? AND tenant_id = ?')->execute([$id, $tid]);
+    json_out(['success' => true, 'message' => 'Associado excluído permanentemente']);
 }
 
 // GET /associados/{id}/cobrancas — cobranças de um associado

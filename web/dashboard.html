@@ -283,7 +283,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
       </div>
       <div class="sbr">
         <div class="sw2"><input class="si" id="sq" placeholder="Buscar nome, CNPJ, email..." oninput="ds()"><div class="sic"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
-        <select class="fl" id="ss" onchange="la()"><option value="">Todos os status</option><option value="ativo">Ativos</option><option value="inadimplente">Inadimplentes</option><option value="prospecto">Prospectos</option><option value="cancelado">Cancelados</option></select>
+        <select class="fl" id="ss" onchange="la()"><option value="">Todos os status</option><option value="ativo">Ativos</option><option value="inadimplente">Inadimplentes</option><option value="prospecto">Prospectos</option><option value="cancelado">Cancelados</option><option value="arquivado">Arquivados</option></select>
       </div>
       <div class="cd">
         <div class="tbl-s"><div class="cb" id="at"><div class="ld"><div class="sp"></div></div></div></div>
@@ -306,6 +306,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
       <div class="sbr">
         <select class="fl" id="cst" onchange="lc()"><option value="">Todas</option><option value="pendente">Pendentes</option><option value="pago">Pagas</option><option value="cancelado">Canceladas</option><option value="vencido">Vencidas</option></select>
       </div>
+      <div id="cob-resumo" style="display:none"></div>
       <div class="cd">
         <div class="tbl-s"><div class="cb" id="cob-t"><div class="ld"><div class="sp"></div></div></div></div>
         <div class="pag" id="cpg" style="display:none"><span id="cpg-info"></span><div class="pag-btns" id="cpg-btns"></div></div>
@@ -436,9 +437,11 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <div class="mt2" id="det-nome">Associado</div>
     <div class="ms2" id="det-info">-</div>
     <div id="det-dados" style="margin-bottom:20px"></div>
+    <div id="det-hier" style="margin-bottom:20px"></div>
     <div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:12px">Histórico de Cobranças</div>
     <div class="tbl-s" id="det-cob"><div class="ld"><div class="sp"></div></div></div>
-    <div class="mf">
+    <div class="mf" style="flex-wrap:wrap;gap:8px">
+      <div id="det-actions-left" style="display:flex;gap:8px;margin-right:auto"></div>
       <button class="btn-o" id="det-btn-pwd" style="display:none" onclick="abrirPwdAssoc()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Redefinir Senha</button>
       <button class="btn" onclick="actCobDet()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Nova Cobrança</button>
     </div>
@@ -453,7 +456,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <div class="ms2" style="border-bottom:1px solid var(--bd);padding-bottom:16px">Cadastrar empresa ou pessoa física no sistema <span style="font-size:11px;color:var(--t3);display:block;margin-top:4px">* campos obrigatórios</span></div>
     <div class="fr">
       <div class="fg"><label class="fl3">Tipo</label><select class="fc" id="ft"><option value="pj">Pessoa Jurídica</option><option value="pf">Pessoa Física</option></select></div>
-      <div class="fg"><label class="fl3">Status</label><select class="fc" id="fst"><option value="prospecto">Prospecto</option><option value="ativo">Ativo</option><option value="inadimplente">Inadimplente</option><option value="suspenso">Suspenso</option></select></div>
+      <div class="fg"><label class="fl3">Status</label><select class="fc" id="fst"><option value="prospecto">Prospecto</option><option value="ativo">Ativo</option><option value="inadimplente">Inadimplente</option><option value="suspenso">Suspenso</option><option value="cancelado">Cancelado</option><option value="arquivado">Arquivado</option></select></div>
     </div>
     <div class="fr" id="fg-cat-vinc">
         <div class="fg"><label class="fl3">Categoria</label><select class="fc" id="fcat" onchange="onCatChange()">
@@ -722,6 +725,9 @@ if(usr.nome){
     // Show admin section but NOT Gateway
     document.getElementById('sec-adm').style.display='';
     document.getElementById('ni-usr').style.display='';
+  } else if(role==='atendente'){
+    // Atendente: leitura + ações básicas, sem admin
+    document.getElementById('btn-top').style.display='none';
   } else if(role==='associado_empresa'){
     // Show ONLY: Meu Perfil, Minhas Taxas, Portal do Associado
     document.querySelector('.ni[data-nav="d"]').style.display='none';
@@ -808,7 +814,8 @@ function limpaCampos(ids){ids.forEach(id=>{const el=document.getElementById(id);
 // Ícones SVG
 const IC={users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>','user-check':'<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/>','alert-circle':'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>','dollar-sign':'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>','trending-up':'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>'};
 const CL={blue:'b',green:'g',red:'r',yellow:'y',purple:'p'};
-function bs(s){return`<span class="bx ${{ativo:'bg',inadimplente:'br',suspenso:'by',cancelado:'bgr',prospecto:'bb',pendente:'by',pago:'bg',vencido:'br',convertido:'bg',rejeitado:'br',aprovado:'bb',reprovado:'br',aguardando_pagamento:'by'}[s]||'bgr'}">${{ativo:'Ativo',inadimplente:'Inadimplente',suspenso:'Suspenso',cancelado:'Cancelado',prospecto:'Prospecto',pendente:'Pendente',pago:'Pago',vencido:'Vencido',convertido:'Convertido',rejeitado:'Rejeitado',aprovado:'Aprovado',reprovado:'Reprovado',aguardando_pagamento:'Aguardando Pgto'}[s]||s}</span>`;}
+function bs(s){return`<span class="bx ${{ativo:'bg',inadimplente:'br',suspenso:'by',cancelado:'bgr',arquivado:'bgr',prospecto:'bb',pendente:'by',pago:'bg',vencido:'br',convertido:'bg',rejeitado:'br',aprovado:'bb',reprovado:'br',aguardando_pagamento:'by'}[s]||'bgr'}">${{ativo:'Ativo',inadimplente:'Inadimplente',suspenso:'Suspenso',cancelado:'Cancelado',arquivado:'Arquivado',prospecto:'Prospecto',pendente:'Pendente',pago:'Pago',vencido:'Vencido',convertido:'Convertido',rejeitado:'Rejeitado',aprovado:'Aprovado',reprovado:'Reprovado',aguardando_pagamento:'Aguardando Pgto'}[s]||s}</span>`;}
+function bsCat(cat){const m={empresa:['bb','Empresa'],colaborador:['bg','Colaborador'],dependente:['by','Dependente']};const[cls,lbl]=m[cat]||['bgr',cat||'-'];return'<span class="bx '+cls+'">'+lbl+'</span>';}
 function money(v){return'R$ '+parseFloat(v||0).toFixed(2).replace('.',',');}
 function svgi(ic){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[ic]||''}</svg>`;}
 
@@ -901,12 +908,16 @@ async function la(p2=1){
   const nbEl=document.getElementById('nb');if(nbEl)nbEl.textContent=d.total;assocs=d.data;
   const rows=Array.isArray(d.data)?d.data:(d.data?.data||[]);assocs=rows;_assocCache={};rows.forEach(x=>_assocCache[x.id]=x);
   if(rows.length===0){document.getElementById('at').innerHTML='<div class="em"><svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--bd);fill:none;stroke-width:1.5;margin:0 auto 12px;display:block"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><div style="font-weight:600;margin-bottom:4px">Nenhum associado encontrado</div><div style="font-size:12px;color:var(--t3);margin-bottom:12px">Cadastre o primeiro associado para começar</div><button class="btn" onclick="act()" style="margin:0 auto">Novo Associado</button></div>';document.getElementById('apg').style.display='none';return;}
+  const isAdminRole=['superadmin','gestor'].includes(usr.role);
   const actBtns=x=>isSelf
     ?`<button class="btn-o" onclick="editarMeuPerfil(${x.id})" style="margin-right:4px">Editar</button>`
-    :`<button class="btn-o" onclick="verDetalhe(${x.id})" style="margin-right:4px">Ver</button><button class="btn-o" onclick="editAssocById(${x.id})" style="margin-right:4px">Editar</button><button class="btn-r" onclick="delAssoc(${x.id},'${(x.razao_social||x.nome_responsavel||'').replace(/'/g,"\\'")}')">Excluir</button>`;
+    :usr.role==='atendente'
+      ?`<button class="btn-o" onclick="verDetalhe(${x.id})">Ver</button>`
+      :`<button class="btn-o" onclick="verDetalhe(${x.id})" style="margin-right:4px">Ver</button><button class="btn-o" onclick="editAssocById(${x.id})" style="margin-right:4px">Editar</button><button class="btn-r" onclick="cancelarAssoc(${x.id},'${(x.razao_social||x.nome_responsavel||'').replace(/'/g,"\\'")}')">Cancelar</button>`;
+  const hierNome=x=>{const nm=x.razao_social||x.nome_responsavel||'-';if(x.categoria==='colaborador')return`<span style="color:var(--t2);font-size:12px">↳ ${nm}</span>`;if(x.categoria==='dependente')return`<span style="color:var(--t3);font-size:11px">↳ ↳ ${nm}</span>`;return`<strong>${nm}</strong>`;};
   document.getElementById('at').innerHTML=`<table><thead><tr><th>Empresa</th>${isSelf?'':'<th>Categoria</th>'}<th>Contato</th><th>Status</th><th>Plano</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
-    <td><strong>${x.razao_social||x.nome_responsavel||'-'}</strong><br><span style="font-size:11px;color:var(--t3)">${x.cnpj||x.cpf||''}</span></td>
-    ${isSelf?'':`<td style="font-size:11px">${{'empresa':'Empresa','colaborador':'Colaborador','dependente':'Dependente'}[x.categoria]||'-'}</td>`}
+    <td>${hierNome(x)}<br><span style="font-size:11px;color:var(--t3)">${x.cnpj||x.cpf||''}</span></td>
+    ${isSelf?'':`<td>${bsCat(x.categoria)}</td>`}
     <td><span style="font-size:12px">${x.email||'-'}</span><br><span style="font-size:11px;color:var(--t3)">${x.whatsapp||x.telefone||''}</span></td>
     <td>${bs(x.status)}</td>
     <td style="font-size:12px">${x.plano_nome||'-'}</td>
@@ -1054,11 +1065,23 @@ async function sa(){
   if(r?.id||r?.message){cm('ma');la(acp);toast(editId?'Associado atualizado!':'Associado cadastrado!');}
   else toast(r?.error||'Erro ao salvar','err');
 }
-async function delAssoc(id,nome){
-  if(!confirm(`Cancelar "${nome}"? O associado será marcado como cancelado.`))return;
-  const r=await api(`/associados/${id}`,{method:'DELETE'});
-  if(r?.success||r?.message){la(acp);toast('Associado cancelado!');}
+async function cancelarAssoc(id,nome){
+  if(!confirm(`Cancelar associação de "${nome}"? O histórico será mantido e a ação pode ser revertida.`))return;
+  const r=await api(`/associados/${id}`,{method:'PUT',body:JSON.stringify({status:'cancelado'})});
+  if(r?.message){la(acp);toast('Associação cancelada. O histórico foi preservado.');}
   else toast(r?.error||'Erro ao cancelar','err');
+}
+async function arquivarAssoc(id,nome){
+  if(!confirm(`Arquivar "${nome}"? O associado ficará oculto das listas.`))return;
+  const r=await api(`/associados/${id}`,{method:'PUT',body:JSON.stringify({status:'arquivado'})});
+  if(r?.message){cm('mdet');la(acp);toast('Associado arquivado.');}
+  else toast(r?.error||'Erro ao arquivar','err');
+}
+async function excluirAssoc(id,nome){
+  if(!confirm(`ATENÇÃO: Excluir permanentemente "${nome}"? Esta ação é IRREVERSÍVEL e apagará todos os dados. Prefira usar "Arquivar" para ocultar o associado mantendo o histórico.`))return;
+  const r=await api(`/associados/${id}`,{method:'DELETE'});
+  if(r?.success||r?.message){cm('mdet');la(acp);toast('Associado excluído permanentemente.');}
+  else toast(r?.error||'Erro ao excluir','err');
 }
 
 // Planos
@@ -1282,6 +1305,24 @@ async function lc(p2=1){
   const d=await api(`/cobrancas?page=${p2}&status=${st}`);if(!d)return;
   // Update filter counts
   if(!st&&d.data){const cts={};d.data.forEach(x=>{cts[x.status]=(cts[x.status]||0)+1;});const sel=document.getElementById('cst');sel.options[0].text='Todas ('+d.data.length+')';[...sel.options].forEach(o=>{if(o.value&&cts[o.value]!==undefined)o.text=o.text.replace(/ \(\d+\)/,'') +' ('+cts[o.value]+')';});}
+  // Resumo financeiro
+  if(d.data&&d.data.length>0){
+    const hoje=new Date();hoje.setHours(0,0,0,0);const mesAtual=hoje.getMonth(),anoAtual=hoje.getFullYear();
+    let totalPendente=0,pagoNoMes=0,emAtraso=0;
+    d.data.forEach(x=>{
+      const v=parseFloat(x.valor||0);
+      if(x.status==='pendente')totalPendente+=v;
+      if(x.status==='pago'&&x.data_pagamento){const dp=new Date(x.data_pagamento+'T00:00:00');if(dp.getMonth()===mesAtual&&dp.getFullYear()===anoAtual)pagoNoMes+=v;}
+      if(x.status==='vencido')emAtraso+=v;
+      if(x.status==='pendente'&&x.data_vencimento){const dv=new Date(x.data_vencimento+'T00:00:00');if(dv<hoje)emAtraso+=v;}
+    });
+    document.getElementById('cob-resumo').style.display='grid';
+    document.getElementById('cob-resumo').style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px';
+    document.getElementById('cob-resumo').innerHTML=`
+      <div class="kc"><div class="ki y">${svgi('clock')}</div><div class="kv">${money(totalPendente)}</div><div class="kl">Total pendente</div></div>
+      <div class="kc"><div class="ki g">${svgi('user-check')}</div><div class="kv">${money(pagoNoMes)}</div><div class="kl">Pago no mês</div></div>
+      <div class="kc"><div class="ki r">${svgi('alert-circle')}</div><div class="kv">${money(emAtraso)}</div><div class="kl">Em atraso</div></div>`;
+  } else { document.getElementById('cob-resumo').style.display='none'; }
   if(d.data.length===0){document.getElementById('cob-t').innerHTML='<div class="em"><svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--bd);fill:none;stroke-width:1.5;margin:0 auto 12px;display:block"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><div style="font-weight:600;margin-bottom:4px">Nenhuma cobrança registrada</div><div style="font-size:12px;color:var(--t3);margin-bottom:12px">Gere a primeira cobrança para um associado</div><button class="btn" onclick="act()" style="margin:0 auto">Nova Cobrança</button></div>';document.getElementById('cpg').style.display='none';return;}
   document.getElementById('cob-t').innerHTML=`<table><thead><tr><th>Associado</th><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr></thead><tbody>${d.data.map(x=>`<tr>
     <td><strong>${x.razao_social||x.nome_responsavel||'-'}</strong></td>
@@ -1290,13 +1331,13 @@ async function lc(p2=1){
     <td style="font-size:12px;color:var(--t3)">${x.data_vencimento?new Date(x.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR'):'-'}</td>
     <td>${bs(x.status)}</td>
     <td style="white-space:nowrap">
-      ${x.status==='pendente'?`<button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button>`:''}
+      ${x.status==='pendente'&&usr.role!=='atendente'?`<button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button>`:''}
     </td>
   </tr>`).join('')}</tbody></table>
   <div class="m-cards">${d.data.map(x=>`<div class="m-card">
     <div class="m-card-row"><div class="m-card-main">${x.razao_social||x.nome_responsavel||'-'}</div><div class="m-card-val">${money(x.valor)}</div></div>
     <div class="m-card-row"><span style="font-size:12px;color:var(--t3)">Venc: ${x.data_vencimento||'-'}</span>${bs(x.status)}</div>
-    ${x.status==='pendente'?`<div class="m-card-acts"><button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button></div>`:''}</div>`).join('')}</div>`;
+    ${x.status==='pendente'&&usr.role!=='atendente'?`<div class="m-card-acts"><button class="btn-r" onclick="cancelarCob(${x.id})">Cancelar</button></div>`:''}</div>`).join('')}</div>`;
   const info=`${(p2-1)*20+1}–${Math.min(p2*20,d.total)} de ${d.total}`;
   const btns=Array.from({length:d.pages},(_,i)=>`<button class="pag-btn${i+1===p2?' on':''}" onclick="lc(${i+1})">${i+1}</button>`).join('');
   document.getElementById('cpg-info').textContent=info;document.getElementById('cpg-btns').innerHTML=btns;document.getElementById('cpg').style.display='flex';
@@ -1470,14 +1511,15 @@ async function linsc(){
     <td>${bs(x.status)}</td>
     <td style="white-space:nowrap">
       <button class="btn-o" onclick="verInsc(${x.id})" style="margin-right:4px">Ver</button>
-      ${x.status==='pendente'?`<button class="btn-o" style="margin-right:4px;border-color:var(--or);color:var(--or)" onclick="abrirConversao(${x.id})">Cobrar</button><button class="btn-r" onclick="reprovarInsc(${x.id})">Reprovar</button>`:''}
+      ${x.status==='pendente'?`<button class="btn-o" style="margin-right:4px;border-color:var(--or);color:var(--or)" onclick="abrirConversao(${x.id})">Cobrar</button>${usr.role!=='atendente'?`<button class="btn-r" onclick="reprovarInsc(${x.id})">Reprovar</button>`:''}`:''}
+
       ${x.status==='aprovado'?`<button class="btn-o" style="border-color:var(--or);color:var(--or)" onclick="abrirConversao(${x.id})">Cobrar</button>`:''}
     </td>
   </tr>`).join('')}</tbody></table>
   <div class="m-cards">${d.data.map(x=>`<div class="m-card" onclick="verInsc(${x.id})">
     <div class="m-card-row"><div><div class="m-card-main">${x.nome_contato||'-'}</div><div class="m-card-sub">${x.nome_empresa||'-'}</div></div>${bs(x.status)}</div>
     <div class="m-card-row"><span style="font-size:12px;color:var(--t2)">${x.plano_nome||'-'}</span><span style="font-size:11px;color:var(--t3)">${x.criado_em?new Date(x.criado_em).toLocaleDateString('pt-BR'):''}</span></div>
-    <div class="m-card-acts"><button class="btn-o" onclick="event.stopPropagation();verInsc(${x.id})">Ver</button>${x.status==='pendente'?`<button class="btn-o" style="border-color:var(--or);color:var(--or)" onclick="event.stopPropagation();abrirConversao(${x.id})">Cobrar</button><button class="btn-r" onclick="event.stopPropagation();reprovarInsc(${x.id})">Reprovar</button>`:x.status==='aprovado'?`<button class="btn-o" style="border-color:var(--or);color:var(--or)" onclick="event.stopPropagation();abrirConversao(${x.id})">Cobrar</button>`:''}</div>
+    <div class="m-card-acts"><button class="btn-o" onclick="event.stopPropagation();verInsc(${x.id})">Ver</button>${x.status==='pendente'?`<button class="btn-o" style="border-color:var(--or);color:var(--or)" onclick="event.stopPropagation();abrirConversao(${x.id})">Cobrar</button>${usr.role!=='atendente'?`<button class="btn-r" onclick="event.stopPropagation();reprovarInsc(${x.id})">Reprovar</button>`:''}`:x.status==='aprovado'?`<button class="btn-o" style="border-color:var(--or);color:var(--or)" onclick="event.stopPropagation();abrirConversao(${x.id})">Cobrar</button>`:''}</div>
   </div>`).join('')}</div>`;
 }
 
@@ -1568,8 +1610,16 @@ async function verDetalhe(id){
   document.getElementById('det-nome').textContent=a.razao_social||a.nome_fantasia||a.nome_responsavel||'-';
   document.getElementById('det-info').textContent=[a.cnpj||a.cpf,a.email,a.whatsapp].filter(Boolean).join(' · ')||'-';
   const isAssoc=usr.role==='associado_empresa'||usr.role==='colaborador';
+  const isAdmin=usr.role==='superadmin'||usr.role==='gestor';
   document.getElementById('det-btn-pwd').style.display=usr.role==='superadmin'?'':'none';
   document.querySelector('#mdet .mf .btn[onclick="actCobDet()"]').style.display=isAssoc?'none':'';
+  // Botões Arquivar / Excluir permanentemente
+  const detLeft=document.getElementById('det-actions-left');
+  const nm=encodeURIComponent(a.razao_social||a.nome_fantasia||a.nome_responsavel||'-');
+  let leftHtml='';
+  if(isAdmin)leftHtml+=`<button class="btn-o" style="font-size:12px;color:var(--t3)" onclick="arquivarAssoc(${id},decodeURIComponent('${nm}'))">Arquivar</button>`;
+  if(usr.role==='superadmin')leftHtml+=`<button class="btn-r" style="font-size:12px" onclick="excluirAssoc(${id},decodeURIComponent('${nm}'))">Excluir permanentemente</button>`;
+  detLeft.innerHTML=leftHtml;
   document.getElementById('det-dados').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;font-size:13px;color:var(--t2)">
     <div><span style="font-weight:600;color:var(--tx)">Status:</span> ${bs(a.status)}</div>
     <div><span style="font-weight:600;color:var(--tx)">Plano:</span> ${a.plano_nome||'Nenhum'}</div>
@@ -1578,6 +1628,21 @@ async function verDetalhe(id){
     <div><span style="font-weight:600;color:var(--tx)">Telefone:</span> ${a.telefone||'-'}</div>
     <div><span style="font-weight:600;color:var(--tx)">Associado desde:</span> ${a.data_associacao||'-'}</div>
   </div>`;
+  // Hierarquia
+  const hierEl=document.getElementById('det-hier');hierEl.innerHTML='';
+  if(a.categoria==='empresa'){
+    const colabs=await api(`/associados?vinculo_id=${id}&categoria=colaborador`);
+    if(colabs?.data?.length>0){hierEl.innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:8px">Colaboradores (${colabs.data.length})</div><div style="display:flex;flex-direction:column;gap:6px">${colabs.data.map(cb=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;font-size:12px"><span>↳ ${cb.razao_social||cb.nome_responsavel||'-'} ${bs(cb.status)}</span><button class="btn-o" style="font-size:11px;padding:2px 8px" onclick="verDetalhe(${cb.id})">Ver</button></div>`).join('')}</div>`;}
+  } else if(a.categoria==='colaborador'){
+    let hierHtml='';
+    if(a.vinculo_id){const emp=_assocCache[a.vinculo_id];if(emp)hierHtml+=`<div style="font-size:12px;color:var(--t2);margin-bottom:8px">Empresa vinculada: <strong>${emp.razao_social||emp.nome_fantasia||'-'}</strong> <button class="btn-o" style="font-size:11px;padding:2px 8px" onclick="verDetalhe(${a.vinculo_id})">Ver empresa</button></div>`;}
+    const deps=await api(`/associados?vinculo_id=${id}&categoria=dependente`);
+    if(deps?.data?.length>0){hierHtml+=`<div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:8px">Dependentes (${deps.data.length})</div><div style="display:flex;flex-direction:column;gap:6px">${deps.data.map(d2=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;font-size:12px"><span>↳ ↳ ${d2.razao_social||d2.nome_responsavel||'-'} ${bs(d2.status)}</span><button class="btn-o" style="font-size:11px;padding:2px 8px" onclick="verDetalhe(${d2.id})">Ver</button></div>`).join('')}</div>`;}
+    hierEl.innerHTML=hierHtml;
+  } else if(a.categoria==='dependente'&&a.vinculo_id){
+    const colab=_assocCache[a.vinculo_id];
+    if(colab)hierEl.innerHTML=`<div style="font-size:12px;color:var(--t2)">Colaborador vinculado: <strong>${colab.razao_social||colab.nome_responsavel||'-'}</strong> <button class="btn-o" style="font-size:11px;padding:2px 8px" onclick="verDetalhe(${a.vinculo_id})">Ver colaborador</button></div>`;
+  }
   const c=await api('/associados/'+id+'/cobrancas');
   if(!c||!c.data||c.data.length===0){document.getElementById('det-cob').innerHTML='<div class="em" style="padding:24px">Nenhuma cobrança registrada.</div>';return;}
   document.getElementById('det-cob').innerHTML=`<table><thead><tr><th>Vencimento</th><th>Valor</th><th>Tipo</th><th>Status</th></tr></thead><tbody>${c.data.map(x=>`<tr>
