@@ -691,11 +691,11 @@ if ($method === 'PUT' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     $b = body();
 
     if ($isSelf && !$isAdmin) {
-        $allowed = ['email','telefone','whatsapp','observacoes'];
+        $allowed = ['email','telefone','whatsapp'];
     } else {
         $allowed = ['razao_social','nome_fantasia','nome_responsavel','email','telefone','whatsapp',
                     'cep','logradouro','numero','complemento','bairro','cidade','uf',
-                    'status','plano_id','vinculo_id','data_associacao','data_vencimento','conecta_user_id','observacoes'];
+                    'status','plano_id','vinculo_id','data_associacao','data_vencimento','conecta_user_id'];
     }
 
     // Validar status se presente
@@ -733,7 +733,7 @@ if ($method === 'DELETE' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     $count = pdo()->prepare('SELECT COUNT(*) FROM cobrancas WHERE associado_id = ? AND tenant_id = ?');
     $count->execute([$id, $tid]);
     if ($count->fetchColumn() > 0) {
-        json_out(['error' => 'Não é possível excluir: associado possui cobranças registradas. Use "Arquivar" para ocultá-lo.'], 422);
+        json_out(['error' => 'Não é possível excluir permanentemente: este associado possui histórico de cobranças (mesmo canceladas). Use "Arquivar" para ocultá-lo mantendo o histórico, ou exclua as cobranças primeiro.'], 422);
     }
 
     pdo()->prepare('DELETE FROM associados WHERE id = ? AND tenant_id = ?')->execute([$id, $tid]);
@@ -2288,6 +2288,148 @@ if ($method === 'GET' && $uri === '/conecta/produtos') {
 
     file_put_contents($cacheFile, json_encode($result));
     json_out($result);
+}
+
+// ============================================================
+// ASSOCIADO SELF-SERVICE (para consumo do Conecta 2.0)
+// ============================================================
+
+// GET /associado/me — dados do associado logado
+if ($method === 'GET' && $uri === '/associado/me') {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $aid = $p['associado_id'] ?? null;
+    $doc = $p['documento'] ?? null;
+
+    if (!$aid && !$doc) json_out(['error' => 'Token não contém dados de associado'], 403);
+
+    if ($aid) {
+        $stmt = pdo()->prepare(
+            'SELECT a.id, a.razao_social, a.nome_fantasia, a.nome_responsavel, a.cnpj, a.cpf,
+                    a.email, a.telefone, a.whatsapp, a.status, a.categoria, a.plano_id,
+                    a.data_associacao, a.data_vencimento,
+                    p.nome AS plano_nome, p.valor AS plano_valor
+             FROM associados a
+             LEFT JOIN planos p ON p.id = a.plano_id
+             WHERE a.id = ? AND a.tenant_id = ?'
+        );
+        $stmt->execute([$aid, $tid]);
+    } else {
+        $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+        $stmt = pdo()->prepare(
+            "SELECT a.id, a.razao_social, a.nome_fantasia, a.nome_responsavel, a.cnpj, a.cpf,
+                    a.email, a.telefone, a.whatsapp, a.status, a.categoria, a.plano_id,
+                    a.data_associacao, a.data_vencimento,
+                    p.nome AS plano_nome, p.valor AS plano_valor
+             FROM associados a
+             LEFT JOIN planos p ON p.id = a.plano_id
+             WHERE a.$field = ? AND a.tenant_id = ?"
+        );
+        $stmt->execute([$doc, $tid]);
+    }
+
+    $row = $stmt->fetch();
+    if (!$row) json_out(['error' => 'Associado não encontrado'], 404);
+    json_out($row);
+}
+
+// GET /associado/cobrancas — cobranças do associado logado
+if ($method === 'GET' && $uri === '/associado/cobrancas') {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $aid = $p['associado_id'] ?? null;
+
+    if (!$aid) json_out(['error' => 'Token não contém associado_id'], 403);
+
+    $stmt = pdo()->prepare(
+        'SELECT id, descricao, valor, data_vencimento, status, modalidade,
+                gateway_url AS link_pagamento, pix_copia_cola, criado_em, data_pagamento, valor_pago
+         FROM cobrancas
+         WHERE associado_id = ? AND tenant_id = ?
+         ORDER BY data_vencimento DESC'
+    );
+    $stmt->execute([$aid, $tid]);
+    $rows = $stmt->fetchAll();
+    json_out(['data' => $rows, 'total' => count($rows)]);
+}
+
+// GET /associado/itens-plano — itens/benefícios do plano do associado
+if ($method === 'GET' && $uri === '/associado/itens-plano') {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $aid = $p['associado_id'] ?? null;
+
+    if (!$aid) json_out(['error' => 'Token não contém associado_id'], 403);
+
+    $stmt = pdo()->prepare('SELECT plano_id FROM associados WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$aid, $tid]);
+    $assoc = $stmt->fetch();
+    if (!$assoc || !$assoc['plano_id']) json_out(['data' => [], 'total' => 0]);
+
+    $stmtP = pdo()->prepare('SELECT nome, valor FROM planos WHERE id = ? AND tenant_id = ?');
+    $stmtP->execute([$assoc['plano_id'], $tid]);
+    $plano = $stmtP->fetch();
+
+    $stmtI = pdo()->prepare(
+        'SELECT nome, conecta_produto_id, conecta_produto_nome, tipo_cobranca
+         FROM plano_itens
+         WHERE plano_id = ? AND tenant_id = ?
+         ORDER BY ordem'
+    );
+    $stmtI->execute([$assoc['plano_id'], $tid]);
+
+    json_out([
+        'plano' => $plano,
+        'itens' => $stmtI->fetchAll(),
+        'total' => $stmtI->rowCount(),
+    ]);
+}
+
+// GET /associado/carteirinha — token assinado para carteirinha digital
+if ($method === 'GET' && $uri === '/associado/carteirinha') {
+    $p   = auth_required();
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $aid = $p['associado_id'] ?? null;
+
+    if (!$aid) json_out(['error' => 'Token não contém associado_id'], 403);
+
+    $stmt = pdo()->prepare(
+        'SELECT a.id, a.razao_social, a.nome_fantasia, a.cnpj, a.cpf, a.status, a.categoria,
+                p.nome AS plano_nome
+         FROM associados a
+         LEFT JOIN planos p ON p.id = a.plano_id
+         WHERE a.id = ? AND a.tenant_id = ?'
+    );
+    $stmt->execute([$aid, $tid]);
+    $a = $stmt->fetch();
+    if (!$a) json_out(['error' => 'Associado não encontrado'], 404);
+
+    $validoAte = date('Y-m-d', strtotime('+30 days'));
+    $qrData = json_encode([
+        'id'        => (int)$a['id'],
+        'cnpj'      => $a['cnpj'] ?? $a['cpf'] ?? '',
+        'nome'      => $a['razao_social'] ?? $a['nome_fantasia'] ?? '',
+        'plano'     => $a['plano_nome'] ?? '',
+        'status'    => $a['status'],
+        'valido_ate'=> $validoAte,
+    ], JSON_UNESCAPED_UNICODE);
+
+    $cartToken = jwt_encode([
+        'tipo'       => 'carteirinha',
+        'id'         => (int)$a['id'],
+        'cnpj'       => $a['cnpj'] ?? $a['cpf'] ?? '',
+        'nome'       => $a['razao_social'] ?? $a['nome_fantasia'] ?? '',
+        'plano_nome' => $a['plano_nome'] ?? '',
+        'status'     => $a['status'],
+        'valido_ate' => $validoAte,
+    ]);
+
+    json_out([
+        'token'     => $cartToken,
+        'qr_data'   => $qrData,
+        'valido_ate' => $validoAte,
+        'associado' => $a,
+    ]);
 }
 
 // ============================================================
