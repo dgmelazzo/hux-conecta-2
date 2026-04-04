@@ -4,18 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Minha Carteirinha — Conecta ACIC</title>
+<link rel="stylesheet" href="/conecta/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script>(function(){var t=localStorage.getItem('acic_theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-:root{--blue:#1B2B6B;--orange:#E8701A;--gn:#16A34A;--rd:#DC2626;--bg:#F8FAFC;--sf:#FFF;--tx:#1E293B;--t2:#475569;--t3:#94A3B8;--bd:#E2E8F0}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
-.header{background:var(--blue);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px}
-.header h1{font-size:18px;font-weight:700}
-.header .back{color:#fff;text-decoration:none;font-size:14px;opacity:.8}
-.header .back:hover{opacity:1}
-.container{max-width:480px;margin:0 auto;padding:20px}
-.carteirinha{background:linear-gradient(135deg,#1B2B6B 0%,#2D3F8F 50%,#1B2B6B 100%);border-radius:16px;padding:28px 24px;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(27,43,107,.3)}
+body{font-family:'Montserrat',sans-serif;background:var(--bg,#F8FAFC);color:var(--text1,#1E293B);min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:60px;background:var(--surface,#FFF);border-bottom:1px solid var(--border,#E2E8F0)}
+.topbar img{height:36px}
+.btn-back{display:flex;align-items:center;gap:6px;color:var(--text2,#475569);font-size:13px;text-decoration:none;font-family:'Montserrat',sans-serif;font-weight:500}
+.btn-back:hover{color:var(--text1,#1E293B)}
+.page-header{max-width:480px;margin:24px auto 0;padding:0 20px}
+.page-title{font-size:22px;font-weight:700;color:var(--text1,#1E293B)}
+.page-sub{font-size:13px;color:var(--text3,#94A3B8);margin-top:4px;font-weight:400}
+.container{max-width:480px;margin:0 auto;padding:16px 20px 40px}
+/* Carteirinha card — manter visual original */
+.carteirinha{background:linear-gradient(135deg,#1B2B6B 0%,#2D3F8F 50%,#1B2B6B 100%);border-radius:16px;padding:28px 24px;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(27,43,107,.3);font-family:'Montserrat',sans-serif}
 .carteirinha::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:rgba(255,255,255,.04);border-radius:50%}
 .carteirinha::after{content:'';position:absolute;bottom:-60px;left:-30px;width:200px;height:200px;background:rgba(255,255,255,.03);border-radius:50%}
 .cart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;position:relative;z-index:1}
@@ -34,25 +40,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .cart-footer-label{font-size:9px;text-transform:uppercase;opacity:.5;letter-spacing:.5px}
 .cart-footer-value{font-size:12px;font-weight:600;opacity:.9}
 .qr-section{text-align:center;margin-top:24px}
-.qr-section h3{font-size:14px;font-weight:600;color:var(--t2);margin-bottom:12px}
-#qrcode{display:inline-block;padding:12px;background:var(--sf);border-radius:12px;border:1px solid var(--bd)}
+.qr-section h3{font-size:14px;font-weight:600;color:var(--text2,#475569);margin-bottom:12px;font-family:'Montserrat',sans-serif}
+#qrcode{display:inline-block;padding:12px;background:var(--surface,#FFF);border-radius:12px;border:1px solid var(--border,#E2E8F0)}
 #qrcode canvas,#qrcode img{border-radius:4px}
 .actions{display:flex;gap:10px;justify-content:center;margin-top:20px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none}
-.btn-blue{background:var(--blue);color:#fff}
-.btn-blue:hover{background:#24367F}
-.btn-outline{background:transparent;border:1px solid var(--bd);color:var(--tx)}
-.btn-outline:hover{background:var(--bg)}
-.offline-badge{display:none;text-align:center;padding:6px;font-size:11px;color:var(--orange);background:#FFFBEB;border-radius:6px;margin-bottom:12px}
-.loading{text-align:center;padding:40px;color:var(--t3);font-size:14px}
-.empty{text-align:center;padding:32px;color:var(--t3);font-size:13px}
-@media(max-width:480px){.container{padding:12px}.carteirinha{padding:20px 16px}.cart-nome{font-size:17px}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;font-family:'Montserrat',sans-serif;transition:opacity .15s}
+.btn-blue{background:#1B2B6B;color:#fff}
+.btn-blue:hover{opacity:.9}
+.btn-outline{background:transparent;border:1px solid var(--border,#E2E8F0);color:var(--text1,#1E293B)}
+.btn-outline:hover{background:var(--bg,#F8FAFC)}
+.offline-badge{display:none;text-align:center;padding:6px;font-size:11px;color:#E8701A;background:#FFFBEB;border-radius:6px;margin-bottom:12px;font-family:'Montserrat',sans-serif}
+.loading{text-align:center;padding:40px;color:var(--text3,#94A3B8);font-size:14px}
+.empty{text-align:center;padding:32px;color:var(--text3,#94A3B8);font-size:13px}
+.empty a{color:#E8701A;font-weight:600}
+@media(max-width:480px){.container{padding:12px}.carteirinha{padding:20px 16px}.cart-nome{font-size:17px}.page-header{padding:0 12px;margin-top:16px}.page-title{font-size:18px}}
 </style>
 </head>
 <body>
-<div class="header">
-  <a href="/conecta/" class="back">&larr; Voltar</a>
-  <h1>Minha Carteirinha</h1>
+<div class="topbar">
+  <img src="https://acicdf.org.br/conecta/wp-content/uploads/2026/02/1-1.png" alt="ACIC Conecta">
+  <a href="/conecta/" class="btn-back">&larr; Voltar ao Portal</a>
+</div>
+<div class="page-header">
+  <div class="page-title">Minha Carteirinha</div>
+  <div class="page-sub">Carteirinha digital de associado ACIC-DF</div>
 </div>
 <div class="container">
   <div id="offline-msg" class="offline-badge">Exibindo dados salvos (offline)</div>
@@ -107,21 +118,16 @@ function fmtDoc(d){
   return d;
 }
 
-function fmtDate(d){
-  if(!d)return'-';
-  return new Date(d+'T00:00:00').toLocaleDateString('pt-BR');
-}
+function fmtDate(d){if(!d)return'-';return new Date(d+'T00:00:00').toLocaleDateString('pt-BR');}
 
 async function init(){
   const[me,cart]=await Promise.all([apiFetch('/associado/me'),apiFetch('/associado/carteirinha')]);
-
   if(!me&&!cart){
     const cached=localStorage.getItem(CACHE_KEY);
     if(cached){renderFromCache(JSON.parse(cached));return;}
     document.getElementById('content').innerHTML='<div class="empty">Erro ao carregar dados.</div>';
     return;
   }
-
   const dados={
     nome:me?.razao_social||me?.nome_fantasia||me?.nome_responsavel||'-',
     doc:me?.cnpj||me?.cpf||'',
@@ -131,16 +137,11 @@ async function init(){
     qr_data:cart?.qr_data||'',
     associado_desde:me?.data_associacao||''
   };
-
-  // Cache para offline
   localStorage.setItem(CACHE_KEY,JSON.stringify(dados));
   render(dados,false);
 }
 
-function renderFromCache(dados){
-  document.getElementById('offline-msg').style.display='block';
-  render(dados,true);
-}
+function renderFromCache(dados){document.getElementById('offline-msg').style.display='block';render(dados,true);}
 
 function render(d,offline){
   const isAtivo=d.status==='ativo';
@@ -172,26 +173,19 @@ function render(d,offline){
   </div>`;
 
   document.getElementById('content').innerHTML=html;
-
-  // Gerar QR Code
   const qrContent=d.qr_data||JSON.stringify({nome:d.nome,doc:d.doc,status:d.status,plano:d.plano,valido_ate:d.valido_ate});
   new QRCode(document.getElementById('qrcode'),{text:qrContent,width:180,height:180,colorDark:'#1B2B6B',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
 }
 
 function downloadCard(){
-  const el=document.getElementById('carteirinha-card');
-  if(!el)return;
+  const el=document.getElementById('carteirinha-card');if(!el)return;
   html2canvas(el,{scale:2,useCORS:true,backgroundColor:null}).then(canvas=>{
-    const link=document.createElement('a');
-    link.download='carteirinha-acic.png';
-    link.href=canvas.toDataURL('image/png');
-    link.click();
+    const link=document.createElement('a');link.download='carteirinha-acic.png';link.href=canvas.toDataURL('image/png');link.click();
   });
 }
 
 function shareCard(){
-  const el=document.getElementById('carteirinha-card');
-  if(!el)return;
+  const el=document.getElementById('carteirinha-card');if(!el)return;
   if(navigator.share){
     html2canvas(el,{scale:2,useCORS:true,backgroundColor:null}).then(canvas=>{
       canvas.toBlob(blob=>{
@@ -199,9 +193,7 @@ function shareCard(){
         navigator.share({title:'Minha Carteirinha ACIC',files:[file]}).catch(()=>{});
       });
     });
-  }else{
-    downloadCard();
-  }
+  }else{downloadCard();}
 }
 </script>
 </body>

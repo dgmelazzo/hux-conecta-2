@@ -699,10 +699,9 @@ const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{
 let _assocCategoria='',_assocCache={};
 if(!tk)location.href='/';
 // Associados e colaboradores: redirecionar para o Conecta 2.0
-if(['associado_empresa','colaborador'].includes(usr.role)){
-  // Transferir token CRM para o Conecta
-  const crmToken=tk;
-  sessionStorage.setItem('conecta_crm_token',crmToken);
+// APENAS se o role no token principal do CRM for de associado (nunca para superadmin/gestor/atendente)
+if(usr.role && ['associado_empresa','colaborador'].includes(usr.role) && !['superadmin','gestor','atendente'].includes(usr.role)){
+  sessionStorage.setItem('conecta_crm_token',tk);
   window.location.href='https://acicdf.org.br/conecta/';
 }
 // Inicializar usuário + permissões por role
