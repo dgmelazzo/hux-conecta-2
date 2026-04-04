@@ -14,6 +14,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg,#F8FAFC);color:var(
 .topbar img{height:36px}
 .btn-back{display:flex;align-items:center;gap:6px;color:var(--text2,#475569);font-size:13px;text-decoration:none;font-family:'Montserrat',sans-serif;font-weight:500}
 .btn-back:hover{color:var(--text1,#1E293B)}
+.topnav{display:flex;gap:4px}
+.topnav a{font-size:12px;font-weight:500;color:var(--text3,#94A3B8);text-decoration:none;padding:6px 10px;border-radius:6px;font-family:'Montserrat',sans-serif;transition:all .15s}
+.topnav a:hover{color:var(--text1,#1E293B);background:var(--bg,#F8FAFC)}
+.topnav a.active{color:#E8701A;font-weight:600}
+@media(max-width:640px){.topnav{display:none}}
 .page-header{max-width:680px;margin:24px auto 0;padding:0 20px}
 .page-title{font-size:22px;font-weight:700;color:var(--text1,#1E293B)}
 .page-sub{font-size:13px;color:var(--text3,#94A3B8);margin-top:4px;font-weight:400}
@@ -57,7 +62,13 @@ td{padding:8px 10px;border-bottom:1px solid var(--border,#E2E8F0);color:var(--te
 <body>
 <div class="topbar">
   <img src="https://acicdf.org.br/conecta/uploads/logo-light-320.png" alt="ACIC Conecta">
-  <a href="/conecta/" class="btn-back">&larr; Voltar ao Portal</a>
+  <nav class="topnav">
+    <a href="/conecta/#dashboard">Dashboard</a>
+    <a href="/conecta/#empresa">Minha Empresa</a>
+    <a href="/conecta/portal-taxas.php" class="active">Minhas Taxas</a>
+    <a href="/conecta/portal-carteirinha.php">Carteirinha</a>
+  </nav>
+  <a href="/conecta/" class="btn-back">&larr; Voltar</a>
 </div>
 <div class="page-header">
   <div class="page-title">Minhas Taxas</div>
@@ -70,11 +81,13 @@ td{padding:8px 10px;border-bottom:1px solid var(--border,#E2E8F0);color:var(--te
 
 <script>
 const CRM_API='https://api.acicdf.org.br';
-let token=sessionStorage.getItem('conecta_crm_token')||localStorage.getItem('crm_token')||'';
+// JWT CRM (se já tiver do SSO anterior)
+let token=sessionStorage.getItem('conecta_crm_token')||'';
 
 async function ensureCrmToken(){
   if(token)return true;
-  const conectaToken=sessionStorage.getItem('conecta_token')||localStorage.getItem('conecta_token')||'';
+  // Token nativo do Conecta 2.0 para trocar por JWT CRM via SSO
+  const conectaToken=sessionStorage.getItem('acic_conecta_token')||localStorage.getItem('acic_conecta_token')||sessionStorage.getItem('conecta_token')||'';
   if(!conectaToken)return false;
   try{
     const r=await fetch(CRM_API+'/auth/sso-conecta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conecta_token:conectaToken})});
