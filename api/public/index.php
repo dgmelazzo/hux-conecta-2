@@ -482,9 +482,26 @@ if ($method === 'POST' && $uri === '/auth/sso-conecta') {
     $conectaToken = $b['conecta_token'] ?? '';
     if (!$conectaToken) json_out(['error' => 'conecta_token obrigatório'], 422);
 
-    // Validar token no Conecta 2.0
-    $resp = conectaApi('verify', ['token' => $conectaToken]);
-    if (!$resp['_ok'] || empty($resp['data']['cpf_cnpj'])) {
+    // Validar token no Conecta 2.0 via action=validate (token no header Authorization)
+    $ch = curl_init('https://acicdf.org.br/conecta/auth.php?action=validate');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $conectaToken,
+        ],
+        CURLOPT_POSTFIELDS     => '{}',
+        CURLOPT_SSL_VERIFYPEER => true,
+    ]);
+    $rawResp = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    error_log("[CRM-SSO] validate code=$httpCode body=" . substr($rawResp ?: '', 0, 500));
+    $resp = json_decode($rawResp ?: '{}', true) ?? [];
+
+    if ($httpCode >= 400 || empty($resp['success']) || empty($resp['data']['cpf_cnpj'])) {
         json_out(['error' => 'Token do Conecta inválido ou expirado'], 401);
     }
 
@@ -2391,7 +2408,7 @@ if ($method === 'GET' && $uri === '/associado/cobrancas') {
 
     $stmt = pdo()->prepare(
         'SELECT id, descricao, valor, data_vencimento, status, modalidade,
-                gateway_url AS link_pagamento, pix_copia_cola, criado_em, data_pagamento, valor_pago
+                gateway_url AS link_pagamento, criado_em, data_pagamento, valor_pago
          FROM cobrancas
          WHERE associado_id = ? AND tenant_id = ?
          ORDER BY data_vencimento DESC'

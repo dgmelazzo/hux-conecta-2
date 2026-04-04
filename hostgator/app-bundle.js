@@ -1362,7 +1362,7 @@ function renderAssociado(d) {
   document.getElementById('dash-greeting').textContent =
     `Olá, ${nomeExibir.split(' ')[0]}! 👋`;
   document.getElementById('stat-status').textContent   = statusLabel(d.status);
-  document.getElementById('stat-since').textContent    = d.razaoSocial === 'Administrador' ? 'ACIC-DF' : formatDate(d.dataAssociacao);
+  document.getElementById('stat-since').textContent    = d.razaoSocial === 'Administrador' ? 'ACIC-DF' : formatDateOrPending(d.dataAssociacao);
   document.getElementById('stat-category').textContent = tipoLabel;
 
   // Dashboard mini
@@ -1797,6 +1797,10 @@ document.addEventListener('click', e => {
 // ============================================================
 function formatDate(d) {
   if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('pt-BR'); } catch { return d; }
+}
+function formatDateOrPending(d) {
+  if (!d) return 'Em processamento';
   try { return new Date(d).toLocaleDateString('pt-BR'); } catch { return d; }
 }
 

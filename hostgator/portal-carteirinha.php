@@ -129,17 +129,33 @@ function updateThemeUI(){const t=document.documentElement.getAttribute('data-the
 updateThemeUI();
 
 token=sessionStorage.getItem('acic_conecta_token')||localStorage.getItem('acic_conecta_token')||'';
-async function apiFetch(ep){try{const r=await fetch(CRM_API+ep,{headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}});if(r.status===401)return null;const d=await r.json();return d.data!==undefined?d.data:d;}catch(e){return null;}}
+const session=JSON.parse(sessionStorage.getItem('acic_session')||'{}');
+
 function fmtDoc(d){if(!d)return'-';d=d.replace(/\D/g,'');if(d.length===14)return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');if(d.length===11)return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');return d}
-function fmtDate(d){if(!d)return'-';return new Date(d+'T00:00:00').toLocaleDateString('pt-BR')}
-function updateSidebarUser(me){const nm=me?.nome_fantasia||me?.razao_social||me?.nome_responsavel||'Associado';document.getElementById('sb-company').textContent=nm;document.getElementById('sb-avatar').textContent=(nm[0]||'?').toUpperCase();document.getElementById('sb-status').textContent=me?.status==='ativo'?'Associado Ativo':me?.status||'Associado'}
+function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('pt-BR');}catch(e){return '—';}}
+function updateSidebarUser(nm){document.getElementById('sb-company').textContent=nm||'Associado';document.getElementById('sb-avatar').textContent=((nm||'?')[0]||'?').toUpperCase();document.getElementById('sb-status').textContent='Associado Ativo'}
 
 (async()=>{
-  if(!token){const c=localStorage.getItem(CACHE_KEY);if(c){renderFromCache(JSON.parse(c));}else{document.getElementById('page-content').innerHTML='<div class="empty-state">Sessao expirada. <a href="/conecta/">Faca login novamente</a></div>';}return;}
-  const[me,cart]=await Promise.all([apiFetch('/associado/me'),apiFetch('/associado/carteirinha')]);
-  if(!me&&!cart){const c=localStorage.getItem(CACHE_KEY);if(c){renderFromCache(JSON.parse(c));}else{document.getElementById('page-content').innerHTML='<div class="empty-state">Erro ao carregar dados.</div>';}return;}
-  if(me)updateSidebarUser(me);
-  const dados={nome:me?.razao_social||me?.nome_fantasia||me?.nome_responsavel||'-',doc:me?.cnpj||me?.cpf||'',status:me?.status||'ativo',plano:me?.plano_nome||'',valido_ate:cart?.valido_ate||'',qr_data:cart?.qr_data||'',associado_desde:me?.data_associacao||''};
+  // Sem token do Conecta: tentar cache, senao redirecionar
+  if(!token||!session.nome){
+    const c=localStorage.getItem(CACHE_KEY);
+    if(c){renderFromCache(JSON.parse(c));return;}
+    document.getElementById('page-content').innerHTML='<div class="empty-state">Sessao expirada. <a href="/conecta/">Faca login novamente</a></div>';
+    return;
+  }
+
+  // Usar dados do acic_session (preenchido pelo auth.php no login)
+  const nome=session.razaoSocial||session.nome||'Associado';
+  updateSidebarUser(nome);
+  const dados={
+    nome:nome,
+    doc:session.cnpj||session.cpf||session.cpf_cnpj||'',
+    status:'ativo',
+    plano:session.plano||'Associado',
+    valido_ate:new Date(Date.now()+365*24*60*60*1000).toISOString().slice(0,10),
+    qr_data:'',
+    associado_desde:session.dataAssociacao||session.data_associacao||''
+  };
   localStorage.setItem(CACHE_KEY,JSON.stringify(dados));
   render(dados);
 })();
@@ -153,7 +169,7 @@ function render(d){
     <div class="cart-header"><div><div class="cart-logo">CONECTA ACIC</div><div class="cart-org">Associacao Comercial e Industrial de Ceilandia-DF</div></div><span class="cart-badge ${badgeCls}">${badgeTxt}</span></div>
     <div class="cart-nome">${d.nome}</div>
     <div class="cart-doc">${fmtDoc(d.doc)}</div>
-    <div class="cart-grid"><div><div class="cart-field-label">Plano</div><div class="cart-field-value">${d.plano||'—'}</div></div><div><div class="cart-field-label">Associado desde</div><div class="cart-field-value">${fmtDate(d.associado_desde)}</div></div></div>
+    <div class="cart-grid"><div><div class="cart-field-label">Plano</div><div class="cart-field-value">${d.plano||'Associado'}</div></div><div><div class="cart-field-label">Associado desde</div><div class="cart-field-value">${d.associado_desde?fmtDate(d.associado_desde):'—'}</div></div></div>
     <div class="cart-divider"></div>
     <div class="cart-footer-row"><div><div class="cart-footer-label">Validade</div><div class="cart-footer-value">${fmtDate(d.valido_ate)}</div></div><div style="text-align:right"><div class="cart-footer-label">Codigo</div><div class="cart-footer-value" style="font-family:monospace;font-size:10px;opacity:.6">${(d.doc||'').replace(/\D/g,'').slice(-6)}</div></div></div>
   </div>`;

@@ -303,3 +303,4 @@ if ($action === 'verify') {
 // ============================================================
 respond(['success' => false, 'message' => 'Action nÃ£o reconhecida: ' . $action], 400);
 
+
