@@ -1494,8 +1494,13 @@ function renderFeaturedBenefits(list) {
   _carouselItems = featured;
   _carouselIndex = 0;
 
-  container.innerHTML = featured.map((b, i) => `
-    <div class="carousel-slide ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="abrirProduto('${b.slug||b.id}')">
+  container.innerHTML = featured.map((b, i) => {
+    const isFirst = i === 0;
+    const slideStyle = isFirst
+      ? 'opacity:1;position:relative;pointer-events:auto'
+      : 'opacity:0;position:absolute;top:0;left:0;width:100%;pointer-events:none';
+    return `
+    <div class="carousel-slide" data-index="${i}" style="${slideStyle}" onclick="abrirProduto('${b.slug||b.id}')">
       <div class="carousel-img-wrap">
         ${b.imagem
           ? `<img src="${b.imagem}" alt="${b.titulo}" class="carousel-img" loading="lazy">`
@@ -1508,7 +1513,8 @@ function renderFeaturedBenefits(list) {
         <p class="carousel-desc">${b.descricao ? (b.descricao.substring(0,120) + (b.descricao.length > 120 ? '...' : '')) : ''}</p>
         <div class="carousel-cta"><span>Saiba mais</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   const dots = document.getElementById('carousel-dots');
   if (dots) {
@@ -1528,7 +1534,13 @@ function carouselNav(dir) {
 
 function carouselGoTo(idx) {
   _carouselIndex = idx;
-  document.querySelectorAll('.carousel-slide').forEach((el, i) => el.classList.toggle('active', i === idx));
+  document.querySelectorAll('.carousel-slide').forEach((el, i) => {
+    const isActive = i === idx;
+    el.style.opacity = isActive ? '1' : '0';
+    el.style.pointerEvents = isActive ? 'auto' : 'none';
+    el.style.position = isActive ? 'relative' : 'absolute';
+    if (!isActive) { el.style.top = '0'; el.style.left = '0'; el.style.width = '100%'; }
+  });
   document.querySelectorAll('.carousel-dot').forEach((el, i) => el.classList.toggle('active', i === idx));
   clearInterval(_carouselTimer);
   _carouselTimer = setInterval(() => carouselNav(1), 5000);
