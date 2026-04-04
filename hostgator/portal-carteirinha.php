@@ -61,16 +61,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 <script>
 const CRM_API='https://api.acicdf.org.br';
-const token=sessionStorage.getItem('conecta_crm_token')||localStorage.getItem('crm_token')||'';
+let token=sessionStorage.getItem('conecta_crm_token')||localStorage.getItem('crm_token')||'';
 const CACHE_KEY='conecta_carteirinha';
 
-if(!token){
-  const cached=localStorage.getItem(CACHE_KEY);
-  if(cached){renderFromCache(JSON.parse(cached));}
-  else{document.getElementById('content').innerHTML='<div class="empty">Sessao expirada. <a href="/conecta/">Faca login novamente</a>.</div>';}
-} else {
-  init();
+async function ensureCrmToken(){
+  if(token)return true;
+  const conectaToken=sessionStorage.getItem('conecta_token')||localStorage.getItem('conecta_token')||'';
+  if(!conectaToken)return false;
+  try{
+    const r=await fetch(CRM_API+'/auth/sso-conecta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conecta_token:conectaToken})});
+    const d=await r.json();
+    if(d.ok!==false&&d.data?.token){token=d.data.token;sessionStorage.setItem('conecta_crm_token',token);return true;}
+    if(d.token){token=d.token;sessionStorage.setItem('conecta_crm_token',token);return true;}
+  }catch(e){console.warn('SSO CRM falhou:',e);}
+  return false;
 }
+
+(async()=>{
+  if(!token){
+    const ok=await ensureCrmToken();
+    if(!ok){
+      const cached=localStorage.getItem(CACHE_KEY);
+      if(cached){renderFromCache(JSON.parse(cached));}
+      else{document.getElementById('content').innerHTML='<div class="empty">Sessao expirada. <a href="/conecta/">Faca login novamente</a>.</div>';}
+      return;
+    }
+  }
+  init();
+})();
 
 async function apiFetch(endpoint){
   try{

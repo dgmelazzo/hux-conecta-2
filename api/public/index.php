@@ -476,6 +476,54 @@ if ($method === 'POST' && $uri === '/auth/primeiro-acesso') {
     json_out($response);
 }
 
+// ── POST /auth/sso-conecta — troca token Conecta 2.0 por JWT CRM ─────────────
+if ($method === 'POST' && $uri === '/auth/sso-conecta') {
+    $b = body();
+    $conectaToken = $b['conecta_token'] ?? '';
+    if (!$conectaToken) json_out(['error' => 'conecta_token obrigatório'], 422);
+
+    // Validar token no Conecta 2.0
+    $resp = conectaApi('verify', ['token' => $conectaToken]);
+    if (!$resp['_ok'] || empty($resp['data']['cpf_cnpj'])) {
+        json_out(['error' => 'Token do Conecta inválido ou expirado'], 401);
+    }
+
+    $doc   = preg_replace('/\D/', '', $resp['data']['cpf_cnpj']);
+    $nome  = $resp['data']['nome'] ?? '';
+    $tid   = tenant_id();
+    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+
+    // Buscar associado no CRM
+    $stmt = pdo()->prepare("SELECT * FROM associados WHERE $field = ? AND tenant_id = ? LIMIT 1");
+    $stmt->execute([$doc, $tid]);
+    $assoc = $stmt->fetch();
+
+    if (!$assoc) {
+        json_out(['error' => 'Associado não encontrado no CRM. Entre em contato com a associação.'], 404);
+    }
+
+    $assocId   = (int)$assoc['id'];
+    $categoria = $assoc['categoria'] ?? 'empresa';
+    $role      = in_array($categoria, ['colaborador', 'dependente']) ? 'colaborador' : 'associado_empresa';
+
+    $token = jwt_encode([
+        'sub'          => $assocId,
+        'documento'    => $doc,
+        'nome'         => $assoc['nome_fantasia'] ?? $assoc['razao_social'] ?? $assoc['nome_responsavel'] ?? $nome,
+        'email'        => $assoc['email'],
+        'role'         => $role,
+        'tenant_id'    => $tid,
+        'associado_id' => $assocId,
+        'sso'          => true,
+    ]);
+
+    json_out([
+        'token'        => $token,
+        'associado_id' => $assocId,
+        'nome'         => $assoc['nome_fantasia'] ?? $assoc['razao_social'] ?? $assoc['nome_responsavel'] ?? $nome,
+    ]);
+}
+
 // ── POST /auth/criar-usuario — cria gestor/atendente (só superadmin/gestor) ───
 if ($method === 'POST' && $uri === '/auth/criar-usuario') {
     $p = auth_required();

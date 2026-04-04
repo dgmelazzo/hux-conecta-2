@@ -267,6 +267,38 @@ if ($action === 'reset_password') {
 }
 
 // ============================================================
+// ACTION: verify — valida token de sessão e retorna dados do usuário
+// ============================================================
+if ($action === 'verify') {
+    $token = $body['token'] ?? '';
+    if (!$token) respond(['success' => false, 'message' => 'Token obrigatório'], 422);
+
+    $stmt = $pdo->prepare(
+        'SELECT u.id, u.cpf, u.cnpj, u.nome, u.email
+         FROM conecta_sessions s
+         JOIN conecta_users u ON u.id = s.user_id
+         WHERE s.token = ? AND s.expira_em > NOW()
+         LIMIT 1'
+    );
+    $stmt->execute([$token]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        respond(['success' => false, 'message' => 'Token inválido ou expirado'], 401);
+    }
+
+    respond([
+        'success' => true,
+        'data'    => [
+            'id'       => (int)$user['id'],
+            'cpf_cnpj' => $user['cnpj'] ?: $user['cpf'] ?: '',
+            'nome'     => $user['nome'] ?? '',
+            'email'    => $user['email'] ?? '',
+        ],
+    ]);
+}
+
+// ============================================================
 // Unknown action
 // ============================================================
 respond(['success' => false, 'message' => 'Action não reconhecida: ' . $action], 400);

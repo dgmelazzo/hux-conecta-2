@@ -60,18 +60,31 @@ td{padding:8px 10px;border-bottom:1px solid var(--bd);color:var(--t2)}
 
 <script>
 const CRM_API='https://api.acicdf.org.br';
-const token=sessionStorage.getItem('conecta_crm_token')||localStorage.getItem('crm_token')||'';
+let token=sessionStorage.getItem('conecta_crm_token')||localStorage.getItem('crm_token')||'';
 
-if(!token){
-  document.getElementById('content').innerHTML='<div class="card"><div class="empty">Sessão expirada. <a href="/conecta/">Faça login novamente</a>.</div></div>';
-} else {
-  init();
+// SSO: se não tem JWT CRM mas tem token Conecta, trocar via /auth/sso-conecta
+async function ensureCrmToken(){
+  if(token)return true;
+  const conectaToken=sessionStorage.getItem('conecta_token')||localStorage.getItem('conecta_token')||'';
+  if(!conectaToken)return false;
+  try{
+    const r=await fetch(CRM_API+'/auth/sso-conecta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conecta_token:conectaToken})});
+    const d=await r.json();
+    if(d.ok!==false&&d.data?.token){token=d.data.token;sessionStorage.setItem('conecta_crm_token',token);return true;}
+    if(d.token){token=d.token;sessionStorage.setItem('conecta_crm_token',token);return true;}
+  }catch(e){console.warn('SSO CRM falhou:',e);}
+  return false;
 }
+
+(async()=>{
+  if(!token){const ok=await ensureCrmToken();if(!ok){document.getElementById('content').innerHTML='<div class="card"><div class="empty">Sessao expirada. <a href="/conecta/">Faca login novamente</a>.</div></div>';return;}}
+  init();
+})();
 
 async function apiFetch(endpoint){
   try{
     const r=await fetch(CRM_API+endpoint,{headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}});
-    if(r.status===401){document.getElementById('content').innerHTML='<div class="card"><div class="empty">Sessão expirada. <a href="/conecta/">Faça login novamente</a>.</div></div>';return null;}
+    if(r.status===401){document.getElementById('content').innerHTML='<div class="card"><div class="empty">Sessao expirada. <a href="/conecta/">Faca login novamente</a>.</div></div>';return null;}
     const d=await r.json();
     return d.data!==undefined?d.data:d;
   }catch(e){return null;}
