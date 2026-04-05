@@ -200,7 +200,7 @@ if ($action === 'check') {
     $stU = $pdo->prepare('SELECT id FROM conecta_users WHERE cpf_cnpj = ? LIMIT 1');
     $stU->execute([$doc]);
     if (!$stU->fetch()) {
-        $pdo->prepare('INSERT INTO conecta_users (cpf_cnpj, tipo, primeiro_acesso, ativo, created_at) VALUES (?, ?, 1, 1, NOW())')
+        $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, higestor_id, primeiro_acesso, ativo, created_at) VALUES (?, ?, '', 1, 1, NOW())")
             ->execute([$doc, $tipo]);
     }
 
@@ -233,8 +233,8 @@ if ($action === 'first') {
         $st->execute([$doc]);
         $u = $st->fetch();
         if (!$u) {
-            $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, password, primeiro_acesso, ativo, created_at)
-                           VALUES (?, 'admin', ?, 0, 1, NOW())")->execute([$doc, $hash]);
+            $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, higestor_id, password, primeiro_acesso, ativo, created_at)
+                           VALUES (?, 'admin', '', ?, 0, 1, NOW())")->execute([$doc, $hash]);
             $uid = (int)$pdo->lastInsertId();
         } else {
             $uid = (int)$u['id'];
@@ -269,8 +269,8 @@ if ($action === 'first') {
     $st->execute([$doc]);
     $u = $st->fetch();
     if (!$u) {
-        $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, password, primeiro_acesso, ativo, crm_associado_id, crm_dados, created_at)
-                       VALUES (?, ?, ?, 0, 1, ?, ?, NOW())")
+        $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, higestor_id, password, primeiro_acesso, ativo, crm_associado_id, crm_dados, created_at)
+                       VALUES (?, ?, '', ?, 0, 1, ?, ?, NOW())")
             ->execute([$doc, $tipo, $hash, $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE)]);
         $uid = (int)$pdo->lastInsertId();
     } else {
@@ -348,8 +348,8 @@ if ($action === 'login') {
     $st->execute([$doc]);
     $u = $st->fetch();
     if (!$u) {
-        $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, primeiro_acesso, ativo, crm_associado_id, crm_dados, created_at)
-                       VALUES (?, ?, 0, 1, ?, ?, NOW())")
+        $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, higestor_id, primeiro_acesso, ativo, crm_associado_id, crm_dados, created_at)
+                       VALUES (?, ?, '', 0, 1, ?, ?, NOW())")
             ->execute([$doc, $tipo, $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE)]);
         $uid = (int)$pdo->lastInsertId();
     } else {
