@@ -27,8 +27,8 @@ register_shutdown_function(function () {
             header('Content-Type: application/json; charset=utf-8');
         }
         echo json_encode([
-            'ok'    => false,
-            'error' => 'PHP fatal: ' . $err['message'] . ' em ' . basename($err['file']) . ':' . $err['line'],
+            'success' => false,
+            'message' => 'PHP fatal: ' . $err['message'] . ' em ' . basename($err['file']) . ':' . $err['line'],
         ]);
     }
 });
@@ -38,8 +38,8 @@ set_exception_handler(function (\Throwable $e) {
         header('Content-Type: application/json; charset=utf-8');
     }
     echo json_encode([
-        'ok'    => false,
-        'error' => 'Exception: ' . $e->getMessage() . ' em ' . basename($e->getFile()) . ':' . $e->getLine(),
+        'success' => false,
+        'message' => 'Exception: ' . $e->getMessage() . ' em ' . basename($e->getFile()) . ':' . $e->getLine(),
     ]);
     exit;
 });
@@ -71,7 +71,7 @@ try {
     );
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => 'DB connection error']);
+    echo json_encode(['success' => false, 'message' => 'DB connection error: ' . $e->getMessage()]);
     exit;
 }
 
@@ -91,14 +91,15 @@ try {
 // ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
+// Frontend (app-bundle.js authPost) espera {success:true,data:{...}} / {success:false,message:"..."}
 function ok(array $data = [], int $code = 200) {
     http_response_code($code);
-    echo json_encode(array_merge(['ok' => true], $data), JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success' => true, 'data' => $data], JSON_UNESCAPED_UNICODE);
     exit;
 }
 function err(int $code, string $msg) {
     http_response_code($code);
-    echo json_encode(['ok' => false, 'error' => $msg], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success' => false, 'message' => $msg], JSON_UNESCAPED_UNICODE);
     exit;
 }
 function normalizeDoc(string $raw): string {
@@ -316,7 +317,7 @@ if ($action === 'login') {
         $st = $pdo->prepare('SELECT * FROM conecta_users WHERE cpf_cnpj = ? LIMIT 1');
         $st->execute([$doc]);
         $u = $st->fetch();
-        if (!$u || empty($u['password'])) err(401, 'Primeiro acesso - defina sua senha.');
+        if (!$u || empty($u['password'])) err(401, 'primeiro_acesso');
         if (!password_verify($passwd, $u['password'])) err(401, 'Senha incorreta.');
 
         $tok = makeToken();
@@ -337,7 +338,7 @@ if ($action === 'login') {
     // Associado: valida no CRM
     $crm = crmPost('/auth/login-associado', ['documento' => $doc, 'senha' => $passwd]);
     if (!($crm['ok'] ?? false)) {
-        if (!empty($crm['primeiro_acesso'])) err(401, 'Primeiro acesso - defina sua senha.');
+        if (!empty($crm['primeiro_acesso'])) err(401, 'primeiro_acesso');
         if ((int)($crm['_http'] ?? 0) === 401) err(401, 'Senha incorreta.');
         err((int)($crm['_http'] ?? 500) ?: 500, $crm['error'] ?? 'Falha ao autenticar');
     }
