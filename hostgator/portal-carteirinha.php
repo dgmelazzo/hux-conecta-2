@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="/conecta/style.css">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script>(function(){var t=localStorage.getItem('acic_theme')||'light';document.documentElement.setAttribute('data-theme',t)})()</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 .carteirinha{background:linear-gradient(135deg,#1B2B6B 0%,#2D3F8F 50%,#1B2B6B 100%);border-radius:16px;padding:28px 24px;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(27,43,107,.3);font-family:var(--font-display);max-width:420px}
@@ -174,11 +173,12 @@ function render(d){
     <div class="cart-divider"></div>
     <div class="cart-footer-row"><div><div class="cart-footer-label">Validade</div><div class="cart-footer-value">${d.valido_ate?fmtDate(d.valido_ate):'Em processamento'}</div></div><div style="text-align:right"><div class="cart-footer-label">Codigo</div><div class="cart-footer-value" style="font-family:monospace;font-size:10px;opacity:.6">${(d.doc||'').replace(/\D/g,'').slice(-6)}</div></div></div>
   </div>`;
-  html+='<div class="qr-section"><h3>QR Code de Validacao</h3><div id="qrcode"></div></div>';
+  const docClean = (d.doc||'').replace(/\D/g,'');
+  const qrUrl = 'https://crm.acicdf.org.br/validar/'+docClean;
+  const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data='+encodeURIComponent(qrUrl)+'&color=1B2B6B&bgcolor=FFFFFF';
+  html+='<div class="qr-section"><h3>QR Code de Validacao</h3><div id="qrcode"><img src="'+qrImg+'" alt="QR Code" width="200" height="200" crossorigin="anonymous" style="display:block;border-radius:4px"></div><p style="font-size:11px;color:var(--text3);margin-top:10px;max-width:240px;margin-left:auto;margin-right:auto">Aponte a camera para validar: <br><code style="font-size:10px">'+qrUrl+'</code></p></div>';
   html+='<div class="card-actions"><button class="btn-primary" onclick="downloadCard()">Baixar Carteirinha</button><button class="btn-outline" onclick="shareCard()">Compartilhar</button></div>';
   document.getElementById('page-content').innerHTML=html;
-  const qr=d.qr_data||JSON.stringify({nome:d.nome,doc:d.doc,status:d.status,plano:d.plano,valido_ate:d.valido_ate});
-  new QRCode(document.getElementById('qrcode'),{text:qr,width:180,height:180,colorDark:'#1B2B6B',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
 }
 function downloadCard(){const el=document.getElementById('carteirinha-card');if(!el)return;html2canvas(el,{scale:2,useCORS:true,backgroundColor:null}).then(c=>{const a=document.createElement('a');a.download='carteirinha-acic.png';a.href=c.toDataURL('image/png');a.click()})}
 function shareCard(){const el=document.getElementById('carteirinha-card');if(!el)return;if(navigator.share){html2canvas(el,{scale:2,useCORS:true,backgroundColor:null}).then(c=>{c.toBlob(b=>{const f=new File([b],'carteirinha-acic.png',{type:'image/png'});navigator.share({title:'Minha Carteirinha ACIC',files:[f]}).catch(()=>{})})})}else{downloadCard()}}

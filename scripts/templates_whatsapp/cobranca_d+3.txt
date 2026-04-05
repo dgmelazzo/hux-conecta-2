@@ -1,0 +1,9 @@
+Ola, {{nome_fantasia}},
+
+Sua taxa associativa venceu ha 3 dias ({{data_vencimento}}).
+
+Valor: {{valor}}
+
+Regularize agora: {{link_boleto}}
+
+Em caso de pagamento ja efetuado, desconsidere.

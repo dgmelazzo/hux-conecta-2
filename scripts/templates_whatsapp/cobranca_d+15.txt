@@ -1,0 +1,9 @@
+{{nome_fantasia}},
+
+Sua taxa associativa esta em atraso ha 15 dias.
+
+Valor: {{valor}}
+Vencimento original: {{data_vencimento}}
+
+Sua associacao sera suspensa automaticamente caso o pagamento nao seja regularizado. Contate a ACIC-DF para negociar ou pague diretamente:
+{{link_boleto}}

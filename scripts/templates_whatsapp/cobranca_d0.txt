@@ -1,0 +1,7 @@
+Ola, {{nome_fantasia}}!
+
+Sua taxa associativa da ACIC-DF vence HOJE ({{data_vencimento}}).
+
+Valor: {{valor}}
+
+Pague agora para evitar interrupcao dos beneficios: {{link_boleto}}

@@ -186,12 +186,7 @@ function processar_gatilho(string $gatilho, int $diasOffset, int $tenantId): voi
         $linkBoleto  = $cob['gateway_url'] ?: '';
         $pixCopiaCola = '';
 
-        // Busca pix copia e cola se disponível
-        if ($cob['modalidade'] === 'pix' && !empty($cob['gateway_charge_id'])) {
-            $stmtPix = pdo()->prepare('SELECT pix_copia_cola FROM cobrancas WHERE id = ? LIMIT 1');
-            $stmtPix->execute([$cob['id']]);
-            // Campo não existe na tabela atual, usa gateway_url
-        }
+        // Pix copia-e-cola: coluna nao existe atualmente, link Asaas cumpre o papel
 
         $vars = [
             'nome_fantasia'   => $nome,

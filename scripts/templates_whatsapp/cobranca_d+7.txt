@@ -1,0 +1,9 @@
+{{nome_fantasia}}, sua taxa associativa da ACIC-DF esta em atraso ha 7 dias.
+
+Valor: {{valor}}
+Vencimento: {{data_vencimento}}
+
+Para manter seus beneficios ativos, regularize agora:
+{{link_boleto}}
+
+Qualquer duvida, fale conosco aqui mesmo.

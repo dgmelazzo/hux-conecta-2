@@ -1,0 +1,9 @@
+Ola, {{nome_fantasia}}! 
+
+Sua taxa associativa da ACIC-DF vence em 7 dias ({{data_vencimento}}).
+
+Valor: {{valor}}
+
+Pague agora pelo link: {{link_boleto}}
+
+Duvidas? Responda esta mensagem.
