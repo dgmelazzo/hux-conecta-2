@@ -46,8 +46,19 @@ set_exception_handler(function (\Throwable $e) {
 
 require_once __DIR__ . '/config.php';
 
-$action = $_GET['action'] ?? '';
-$body   = json_decode(file_get_contents('php://input') ?: '{}', true) ?? [];
+// Le php://input UMA unica vez e cacheia (stream so pode ser lido uma vez)
+function input(): array {
+    static $cache = null;
+    if ($cache !== null) return $cache;
+    $raw = file_get_contents('php://input');
+    $decoded = json_decode($raw ?: '{}', true);
+    $cache = is_array($decoded) ? $decoded : [];
+    return $cache;
+}
+
+$body   = input();
+// action pode vir via query string, form POST, ou JSON body (o frontend envia nos 3)
+$action = $_GET['action'] ?? $_POST['action'] ?? ($body['action'] ?? '');
 
 // ------------------------------------------------------------
 // DB
