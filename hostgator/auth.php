@@ -171,14 +171,14 @@ if ($action === 'check') {
 
     // Admin: fluxo local, nao consulta CRM
     if ($doc === ADMIN_DOC) {
-        $st = $pdo->prepare('SELECT id, nome, senha_hash, primeiro_acesso FROM conecta_users WHERE cpf = ? OR cnpj = ? LIMIT 1');
-        $st->execute([$doc, $doc]);
+        $st = $pdo->prepare('SELECT id, password, primeiro_acesso FROM conecta_users WHERE cpf_cnpj = ? LIMIT 1');
+        $st->execute([$doc]);
         $u = $st->fetch();
-        $primeiro = !$u || empty($u['senha_hash']) || !empty($u['primeiro_acesso']);
+        $primeiro = !$u || empty($u['password']) || !empty($u['primeiro_acesso']);
         ok([
             'existe'          => true,
             'primeiro_acesso' => $primeiro,
-            'nome'            => $u['nome'] ?? 'Administrador',
+            'nome'            => defined('ADMIN_NOME') ? ADMIN_NOME : 'Administrador',
             'status'          => 'ativo',
             'plano'           => 'Admin',
             'is_admin'        => true,
@@ -196,12 +196,12 @@ if ($action === 'check') {
     }
 
     // Garante user local (cache/sessao)
-    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
-    $stU = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+    $tipo = strlen($doc) === 14 ? 'empresa' : 'contribuinte';
+    $stU = $pdo->prepare('SELECT id FROM conecta_users WHERE cpf_cnpj = ? LIMIT 1');
     $stU->execute([$doc]);
     if (!$stU->fetch()) {
-        $pdo->prepare("INSERT INTO conecta_users ($field, nome, primeiro_acesso, criado_em) VALUES (?, ?, 1, NOW())")
-            ->execute([$doc, $d['nome'] ?? '']);
+        $pdo->prepare('INSERT INTO conecta_users (cpf_cnpj, tipo, primeiro_acesso, ativo, created_at) VALUES (?, ?, 1, 1, NOW())')
+            ->execute([$doc, $tipo]);
     }
 
     ok([
@@ -223,22 +223,22 @@ if ($action === 'first') {
     if (!$doc) err(422, 'CPF/CNPJ obrigatorio');
     if (strlen($passwd) < 6) err(422, 'Senha minima de 6 caracteres');
 
-    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+    $tipo    = strlen($doc) === 14 ? 'empresa' : 'contribuinte';
     $isAdmin = ($doc === ADMIN_DOC);
 
     if ($isAdmin) {
         // Admin: so local
         $hash = password_hash($passwd, PASSWORD_BCRYPT);
-        $st = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+        $st = $pdo->prepare('SELECT id FROM conecta_users WHERE cpf_cnpj = ? LIMIT 1');
         $st->execute([$doc]);
         $u = $st->fetch();
         if (!$u) {
-            $pdo->prepare("INSERT INTO conecta_users ($field, nome, senha_hash, primeiro_acesso, criado_em)
-                           VALUES (?, 'Administrador', ?, 0, NOW())")->execute([$doc, $hash]);
+            $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, password, primeiro_acesso, ativo, created_at)
+                           VALUES (?, 'admin', ?, 0, 1, NOW())")->execute([$doc, $hash]);
             $uid = (int)$pdo->lastInsertId();
         } else {
             $uid = (int)$u['id'];
-            $pdo->prepare("UPDATE conecta_users SET senha_hash = ?, primeiro_acesso = 0, atualizado_em = NOW() WHERE id = ?")
+            $pdo->prepare('UPDATE conecta_users SET password = ?, primeiro_acesso = 0 WHERE id = ?')
                 ->execute([$hash, $uid]);
         }
         $tok = makeToken();
@@ -248,7 +248,7 @@ if ($action === 'first') {
             'token'            => $tok,
             'tipo'             => 'admin',
             'cpf_cnpj'         => $doc,
-            'nome'             => 'Administrador',
+            'nome'             => defined('ADMIN_NOME') ? ADMIN_NOME : 'Administrador',
             'is_admin'         => true,
             'is_superadmin'    => true,
             'crm_associado_id' => null,
@@ -265,17 +265,17 @@ if ($action === 'first') {
 
     // Cache local + sessao
     $hash = password_hash($passwd, PASSWORD_BCRYPT);
-    $st = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+    $st = $pdo->prepare('SELECT id FROM conecta_users WHERE cpf_cnpj = ? LIMIT 1');
     $st->execute([$doc]);
     $u = $st->fetch();
     if (!$u) {
-        $pdo->prepare("INSERT INTO conecta_users ($field, nome, senha_hash, primeiro_acesso, crm_associado_id, crm_dados, criado_em)
-                       VALUES (?, ?, ?, 0, ?, ?, NOW())")
-            ->execute([$doc, $d['razao_social'] ?? $d['nome_fantasia'] ?? '', $hash, $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE)]);
+        $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, password, primeiro_acesso, ativo, crm_associado_id, crm_dados, created_at)
+                       VALUES (?, ?, ?, 0, 1, ?, ?, NOW())")
+            ->execute([$doc, $tipo, $hash, $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE)]);
         $uid = (int)$pdo->lastInsertId();
     } else {
         $uid = (int)$u['id'];
-        $pdo->prepare("UPDATE conecta_users SET senha_hash = ?, primeiro_acesso = 0, crm_associado_id = ?, crm_dados = ?, atualizado_em = NOW() WHERE id = ?")
+        $pdo->prepare('UPDATE conecta_users SET password = ?, primeiro_acesso = 0, crm_associado_id = ?, crm_dados = ? WHERE id = ?')
             ->execute([$hash, $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE), $uid]);
     }
 
@@ -308,18 +308,17 @@ if ($action === 'login') {
     $passwd = $body['password'] ?? '';
     if (!$doc || !$passwd) err(422, 'CPF/CNPJ e senha obrigatorios');
 
-    $field = strlen($doc) === 14 ? 'cnpj' : 'cpf';
+    $tipo    = strlen($doc) === 14 ? 'empresa' : 'contribuinte';
     $isAdmin = ($doc === ADMIN_DOC);
 
     if ($isAdmin) {
         // Admin: verifica senha local
-        $st = $pdo->prepare("SELECT * FROM conecta_users WHERE $field = ? LIMIT 1");
+        $st = $pdo->prepare('SELECT * FROM conecta_users WHERE cpf_cnpj = ? LIMIT 1');
         $st->execute([$doc]);
         $u = $st->fetch();
-        if (!$u || empty($u['senha_hash'])) err(401, 'Primeiro acesso - defina sua senha.');
-        if (!password_verify($passwd, $u['senha_hash'])) err(401, 'Senha incorreta.');
+        if (!$u || empty($u['password'])) err(401, 'Primeiro acesso - defina sua senha.');
+        if (!password_verify($passwd, $u['password'])) err(401, 'Senha incorreta.');
 
-        $pdo->prepare('UPDATE conecta_users SET ultimo_login = NOW() WHERE id = ?')->execute([$u['id']]);
         $tok = makeToken();
         $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
                        VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([$u['id'], $tok]);
@@ -327,7 +326,7 @@ if ($action === 'login') {
             'token'            => $tok,
             'tipo'             => 'admin',
             'cpf_cnpj'         => $doc,
-            'nome'             => $u['nome'] ?: 'Administrador',
+            'nome'             => defined('ADMIN_NOME') ? ADMIN_NOME : 'Administrador',
             'is_admin'         => true,
             'is_superadmin'    => true,
             'crm_associado_id' => null,
@@ -345,17 +344,17 @@ if ($action === 'login') {
     $d = $crm['data'] ?? [];
 
     // Cache local + sessao
-    $st = $pdo->prepare("SELECT id FROM conecta_users WHERE $field = ? LIMIT 1");
+    $st = $pdo->prepare('SELECT id FROM conecta_users WHERE cpf_cnpj = ? LIMIT 1');
     $st->execute([$doc]);
     $u = $st->fetch();
     if (!$u) {
-        $pdo->prepare("INSERT INTO conecta_users ($field, nome, primeiro_acesso, crm_associado_id, crm_dados, criado_em)
-                       VALUES (?, ?, 0, ?, ?, NOW())")
-            ->execute([$doc, $d['razao_social'] ?? '', $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE)]);
+        $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, primeiro_acesso, ativo, crm_associado_id, crm_dados, created_at)
+                       VALUES (?, ?, 0, 1, ?, ?, NOW())")
+            ->execute([$doc, $tipo, $d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE)]);
         $uid = (int)$pdo->lastInsertId();
     } else {
         $uid = (int)$u['id'];
-        $pdo->prepare("UPDATE conecta_users SET crm_associado_id = ?, crm_dados = ?, ultimo_login = NOW() WHERE id = ?")
+        $pdo->prepare('UPDATE conecta_users SET crm_associado_id = ?, crm_dados = ? WHERE id = ?')
             ->execute([$d['associado_id'] ?? null, json_encode($d, JSON_UNESCAPED_UNICODE), $uid]);
     }
 
@@ -388,7 +387,7 @@ if ($action === 'dados') {
     if (!$token) err(422, 'token obrigatorio');
 
     $st = $pdo->prepare(
-        'SELECT u.id, u.cpf, u.cnpj, u.nome, u.crm_associado_id, u.crm_dados
+        'SELECT u.id, u.cpf_cnpj, u.tipo, u.crm_associado_id, u.crm_dados
          FROM conecta_sessions s
          JOIN conecta_users u ON u.id = s.user_id
          WHERE s.token = ? AND s.expira_em > NOW() LIMIT 1'
@@ -397,13 +396,13 @@ if ($action === 'dados') {
     $u = $st->fetch();
     if (!$u) err(401, 'Sessao invalida ou expirada');
 
-    $doc = $u['cnpj'] ?: $u['cpf'] ?: '';
+    $doc = $u['cpf_cnpj'] ?: '';
     $isAdmin = ($doc === ADMIN_DOC);
 
     if ($isAdmin) {
         ok([
             'tipo'     => 'admin',
-            'nome'     => $u['nome'] ?? 'Administrador',
+            'nome'     => defined('ADMIN_NOME') ? ADMIN_NOME : 'Administrador',
             'cpf_cnpj' => $doc,
             'is_admin' => true,
         ]);
@@ -447,7 +446,7 @@ if ($action === 'validate') {
     $token = $body['token'] ?? '';
     if (!$token) err(422, 'token obrigatorio');
     $st = $pdo->prepare(
-        'SELECT u.id, u.cpf, u.cnpj, u.nome, u.crm_associado_id
+        'SELECT u.id, u.cpf_cnpj, u.crm_associado_id, u.crm_dados
          FROM conecta_sessions s
          JOIN conecta_users u ON u.id = s.user_id
          WHERE s.token = ? AND s.expira_em > NOW() LIMIT 1'
@@ -455,11 +454,15 @@ if ($action === 'validate') {
     $st->execute([$token]);
     $u = $st->fetch();
     if (!$u) err(401, 'Sessao invalida ou expirada');
+    $doc = $u['cpf_cnpj'] ?: '';
+    $cached = $u['crm_dados'] ? json_decode($u['crm_dados'], true) : null;
+    $nome = ($doc === ADMIN_DOC) ? (defined('ADMIN_NOME') ? ADMIN_NOME : 'Administrador')
+           : ($cached['razao_social'] ?? $cached['nome_fantasia'] ?? '');
     ok([
         'data' => [
             'id'               => (int)$u['id'],
-            'cpf_cnpj'         => $u['cnpj'] ?: $u['cpf'] ?: '',
-            'nome'             => $u['nome'] ?? '',
+            'cpf_cnpj'         => $doc,
+            'nome'             => $nome,
             'crm_associado_id' => $u['crm_associado_id'] ? (int)$u['crm_associado_id'] : null,
         ],
     ]);
@@ -483,14 +486,14 @@ if ($action === 'admin_check') {
     $token = $body['token'] ?? '';
     if (!$token) err(422, 'token obrigatorio');
     $st = $pdo->prepare(
-        'SELECT u.cpf, u.cnpj FROM conecta_sessions s
+        'SELECT u.cpf_cnpj FROM conecta_sessions s
          JOIN conecta_users u ON u.id = s.user_id
          WHERE s.token = ? AND s.expira_em > NOW() LIMIT 1'
     );
     $st->execute([$token]);
     $u = $st->fetch();
     if (!$u) err(401, 'Sessao invalida ou expirada');
-    $doc = $u['cnpj'] ?: $u['cpf'] ?: '';
+    $doc = $u['cpf_cnpj'] ?: '';
     ok(['is_admin' => $doc === ADMIN_DOC]);
 }
 
