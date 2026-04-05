@@ -441,6 +441,29 @@ if ($action === 'dados') {
 }
 
 // ------------------------------------------------------------
+// ACTION: cobrancas - lista cobrancas do associado logado
+// ------------------------------------------------------------
+if ($action === 'cobrancas') {
+    $token = $body['token'] ?? '';
+    if (!$token) err(422, 'token obrigatorio');
+    $st = $pdo->prepare(
+        'SELECT u.id, u.cpf_cnpj, u.crm_associado_id
+         FROM conecta_sessions s
+         JOIN conecta_users u ON u.id = s.user_id
+         WHERE s.token = ? AND s.expires_at > NOW() LIMIT 1'
+    );
+    $st->execute([$token]);
+    $u = $st->fetch();
+    if (!$u) err(401, 'Sessao invalida ou expirada');
+    $aid = (int)($u['crm_associado_id'] ?? 0);
+    if (!$aid) err(404, 'Associado nao vinculado');
+
+    $crm = crmGetPublic('/public/associados/' . $aid . '/cobrancas');
+    if (!$crm['ok']) err((int)($crm['_http'] ?? 500) ?: 500, $crm['error'] ?? 'Falha ao buscar cobrancas');
+    ok(['cobrancas' => $crm['data']['data'] ?? [], 'total' => $crm['data']['total'] ?? 0]);
+}
+
+// ------------------------------------------------------------
 // ACTION: validate - valida token e retorna dados basicos
 // ------------------------------------------------------------
 if ($action === 'validate') {

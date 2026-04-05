@@ -145,16 +145,16 @@ function updateSidebarUser(nm){document.getElementById('sb-company').textContent
   }
 
   // Usar dados do acic_session (preenchido pelo auth.php no login)
-  const nome=session.razaoSocial||session.nome||'Associado';
+  const nome=session.nome||'Associado';
   updateSidebarUser(nome);
   const dados={
     nome:nome,
-    doc:session.cnpj||session.cpf||session.cpf_cnpj||'',
-    status:'ativo',
+    doc:session.cpf_cnpj||session.cpf||'',
+    status:session.status||'ativo',
     plano:session.plano||'Associado',
-    valido_ate:new Date(Date.now()+365*24*60*60*1000).toISOString().slice(0,10),
-    qr_data:'',
-    associado_desde:session.dataAssociacao||session.data_associacao||''
+    valido_ate:session.data_vencimento||null,
+    qr_data:JSON.stringify({id:session.crm_associado_id||null,doc:session.cpf_cnpj||session.cpf||'',nome:nome,plano:session.plano||'',validade:session.data_vencimento||null,src:'acic-conecta'}),
+    associado_desde:session.data_associacao||''
   };
   localStorage.setItem(CACHE_KEY,JSON.stringify(dados));
   render(dados);
@@ -171,7 +171,7 @@ function render(d){
     <div class="cart-doc">${fmtDoc(d.doc)}</div>
     <div class="cart-grid"><div><div class="cart-field-label">Plano</div><div class="cart-field-value">${d.plano||'Associado'}</div></div><div><div class="cart-field-label">Associado desde</div><div class="cart-field-value">${d.associado_desde?fmtDate(d.associado_desde):'—'}</div></div></div>
     <div class="cart-divider"></div>
-    <div class="cart-footer-row"><div><div class="cart-footer-label">Validade</div><div class="cart-footer-value">${fmtDate(d.valido_ate)}</div></div><div style="text-align:right"><div class="cart-footer-label">Codigo</div><div class="cart-footer-value" style="font-family:monospace;font-size:10px;opacity:.6">${(d.doc||'').replace(/\D/g,'').slice(-6)}</div></div></div>
+    <div class="cart-footer-row"><div><div class="cart-footer-label">Validade</div><div class="cart-footer-value">${d.valido_ate?fmtDate(d.valido_ate):'Em processamento'}</div></div><div style="text-align:right"><div class="cart-footer-label">Codigo</div><div class="cart-footer-value" style="font-family:monospace;font-size:10px;opacity:.6">${(d.doc||'').replace(/\D/g,'').slice(-6)}</div></div></div>
   </div>`;
   html+='<div class="qr-section"><h3>QR Code de Validacao</h3><div id="qrcode"></div></div>';
   html+='<div class="card-actions"><button class="btn-primary" onclick="downloadCard()">Baixar Carteirinha</button><button class="btn-outline" onclick="shareCard()">Compartilhar</button></div>';

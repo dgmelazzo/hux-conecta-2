@@ -8,28 +8,74 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script>(function(){var t=localStorage.getItem('acic_theme')||'light';document.documentElement.setAttribute('data-theme',t)})()</script>
 <style>
-.cob-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,12px);padding:18px;margin-bottom:12px}
-.cob-valor{font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--accent)}
-.cob-desc{font-size:12px;color:var(--text2);margin-top:2px}
-.cob-venc{font-size:12px;color:var(--text3);margin-top:4px}
-.cob-actions{display:flex;gap:8px;margin-top:12px}
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px}
-.info-field label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
-.info-field span{font-size:13px;font-weight:500;color:var(--text);display:block;margin-top:3px}
-.alert-warn{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--radius-sm,8px);font-size:13px;margin-bottom:16px;background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.2);color:#B8860B}
-.alert-danger{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--radius-sm,8px);font-size:13px;margin-bottom:16px;background:rgba(226,75,74,.1);border:1px solid rgba(226,75,74,.25);color:#E24B4A}
-.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius,12px);padding:20px;margin-bottom:16px}
-.dash-card-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px}
-table{width:100%;border-collapse:collapse;font-size:12px}
-th{text-align:left;padding:8px 10px;background:var(--surface2);color:var(--text2);font-weight:600;border-bottom:1px solid var(--border)}
-td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
-.empty-state{text-align:center;padding:32px;color:var(--text3);font-size:13px}
-.empty-state a{color:var(--accent);font-weight:600;text-decoration:none}
+:root{--blue:#1B2B6B;--orange:#E8701A}
+/* ── Summary card (topo) ─────────────────────────────────────── */
+.taxas-summary{background:linear-gradient(135deg,var(--blue) 0%,#2d3f8a 100%);border-radius:16px;padding:24px 22px;color:#fff;margin-bottom:22px;position:relative;overflow:hidden}
+.taxas-summary::after{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(232,112,26,.18)}
+.taxas-summary-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;opacity:.75;font-weight:600;position:relative;z-index:1}
+.taxas-summary-value{font-family:Montserrat,sans-serif;font-size:32px;font-weight:800;letter-spacing:-.5px;margin:6px 0 2px;position:relative;z-index:1}
+.taxas-summary-hint{font-size:13px;opacity:.8;position:relative;z-index:1}
+.taxas-summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:18px;position:relative;z-index:1}
+.taxas-summary-stat{border-left:2px solid rgba(255,255,255,.18);padding-left:12px}
+.taxas-summary-stat-num{font-family:Montserrat;font-size:22px;font-weight:700}
+.taxas-summary-stat-lbl{font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+
+/* ── Cobranca cards ──────────────────────────────────────────── */
+.cob-list{display:flex;flex-direction:column;gap:12px}
+.cob-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;transition:all .2s;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden}
+.cob-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(27,43,107,.08);transform:translateY(-1px)}
+.cob-card.paid::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#10B981}
+.cob-card.pending::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#F59E0B}
+.cob-card.overdue::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#E24B4A}
+.cob-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.cob-info{flex:1;min-width:0}
+.cob-title{font-family:Montserrat;font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.3}
+.cob-sub{font-size:12px;color:var(--text3);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cob-sub svg{flex-shrink:0}
+.cob-valor{font-family:Montserrat;font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px;white-space:nowrap}
+.cob-status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.cob-status.paid{background:rgba(16,185,129,.12);color:#047857}
+.cob-status.pending{background:rgba(245,158,11,.12);color:#B45309}
+.cob-status.overdue{background:rgba(226,75,74,.12);color:#B91C1C}
+.cob-status-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.cob-actions{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border);align-items:center;flex-wrap:wrap}
+.cob-btn-pay{flex:1;min-width:140px;background:var(--orange);color:#fff;border:none;border-radius:10px;padding:11px 16px;font-family:Montserrat;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+.cob-btn-pay:hover{background:#D06416;transform:translateY(-1px);box-shadow:0 4px 12px rgba(232,112,26,.25)}
+.cob-btn-pay.overdue{background:#E24B4A}
+.cob-btn-pay.overdue:hover{background:#C83432;box-shadow:0 4px 12px rgba(226,75,74,.3)}
+.cob-btn-view{background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-family:Montserrat;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
+.cob-btn-view:hover{border-color:var(--blue);color:var(--blue)}
+.cob-modalidade{font-size:10px;text-transform:uppercase;font-weight:700;letter-spacing:.08em;color:var(--text3);padding:4px 8px;background:var(--surface2);border-radius:6px}
+
+/* ── Empty state ────────────────────────────────────────────── */
+.taxas-empty{text-align:center;padding:56px 24px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.taxas-empty-icon{width:72px;height:72px;margin:0 auto 20px;background:rgba(27,43,107,.08);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.taxas-empty h3{font-family:Montserrat;font-size:18px;font-weight:700;color:var(--text);margin:0 0 8px}
+.taxas-empty p{color:var(--text2);font-size:14px;line-height:1.5;max-width:380px;margin:0 auto}
+
+/* ── Loading skeleton ───────────────────────────────────────── */
+.taxas-skel{height:120px;background:linear-gradient(90deg,var(--surface2) 0%,var(--border) 50%,var(--surface2) 100%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:14px;margin-bottom:12px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Error banner ───────────────────────────────────────────── */
+.taxas-error{background:rgba(226,75,74,.08);border:1px solid rgba(226,75,74,.2);border-radius:10px;padding:14px 16px;color:#B91C1C;font-size:13px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media(max-width:480px){
+  .taxas-summary{padding:20px 18px}
+  .taxas-summary-value{font-size:26px}
+  .taxas-summary-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .taxas-summary-stat-num{font-size:18px}
+  .cob-card{padding:16px}
+  .cob-valor{font-size:18px}
+  .cob-title{font-size:14px}
+  .cob-btn-pay{width:100%;flex:initial}
+  .cob-actions{flex-direction:column;align-items:stretch}
+}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;box-shadow:var(--shadow)}
 .toast.on{opacity:1}
 .sidebar-overlay{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.4);display:none}
 .sidebar-overlay.active{display:block}
-@media(max-width:600px){.info-grid{grid-template-columns:1fr}.cob-valor{font-size:20px}}
 </style>
 </head>
 <body>
@@ -63,7 +109,7 @@ td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
     </a>
   </nav>
   <div class="sidebar-footer">
-    <div style="padding:0 8px 8px;font-size:10px;color:var(--text3);text-align:center;letter-spacing:.5px">ACIC Conecta <span style="color:var(--accent)">v1.1.0</span></div>
+    <div style="padding:0 8px 8px;font-size:10px;color:var(--text3);text-align:center;letter-spacing:.5px">ACIC Conecta <span style="color:var(--accent)">v1.2.0</span></div>
     <div class="sb-user">
       <div class="sb-avatar" id="sb-avatar">?</div>
       <div class="sb-user-text">
@@ -71,7 +117,7 @@ td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
         <span class="sb-status" id="sb-status">Associado</span>
       </div>
     </div>
-    <button class="btn-logout" onclick="location.href='/conecta/'">
+    <button class="btn-logout" onclick="logout()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Sair
     </button>
@@ -99,8 +145,11 @@ td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
         <p class="section-sub">Sua situacao financeira na ACIC-DF</p>
       </div>
     </div>
+
+    <div id="summary-card"></div>
     <div id="page-content">
-      <div class="skeleton-row"></div><div class="skeleton-row short"></div><div class="skeleton-row"></div>
+      <div class="taxas-skel"></div>
+      <div class="taxas-skel"></div>
     </div>
   </div>
 </main>
@@ -108,57 +157,171 @@ td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
 <div class="toast" id="toast"></div>
 
 <script>
-const CRM_API='https://api.acicdf.org.br';
-let token=sessionStorage.getItem('conecta_crm_token')||'';
+const AUTH_URL = '/conecta/auth.php';
+const session  = JSON.parse(sessionStorage.getItem('acic_session') || '{}');
+const token    = sessionStorage.getItem('acic_conecta_token') || '';
 
-// Sidebar toggle
-function toggleSidebar(){
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebarOverlay').classList.toggle('active');
-}
-
-// Theme toggle
-function toggleTheme(){
-  const cur=document.documentElement.getAttribute('data-theme');
-  const nxt=cur==='dark'?'light':'dark';
-  document.documentElement.setAttribute('data-theme',nxt);
-  localStorage.setItem('acic_theme',nxt);
-  updateThemeUI();
-}
-function updateThemeUI(){
-  const t=document.documentElement.getAttribute('data-theme');
-  const track=document.getElementById('themeTrack');
-  const label=document.getElementById('theme-label');
-  if(t==='dark'){track.classList.add('active');label.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Dark';}
-  else{track.classList.remove('active');label.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Light';}
-}
+// Sidebar
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('active');}
+function toggleTheme(){const c=document.documentElement.getAttribute('data-theme');const n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('acic_theme',n);updateThemeUI();}
+function updateThemeUI(){const t=document.documentElement.getAttribute('data-theme');const tr=document.getElementById('themeTrack');const lb=document.getElementById('theme-label');if(t==='dark'){tr.classList.add('active');lb.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Dark';}else{tr.classList.remove('active');lb.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/></svg> Light';}}
 updateThemeUI();
+async function logout(){try{await fetch(AUTH_URL+'?action=logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout',token})});}catch(e){}sessionStorage.clear();location.href='/conecta/';}
 
-// Sem chamadas a API CRM — pagina statica com mensagem "em breve"
-const session=JSON.parse(sessionStorage.getItem('acic_session')||'{}');
-const nome=session.razaoSocial||session.nome||'Associado';
-document.getElementById('sb-company').textContent=nome;
-document.getElementById('sb-avatar').textContent=(nome[0]||'?').toUpperCase();
-document.getElementById('sb-status').textContent='Associado Ativo';
+// User info in sidebar
+const nome = session.nome || session.razaoSocial || 'Associado';
+document.getElementById('sb-company').textContent = nome;
+document.getElementById('sb-avatar').textContent = (nome[0]||'?').toUpperCase();
+document.getElementById('sb-status').textContent = session.is_admin ? 'Administrador' : 'Associado Ativo';
 
-document.getElementById('page-content').innerHTML=`
-  <div class="dash-card" style="text-align:center;padding:48px 24px">
-    <div style="width:64px;height:64px;border-radius:50%;background:rgba(27,43,107,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1B2B6B" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+// Helpers
+function money(v){return 'R$ '+Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.').replace('R$ -','-R$ ');}
+function fmtDate(s){if(!s)return '-';const d=new Date(s+'T00:00:00');return d.toLocaleDateString('pt-BR');}
+function daysUntil(s){if(!s)return null;const d=new Date(s+'T00:00:00');const h=new Date();h.setHours(0,0,0,0);return Math.round((d-h)/(1000*60*60*24));}
+
+// Status classification
+function classifyCob(c){
+  if(c.status==='pago') return 'paid';
+  const days = daysUntil(c.data_vencimento);
+  if(c.status==='expirado' || (c.status==='pendente' && days!==null && days<0)) return 'overdue';
+  return 'pending';
+}
+function statusLabel(cls){return cls==='paid'?'Pago':cls==='overdue'?'Vencido':'Pendente';}
+function vencLabel(c, cls){
+  if(cls==='paid' && c.data_pagamento) return 'Pago em '+new Date(c.data_pagamento).toLocaleDateString('pt-BR');
+  const days = daysUntil(c.data_vencimento);
+  if(days===null) return 'Sem vencimento';
+  if(days<0) return 'Venceu em '+fmtDate(c.data_vencimento)+' ('+Math.abs(days)+' dias atras)';
+  if(days===0) return 'Vence hoje';
+  if(days===1) return 'Vence amanha';
+  if(days<=7) return 'Vence em '+days+' dias ('+fmtDate(c.data_vencimento)+')';
+  return 'Vence em '+fmtDate(c.data_vencimento);
+}
+
+// Icons
+function modIcon(m){
+  const ic={pix:'<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5.283 18.36a3.49 3.49 0 0 0 2.48-1.03l3.65-3.64c.24-.23.67-.23.91 0l3.67 3.66a3.49 3.49 0 0 0 2.48 1.03h.72l-4.64 4.64a3.5 3.5 0 0 1-4.94 0l-4.63-4.64h.28z"/></svg> PIX',boleto:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="4" x2="5" y2="20"/><line x1="9" y1="4" x2="9" y2="20"/><line x1="13" y1="4" x2="13" y2="20"/><line x1="17" y1="4" x2="17" y2="20"/><line x1="21" y1="4" x2="21" y2="20"/></svg> Boleto',cartao:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> Cartao'};
+  return ic[m]||m;
+}
+
+// Render
+function renderCobrancas(list){
+  if(!list || !list.length){
+    document.getElementById('page-content').innerHTML = `
+      <div class="taxas-empty">
+        <div class="taxas-empty-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1B2B6B" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <h3>Nenhuma cobranca encontrada</h3>
+        <p>Voce esta em dia com a ACIC-DF. Quando houver novas cobrancas, elas aparecerao aqui.</p>
+      </div>`;
+    return;
+  }
+
+  // Summary stats
+  const totalPendente = list.filter(c=>c.status==='pendente').reduce((s,c)=>s+Number(c.valor),0);
+  const totalPago = list.filter(c=>c.status==='pago').reduce((s,c)=>s+Number(c.valor_pago||c.valor),0);
+  const vencidas = list.filter(c=>{const cls=classifyCob(c);return cls==='overdue'}).length;
+  const proxima = list.filter(c=>c.status==='pendente').sort((a,b)=>new Date(a.data_vencimento)-new Date(b.data_vencimento))[0];
+
+  // Summary card
+  let summaryInner = '';
+  if(vencidas>0){
+    summaryInner = `<div class="taxas-summary-label">Atencao</div>
+      <div class="taxas-summary-value">${money(totalPendente)}</div>
+      <div class="taxas-summary-hint">Voce tem ${vencidas} cobranca${vencidas>1?'s':''} em atraso. Regularize para evitar juros.</div>`;
+  } else if(proxima){
+    const d = daysUntil(proxima.data_vencimento);
+    const urgent = d!==null && d<=7;
+    summaryInner = `<div class="taxas-summary-label">Proxima cobranca</div>
+      <div class="taxas-summary-value">${money(proxima.valor)}</div>
+      <div class="taxas-summary-hint">${urgent?'⚠ ':''}${vencLabel(proxima,'pending')}</div>`;
+  } else {
+    summaryInner = `<div class="taxas-summary-label">Em dia</div>
+      <div class="taxas-summary-value">Tudo certo</div>
+      <div class="taxas-summary-hint">Voce nao tem cobrancas pendentes no momento.</div>`;
+  }
+  document.getElementById('summary-card').innerHTML = `
+    <div class="taxas-summary">
+      ${summaryInner}
+      <div class="taxas-summary-grid">
+        <div class="taxas-summary-stat"><div class="taxas-summary-stat-num">${list.length}</div><div class="taxas-summary-stat-lbl">Total</div></div>
+        <div class="taxas-summary-stat"><div class="taxas-summary-stat-num">${list.filter(c=>c.status==='pago').length}</div><div class="taxas-summary-stat-lbl">Pagas</div></div>
+        <div class="taxas-summary-stat"><div class="taxas-summary-stat-num">${list.filter(c=>c.status==='pendente').length}</div><div class="taxas-summary-stat-lbl">Pendentes</div></div>
+      </div>
+    </div>`;
+
+  // Card list
+  const cards = list.map(c=>{
+    const cls = classifyCob(c);
+    const canPay = (cls==='pending'||cls==='overdue') && c.gateway_url;
+    const descricao = c.descricao || c.plano_nome || 'Cobranca ACIC-DF';
+    return `
+    <div class="cob-card ${cls}">
+      <div class="cob-head">
+        <div class="cob-info">
+          <div class="cob-title">${descricao}</div>
+          <div class="cob-sub">
+            <span class="cob-status ${cls}"><span class="cob-status-dot"></span>${statusLabel(cls)}</span>
+            <span>${vencLabel(c,cls)}</span>
+          </div>
+        </div>
+        <div class="cob-valor">${money(c.valor)}</div>
+      </div>
+      <div class="cob-actions">
+        ${canPay ? `<a href="${c.gateway_url}" target="_blank" rel="noopener" class="cob-btn-pay ${cls==='overdue'?'overdue':''}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M20 12v4H6a2 2 0 0 0 0 4h14v-4"/><circle cx="16" cy="12" r="1" fill="currentColor"/></svg>
+          Pagar agora
+        </a>` : ''}
+        ${c.gateway_url && cls==='paid' ? `<a href="${c.gateway_url}" target="_blank" rel="noopener" class="cob-btn-view">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Ver recibo
+        </a>` : ''}
+        <span class="cob-modalidade">${modIcon(c.modalidade)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('page-content').innerHTML = `<div class="cob-list">${cards}</div>`;
+}
+
+function showError(msg){
+  document.getElementById('page-content').innerHTML = `
+    <div class="taxas-error">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>${msg}</span>
     </div>
-    <h3 style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text);margin:0 0 10px">Seu historico financeiro estara disponivel em breve</h3>
-    <p style="color:var(--text2);font-size:14px;line-height:1.6;max-width:440px;margin:0 auto 24px">Estamos finalizando a integracao do sistema financeiro. Em caso de duvidas sobre cobrancas, mensalidades ou renovacao, entre em contato com a ACIC-DF.</p>
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <a href="https://wa.me/5561991234567" target="_blank" class="btn-primary" style="width:auto;padding:10px 20px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:8px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-        Falar no WhatsApp
-      </a>
-      <a href="mailto:contato@acicdf.org.br" class="btn-table-action" style="padding:10px 20px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:8px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Enviar e-mail
-      </a>
-    </div>
-  </div>`;
+    <div class="taxas-empty">
+      <div class="taxas-empty-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1B2B6B" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9V3m-9 9a9 9 0 0 0 9 9"/></svg>
+      </div>
+      <h3>Nao foi possivel carregar</h3>
+      <p>Tente novamente em alguns instantes ou entre em contato com a ACIC-DF.</p>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <a href="https://wa.me/5561991234567" target="_blank" class="cob-btn-pay" style="width:auto;flex:initial">Falar no WhatsApp</a>
+        <button onclick="location.reload()" class="cob-btn-view">Tentar novamente</button>
+      </div>
+    </div>`;
+}
+
+// Fetch cobrancas via auth.php bridge
+async function loadCobrancas(){
+  if(!token){location.href='/conecta/';return;}
+  try{
+    const res = await fetch(AUTH_URL+'?action=cobrancas',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'cobrancas',token})
+    });
+    const data = await res.json();
+    if(res.status===401){sessionStorage.clear();location.href='/conecta/';return;}
+    if(!data.success){showError(data.message||'Erro desconhecido');return;}
+    renderCobrancas(data.data.cobrancas||[]);
+  } catch(e){
+    showError('Erro de conexao. Verifique sua internet.');
+  }
+}
+loadCobrancas();
 </script>
 </body>
 </html>
