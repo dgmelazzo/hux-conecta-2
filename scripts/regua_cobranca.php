@@ -79,27 +79,44 @@ function enviar_whatsapp(string $telefone, string $mensagem, int $tenantId): boo
     $stmtT->execute([$tenantId]);
     $token = $stmtT->fetchColumn();
 
-    if (!$instance || !$token) return false;
+    $stmtCT = pdo()->prepare("SELECT valor FROM tenant_configs WHERE tenant_id = ? AND chave = 'zapi_client_token'");
+    $stmtCT->execute([$tenantId]);
+    $clientToken = $stmtCT->fetchColumn() ?: ($_ENV['ZAPI_CLIENT_TOKEN'] ?? '');
+
+    // Fallback para .env se tenant_configs estiver vazio
+    $instance = $instance ?: ($_ENV['ZAPI_INSTANCE'] ?? '');
+    $token    = $token    ?: ($_ENV['ZAPI_TOKEN']    ?? '');
+
+    if (!$instance || !$token) {
+        log_msg("[ZAPI] credenciais ausentes (instance ou token vazio) — nao enviou");
+        return false;
+    }
 
     // Formata telefone
     $tel = preg_replace('/\D/', '', $telefone);
-    if (strlen($tel) === 11) $tel = '55' . $tel;
-    if (strlen($tel) === 10) $tel = '55' . $tel;
+    if (strlen($tel) === 10 || strlen($tel) === 11) $tel = '55' . $tel;
 
     $url = "https://api.z-api.io/instances/{$instance}/token/{$token}/send-text";
+    $headers = ['Content-Type: application/json'];
+    if ($clientToken) $headers[] = 'Client-Token: ' . $clientToken;
+
     $ch  = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 15,
         CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => json_encode(['phone' => $tel, 'message' => $mensagem]),
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS     => json_encode(['phone' => $tel, 'message' => $mensagem], JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER     => $headers,
     ]);
     $res  = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    return $code === 200;
+    if ($code < 200 || $code >= 300) {
+        log_msg("[ZAPI] falha http=$code tel=$tel resp=" . substr($res ?: '', 0, 200));
+        return false;
+    }
+    return true;
 }
 
 // ── REGISTRA ENVIO ────────────────────────────────────────────────────────────
