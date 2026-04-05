@@ -83,7 +83,7 @@
         <span class="sb-status" id="sb-status">Associado</span>
       </div>
     </div>
-    <button class="btn-logout" onclick="location.href='/conecta/'">
+    <button class="btn-logout" onclick="doLogout()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Sair
     </button>
@@ -129,10 +129,11 @@ function updateThemeUI(){const t=document.documentElement.getAttribute('data-the
 updateThemeUI();
 
 token=sessionStorage.getItem('acic_conecta_token')||localStorage.getItem('acic_conecta_token')||'';
+async function doLogout(){try{await fetch('/conecta/auth.php?action=logout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout',token})});}catch(e){}sessionStorage.clear();location.href='/conecta/';}
 const session=JSON.parse(sessionStorage.getItem('acic_session')||'{}');
 
 function fmtDoc(d){if(!d)return'-';d=d.replace(/\D/g,'');if(d.length===14)return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');if(d.length===11)return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');return d}
-function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('pt-BR');}catch(e){return '—';}}
+function fmtDate(d){if(!d)return'—';try{const s=String(d).slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(s)){const[y,m,day]=s.split('-');return day+'/'+m+'/'+y;}return new Date(d).toLocaleDateString('pt-BR');}catch(e){return '—';}}
 function updateSidebarUser(nm){document.getElementById('sb-company').textContent=nm||'Associado';document.getElementById('sb-avatar').textContent=((nm||'?')[0]||'?').toUpperCase();document.getElementById('sb-status').textContent='Associado Ativo'}
 
 (async()=>{
