@@ -11,14 +11,40 @@
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/config.php';
-
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+
+// Captura erros fatais e retorna JSON (evita body vazio em 500)
+register_shutdown_function(function () {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE, E_USER_ERROR], true)) {
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+        }
+        echo json_encode([
+            'ok'    => false,
+            'error' => 'PHP fatal: ' . $err['message'] . ' em ' . basename($err['file']) . ':' . $err['line'],
+        ]);
+    }
+});
+set_exception_handler(function (\Throwable $e) {
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    echo json_encode([
+        'ok'    => false,
+        'error' => 'Exception: ' . $e->getMessage() . ' em ' . basename($e->getFile()) . ':' . $e->getLine(),
+    ]);
+    exit;
+});
+
+require_once __DIR__ . '/config.php';
 
 $action = $_GET['action'] ?? '';
 $body   = json_decode(file_get_contents('php://input') ?: '{}', true) ?? [];
@@ -38,26 +64,34 @@ try {
     exit;
 }
 
-// Schema upgrade - garante colunas novas sem quebrar existentes
-$pdo->exec("ALTER TABLE conecta_users
-    ADD COLUMN IF NOT EXISTS crm_associado_id INT NULL,
-    ADD COLUMN IF NOT EXISTS crm_dados JSON NULL");
+// Schema upgrade - garante colunas novas (silencioso se ja existirem)
+try {
+    $cols = $pdo->query("SHOW COLUMNS FROM conecta_users")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('crm_associado_id', $cols, true)) {
+        $pdo->exec("ALTER TABLE conecta_users ADD COLUMN crm_associado_id INT NULL");
+    }
+    if (!in_array('crm_dados', $cols, true)) {
+        // Tenta JSON, cai pra TEXT se o MySQL nao suportar
+        try { $pdo->exec("ALTER TABLE conecta_users ADD COLUMN crm_dados JSON NULL"); }
+        catch (\Throwable $e) { $pdo->exec("ALTER TABLE conecta_users ADD COLUMN crm_dados TEXT NULL"); }
+    }
+} catch (\Throwable $e) { /* schema upgrade best-effort */ }
 
 // ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
-function ok(array $data = [], int $code = 200): never {
+function ok(array $data = [], int $code = 200) {
     http_response_code($code);
     echo json_encode(array_merge(['ok' => true], $data), JSON_UNESCAPED_UNICODE);
     exit;
 }
-function err(int $code, string $msg): never {
+function err(int $code, string $msg) {
     http_response_code($code);
     echo json_encode(['ok' => false, 'error' => $msg], JSON_UNESCAPED_UNICODE);
     exit;
 }
 function normalizeDoc(string $raw): string {
-    return preg_replace('/\D/', '', $raw);
+    return (string)preg_replace('/\D/', '', $raw);
 }
 
 function crmPost(string $endpoint, array $body): array {
