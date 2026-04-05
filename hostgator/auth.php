@@ -242,7 +242,7 @@ if ($action === 'first') {
                 ->execute([$hash, $uid]);
         }
         $tok = makeToken();
-        $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+        $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, created_at, expires_at)
                        VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([$uid, $tok]);
         ok([
             'token'            => $tok,
@@ -280,7 +280,7 @@ if ($action === 'first') {
     }
 
     $tok = makeToken();
-    $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+    $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, created_at, expires_at)
                    VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([$uid, $tok]);
 
     ok([
@@ -320,7 +320,7 @@ if ($action === 'login') {
         if (!password_verify($passwd, $u['password'])) err(401, 'Senha incorreta.');
 
         $tok = makeToken();
-        $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+        $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, created_at, expires_at)
                        VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([$u['id'], $tok]);
         ok([
             'token'            => $tok,
@@ -359,7 +359,7 @@ if ($action === 'login') {
     }
 
     $tok = makeToken();
-    $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, criado_em, expira_em)
+    $pdo->prepare('INSERT INTO conecta_sessions (user_id, token, created_at, expires_at)
                    VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([$uid, $tok]);
 
     ok([
@@ -390,7 +390,7 @@ if ($action === 'dados') {
         'SELECT u.id, u.cpf_cnpj, u.tipo, u.crm_associado_id, u.crm_dados
          FROM conecta_sessions s
          JOIN conecta_users u ON u.id = s.user_id
-         WHERE s.token = ? AND s.expira_em > NOW() LIMIT 1'
+         WHERE s.token = ? AND s.expires_at > NOW() LIMIT 1'
     );
     $st->execute([$token]);
     $u = $st->fetch();
@@ -449,7 +449,7 @@ if ($action === 'validate') {
         'SELECT u.id, u.cpf_cnpj, u.crm_associado_id, u.crm_dados
          FROM conecta_sessions s
          JOIN conecta_users u ON u.id = s.user_id
-         WHERE s.token = ? AND s.expira_em > NOW() LIMIT 1'
+         WHERE s.token = ? AND s.expires_at > NOW() LIMIT 1'
     );
     $st->execute([$token]);
     $u = $st->fetch();
@@ -488,7 +488,7 @@ if ($action === 'admin_check') {
     $st = $pdo->prepare(
         'SELECT u.cpf_cnpj FROM conecta_sessions s
          JOIN conecta_users u ON u.id = s.user_id
-         WHERE s.token = ? AND s.expira_em > NOW() LIMIT 1'
+         WHERE s.token = ? AND s.expires_at > NOW() LIMIT 1'
     );
     $st->execute([$token]);
     $u = $st->fetch();
