@@ -684,7 +684,7 @@ async function editarProduto(id) {
     const p = await prodApi('detalhe', { id }, 'GET');
     produtoEditando = p;
     abrirFormProduto(p);
-  } catch (e) { alert('Erro ao carregar produto: ' + e.message); }
+  } catch (e) { notify.erro(e.message, 'Erro ao carregar produto'); }
 }
 
 function abrirFormProduto(p = null) {
@@ -789,7 +789,7 @@ async function atualizarSelectCategorias(categoriaId) {
 
 async function buscarAssociado() {
   const q = document.getElementById('fp-associado-busca').value.trim();
-  if (q.length < 2) { alert('Digite ao menos 2 caracteres.'); return; }
+  if (q.length < 2) { notify.aviso('Digite ao menos 2 caracteres.'); return; }
   const res = document.getElementById('fp-associado-result');
   res.innerHTML = '<option value="">Buscando...</option>';
 
@@ -977,7 +977,7 @@ async function salvarSub(e) {
       if (produtoEditando) produtoEditando = p;
     }
   } catch (e) {
-    alert('Erro: ' + e.message);
+    notify.erro(e.message);
   } finally {
     btn.disabled = false;
   }
@@ -986,13 +986,13 @@ async function salvarSub(e) {
 async function excluirSub(id, produtoIdFallback) {
   if (!confirm('Remover este subproduto?')) return;
   const pid = produtoEditando?.id || produtoIdFallback;
-  if (!pid) { alert('Erro: produto não identificado.'); return; }
+  if (!pid) { notify.erro('Produto não identificado.'); return; }
   try {
     await prodApi('sub_excluir', { id, token: getToken() });
     const p = await prodApi('detalhe', { id: pid }, 'GET');
     renderSubprodutosAdmin(p.subprodutos || [], pid);
     if (produtoEditando) produtoEditando = p;
-  } catch (e) { alert('Erro ao remover: ' + (e.message || JSON.stringify(e))); }
+  } catch (e) { notify.erro(e.message || 'Erro desconhecido', 'Erro ao remover'); }
 }
 /**
  * ACIC CONECTA — Lógica do Portal
@@ -1659,7 +1659,7 @@ async function salvarLink(e) {
     fecharFormLink();
     carregarLinksImportantes();
   } catch(err) {
-    alert('Erro: ' + err.message);
+    notify.erro(err.message);
   } finally {
     btn.disabled = false; btn.textContent = 'Salvar';
   }
@@ -1671,7 +1671,7 @@ async function excluirLink(id) {
     await adminApi('links_excluir', { id });
     carregarLinksImportantes();
   } catch(err) {
-    alert('Erro: ' + err.message);
+    notify.erro(err.message);
   }
 }
 
@@ -2011,13 +2011,13 @@ function previewImagemUrl() {
 
 async function adicionarImagemUrl(produtoId) {
   const url = document.getElementById('fp-img-url').value.trim();
-  if (!url) { alert('Informe a URL da imagem.'); return; }
+  if (!url) { notify.aviso('Informe a URL da imagem.'); return; }
   try {
     await prodApi('imagem_add', { produto_id: produtoId, url, token: getToken() });
     document.getElementById('fp-img-url').value = '';
     document.getElementById('fp-img-preview').style.display = 'none';
     carregarGaleriaAdmin(produtoId);
-  } catch(e) { alert('Erro: ' + e.message); }
+  } catch(e) { notify.erro(e.message); }
 }
 
 // ============================================================
@@ -2199,7 +2199,7 @@ async function handleGaleriaUpload(input) {
   const files   = Array.from(input.files);
   if (!files.length) return;
   const produtoId = document.getElementById('fp-id').value;
-  if (!produtoId) { alert('Salve o produto primeiro antes de adicionar fotos.'); return; }
+  if (!produtoId) { notify.aviso('Salve o produto primeiro antes de adicionar fotos.'); return; }
 
   const progress = document.getElementById('galeria-upload-progress');
   const fill     = document.getElementById('galeria-upload-fill');
@@ -2443,16 +2443,16 @@ async function toggleBloqueio(id, doc, ativo) {
   try {
     await adminApi('bloquear', { id });
     carregarUsuarios();
-  } catch(e) { alert('Erro: ' + e.message); }
+  } catch(e) { notify.erro(e.message); }
 }
 
 async function resetarSenha(id, doc) {
   if (!confirm(`Resetar a senha de ${doc}? O usuário precisará criar uma nova senha no próximo acesso.`)) return;
   try {
     await adminApi('resetar_senha', { id });
-    mostrarToast('✅ Senha resetada', 'O usuário criará nova senha no próximo acesso.', 'sucesso');
+    mostrarToast('Senha resetada', 'O usuário criará nova senha no próximo acesso.', 'sucesso');
     carregarUsuarios();
-  } catch(e) { alert('Erro: ' + e.message); }
+  } catch(e) { notify.erro(e.message); }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2802,7 +2802,7 @@ async function marcarTodasLidas() {
     });
     atualizarBadge(0);
     carregarNotificacoes();
-  } catch(e) { alert('Erro: ' + e.message); }
+  } catch(e) { notify.erro(e.message); }
 }
 
 // Tempo relativo
@@ -2818,24 +2818,61 @@ function tempoRelativo(dataStr) {
   return new Date(dataStr).toLocaleDateString('pt-BR');
 }
 
-// Toast de notificação (aparece no canto)
+// ── TOAST NOTIFICATION SYSTEM ──
+const _toastIcons = {
+  sucesso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  erro:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  aviso:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  alerta:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+};
+function _getToastContainer() {
+  let c = document.getElementById('toast-container');
+  if (!c) { c = document.createElement('div'); c.id = 'toast-container'; c.className = 'toast-container'; document.body.appendChild(c); }
+  return c;
+}
 function mostrarToast(titulo, mensagem, tipo = 'info', duracao = 5000) {
+  // Mapear tipo legado 'alerta' → 'erro'
+  if (tipo === 'alerta') tipo = 'erro';
+  const container = _getToastContainer();
   const toast = document.createElement('div');
-  toast.className = 'notif-toast';
-  const bordas = { info:'#3498DB', aviso:'#F39C12', alerta:'#E74C3C', sucesso:'#27AE60' };
-  toast.style.borderLeftColor = bordas[tipo] || '#E8640A';
+  toast.className = `toast toast--${tipo}`;
+  const escapedMsg = String(mensagem || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const escapedTit = titulo ? String(titulo).replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
   toast.innerHTML = `
-    <div class="notif-toast-titulo">${titulo}</div>
-    <div class="notif-toast-msg">${mensagem}</div>
+    <div class="toast-icon">${_toastIcons[tipo] || _toastIcons.info}</div>
+    <div class="toast-body">
+      ${escapedTit ? `<div class="toast-titulo">${escapedTit}</div>` : ''}
+      <div class="toast-msg">${escapedMsg}</div>
+    </div>
+    <button class="toast-close" aria-label="Fechar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="toast-progress" style="width:100%"></div>
   `;
-  toast.onclick = () => removerToast(toast);
-  document.body.appendChild(toast);
+  toast.querySelector('.toast-close').onclick = () => removerToast(toast);
+  container.appendChild(toast);
+  // Animate progress bar
+  const bar = toast.querySelector('.toast-progress');
+  bar.style.transitionDuration = duracao + 'ms';
+  requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = '0%'; }));
+  // Max 5 visible toasts
+  const all = container.querySelectorAll('.toast:not(.saindo)');
+  if (all.length > 5) removerToast(all[0]);
   setTimeout(() => removerToast(toast), duracao);
 }
 function removerToast(toast) {
+  if (!toast || toast.classList.contains('saindo')) return;
   toast.classList.add('saindo');
-  setTimeout(() => toast.remove(), 300);
+  setTimeout(() => toast.remove(), 280);
 }
+// Convenience shortcuts
+const notify = {
+  sucesso: (msg, titulo) => mostrarToast(titulo || 'Sucesso', msg, 'sucesso'),
+  erro:    (msg, titulo) => mostrarToast(titulo || 'Erro', msg, 'erro', 7000),
+  aviso:   (msg, titulo) => mostrarToast(titulo || 'Atenção', msg, 'aviso', 6000),
+  info:    (msg, titulo) => mostrarToast(titulo || '', msg, 'info')
+};
 
 // ============================================================
 // ADMIN — ENVIAR NOTIFICAÇÃO
@@ -2891,14 +2928,14 @@ async function enviarNotificacao(e) {
     const data = await res.json();
     if (!data.success) throw new Error(data.message);
     fecharModalNotif();
-    mostrarToast('✅ Notificação enviada', `${data.data.enviadas} notificação(ões) enviada(s).`, 'sucesso');
+    mostrarToast('Notificação enviada', `${data.data.enviadas} notificação(ões) enviada(s).`, 'sucesso');
     // Limpa formulário
     document.getElementById('notif-titulo').value   = '';
     document.getElementById('notif-mensagem').value = '';
     document.getElementById('notif-link').value     = '';
     document.getElementById('notif-email').checked  = false;
   } catch(err) {
-    alert('Erro ao enviar: ' + err.message);
+    notify.erro(err.message, 'Erro ao enviar');
   } finally {
     btn.disabled = false;
     btn.textContent = 'Enviar notificação';
