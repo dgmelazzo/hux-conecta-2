@@ -104,6 +104,64 @@ async function apiLogin(cpfCnpj, senha) {
   return data;
 }
 
+// Login unificado via email
+async function apiCheckTipo(email) {
+  return authPost('check-tipo', { email });
+}
+
+async function apiLoginEmail(email, senha) {
+  const data = await authPost('login-email', { email, senha });
+  setToken(data.token);
+  sessionStorage.setItem('acic_session', JSON.stringify({
+    tipo:        data.tipo,
+    nome:        data.nome,
+    email:       data.email,
+    empresa_cnpj: data.empresa_cnpj,
+    is_admin:      data.is_admin || false,
+    is_superadmin: data.is_superadmin || false,
+    permissoes:  data.permissoes || null,
+    destino:     data.destino || 'conecta',
+    sso_token:   data.sso_token || null,
+    redirect_crm: data.redirect_crm || null,
+    redirect_conecta: data.redirect_conecta || null,
+  }));
+  return data;
+}
+
+async function apiValidateSso(ssoToken) {
+  const data = await authPost('validate-sso', { sso_token: ssoToken });
+  setToken(data.token);
+  sessionStorage.setItem('acic_session', JSON.stringify({
+    tipo:        data.tipo,
+    nome:        data.nome,
+    email:       data.email,
+    empresa_cnpj: data.empresa_cnpj,
+    is_admin:      data.is_admin || false,
+    is_superadmin: data.is_superadmin || false,
+    permissoes:  data.permissoes || null,
+    crm_associado_id: data.crm_associado_id || null,
+    primeiro_acesso: data.primeiro_acesso || false,
+  }));
+  return data;
+}
+
+async function apiAceitarConvite(conviteToken, senha, confirmarSenha) {
+  const data = await authPost('aceitar-convite', {
+    convite_token: conviteToken,
+    senha,
+    confirmar_senha: confirmarSenha,
+  });
+  setToken(data.token);
+  sessionStorage.setItem('acic_session', JSON.stringify({
+    tipo:        data.tipo,
+    nome:        data.nome,
+    permissoes:  data.permissoes || null,
+    is_admin:    false,
+    is_superadmin: false,
+  }));
+  return data;
+}
+
 async function apiLogout() {
   const token = getToken();
   if (token) {
@@ -115,6 +173,44 @@ async function apiLogout() {
 function getSession() {
   const raw = sessionStorage.getItem('acic_session');
   return raw ? JSON.parse(raw) : null;
+}
+
+// Permissões por perfil
+function aplicarPermissoes(sessao) {
+  if (!sessao) return;
+  const p = sessao.permissoes || {};
+  const tipo = sessao.tipo || 'associado_empresa';
+
+  // Default: superadmin/admin vê tudo
+  const isAdmin = sessao.is_admin || tipo === 'superadmin';
+  if (isAdmin && !sessao.permissoes) {
+    // Legacy admin sem permissoes: mostrar tudo
+    return;
+  }
+
+  const regras = {
+    'nav-taxas':           p.ver_taxas !== false,
+    'nav-empresa':         p.ver_empresa !== false,
+    'nav-admin-produtos':  p.gerenciar_produtos === true,
+    'nav-usuarios':        p.ver_usuarios === true,
+    'nav-metricas':        p.ver_metricas === true,
+    'nav-admins':          p.cadastrar_superadmin === true,
+    'nav-admin':           p.gerenciar_produtos === true || p.ver_usuarios === true || p.ver_metricas === true,
+  };
+
+  Object.entries(regras).forEach(([id, visivel]) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', !visivel);
+  });
+
+  // Badge de perfil
+  const badge = document.getElementById('perfil-badge');
+  if (badge) {
+    const labels = { superadmin:'Super Admin', gestor:'Gestor', atendente:'Atendente', associado_empresa:'Associado', colaborador:'Colaborador', dependente:'Dependente' };
+    badge.textContent = labels[tipo] || tipo;
+  }
+
+  window._permissoes = p;
 }
 
 // ============================================================
@@ -1011,9 +1107,39 @@ let docAtual         = '';   // CPF/CNPJ que está sendo logado
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+
+  // SSO via URL: ?sso=TOKEN
+  const ssoParam = params.get('sso');
+  if (ssoParam) {
+    try {
+      const data = await apiValidateSso(ssoParam);
+      history.replaceState({}, '', window.location.pathname);
+      aplicarPermissoes(getSession());
+      showPortal();
+      if (data.primeiro_acesso) {
+        mostrarToast('Bem-vindo ao portal!', 'Você foi convidado por ' + (data.nome || 'sua empresa') + '.', 'sucesso');
+      }
+      return;
+    } catch(e) {
+      history.replaceState({}, '', window.location.pathname);
+      notify.erro('Link de acesso expirado. Faça login novamente.');
+      showLogin();
+      return;
+    }
+  }
+
+  // Convite via URL: ?convite=TOKEN
+  const conviteParam = params.get('convite');
+  if (conviteParam) {
+    history.replaceState({}, '', window.location.pathname);
+    mostrarTelaConvite(conviteParam);
+    return;
+  }
+
+  // Normal: verifica token existente
   const token = getToken();
   if (token) {
-    // Valida token antes de mostrar portal
     try {
       const res  = await fetch(AUTH_URL + '?action=validate', {
         method: 'POST',
@@ -1022,6 +1148,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       const data = await res.json();
       if (data.success) {
+        // Atualiza sessão com dados do validate (tipo, permissoes)
+        if (data.data?.tipo) {
+          const sess = getSession() || {};
+          sess.tipo = data.data.tipo;
+          sess.nome = data.data.nome || sess.nome;
+          sess.is_admin = data.data.is_admin || sess.is_admin;
+          sess.is_superadmin = data.data.is_superadmin || sess.is_superadmin;
+          if (data.data.permissoes) sess.permissoes = data.data.permissoes;
+          sessionStorage.setItem('acic_session', JSON.stringify(sess));
+        }
+        aplicarPermissoes(getSession());
         showPortal();
       } else {
         clearToken();
@@ -1039,6 +1176,80 @@ document.addEventListener('DOMContentLoaded', async () => {
   const novaSenha = document.getElementById('nova-senha');
   if (novaSenha) novaSenha.addEventListener('input', atualizarForcaSenha);
 });
+
+// Tela de aceitar convite
+function mostrarTelaConvite(conviteToken) {
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('portal-screen').classList.remove('active');
+
+  // Esconder forms de login, mostrar form de convite
+  document.getElementById('step-doc')?.classList.add('hidden');
+  document.getElementById('step-senha')?.classList.add('hidden');
+  document.getElementById('step-novo')?.classList.add('hidden');
+  hideError();
+
+  const title = document.getElementById('login-title');
+  const desc = document.getElementById('login-desc');
+  if (title) title.textContent = 'Criar sua senha';
+  if (desc) desc.textContent = 'Você foi convidado para o Portal do Associado ACIC-DF. Defina sua senha de acesso.';
+
+  // Criar form de convite dinamicamente
+  let form = document.getElementById('step-convite');
+  if (!form) {
+    form = document.createElement('form');
+    form.id = 'step-convite';
+    form.className = 'login-form';
+    form.innerHTML = `
+      <div class="field">
+        <label>Nova senha <small style="color:var(--text3)">(mín. 8 caracteres)</small></label>
+        <div class="input-wrap">
+          <input type="password" id="convite-senha" placeholder="••••••••" required minlength="8"/>
+          <button type="button" class="toggle-pw" onclick="togglePw('convite-senha')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Confirmar senha</label>
+        <div class="input-wrap">
+          <input type="password" id="convite-confirmar" placeholder="••••••••" required minlength="8"/>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" id="btn-convite">
+        <span class="btn-text">Criar senha e acessar</span>
+        <span class="btn-loader hidden"></span>
+      </button>
+    `;
+    document.querySelector('.login-card')?.appendChild(form);
+  }
+  form.classList.remove('hidden');
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const senha = document.getElementById('convite-senha').value;
+    const confirmar = document.getElementById('convite-confirmar').value;
+    if (senha !== confirmar) { notify.aviso('As senhas não conferem.'); return; }
+    if (senha.length < 8) { notify.aviso('Senha mínima: 8 caracteres.'); return; }
+
+    const btn = document.getElementById('btn-convite');
+    btn.querySelector('.btn-text').textContent = 'Criando...';
+    btn.querySelector('.btn-loader').classList.remove('hidden');
+    btn.disabled = true;
+
+    try {
+      await apiAceitarConvite(conviteToken, senha, confirmar);
+      aplicarPermissoes(getSession());
+      showPortal();
+      mostrarToast('Bem-vindo!', 'Sua senha foi criada. Aproveite o portal!', 'sucesso');
+    } catch(err) {
+      notify.erro(err.message || 'Erro ao aceitar convite.');
+    } finally {
+      btn.querySelector('.btn-text').textContent = 'Criar senha e acessar';
+      btn.querySelector('.btn-loader').classList.add('hidden');
+      btn.disabled = false;
+    }
+  };
+}
 
 // ============================================================
 // PERSISTÊNCIA DE NAVEGAÇÃO — restaura seção após refresh
@@ -1080,8 +1291,15 @@ function showPortal() {
   const tag = document.getElementById('topbar-tag');
   if (tag) tag.style.display = 'none';
 
+  // Esconder form convite se existir
+  document.getElementById('step-convite')?.classList.add('hidden');
+
   document.getElementById('login-screen').classList.remove('active');
   document.getElementById('portal-screen').classList.add('active');
+
+  // Aplicar permissões por perfil
+  aplicarPermissoes(getSession());
+
   loadPortalData();
   iniciarNotificacoes();
   renderVersao();
@@ -1094,6 +1312,141 @@ function showPortal() {
 
 // ============================================================
 // LOGIN — ETAPA 1: verificar CPF/CNPJ
+// ============================================================
+// ============================================================
+// LOGIN POR EMAIL — Fluxo unificado
+// ============================================================
+let _loginEmail = '';
+
+function toggleLoginMode(e) {
+  e.preventDefault();
+  const emailForm = document.getElementById('step-email');
+  const docForm = document.getElementById('step-doc');
+  const emailSenha = document.getElementById('step-email-senha');
+  const destino = document.getElementById('step-destino');
+  hideError();
+
+  if (emailForm && !emailForm.classList.contains('hidden')) {
+    // Switch to CPF/CNPJ mode
+    emailForm.classList.add('hidden');
+    emailSenha?.classList.add('hidden');
+    destino?.classList.add('hidden');
+    docForm?.classList.remove('hidden');
+    document.getElementById('login-desc').textContent = 'Acesse com seu CPF ou CNPJ cadastrado na ACIC-DF.';
+  } else {
+    // Switch to email mode
+    docForm?.classList.add('hidden');
+    document.getElementById('step-senha')?.classList.add('hidden');
+    document.getElementById('step-novo')?.classList.add('hidden');
+    emailSenha?.classList.add('hidden');
+    destino?.classList.add('hidden');
+    emailForm?.classList.remove('hidden');
+    document.getElementById('login-desc').textContent = 'Acesse com seu email cadastrado na ACIC-DF.';
+  }
+  document.getElementById('login-title').textContent = 'Bem-vindo';
+}
+
+async function handleCheckEmail(e) {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const btn = document.getElementById('btn-check-email');
+
+  setLoading(btn, true);
+  hideError();
+
+  try {
+    const result = await apiCheckTipo(email);
+    _loginEmail = email;
+
+    const pill = document.getElementById('email-display');
+    if (pill) pill.textContent = email;
+
+    const context = document.getElementById('email-context');
+    const labels = { superadmin:'Super Admin', gestor:'Gestor', atendente:'Atendente', associado_empresa:'Associado', colaborador:'Colaborador', dependente:'Dependente' };
+    if (context) {
+      const tipo = result.tipo || 'associado_empresa';
+      const nome = result.nome || '';
+      if (tipo === 'colaborador' || tipo === 'dependente') {
+        context.textContent = 'Bem-vindo ao Portal do Associado';
+      } else if (nome) {
+        context.textContent = 'Bem-vindo, ' + nome.split(' ')[0];
+      } else {
+        context.textContent = '';
+      }
+    }
+
+    document.getElementById('login-title').textContent = 'Entrar';
+    document.getElementById('login-desc').textContent = 'Digite sua senha para continuar.';
+
+    // Esconder email form, mostrar senha
+    document.getElementById('step-email').classList.add('hidden');
+    document.getElementById('step-email-senha').classList.remove('hidden');
+
+  } catch (err) {
+    if (err.status === 404) {
+      showError('Email não encontrado. Verifique ou use CPF/CNPJ.');
+    } else {
+      showError(err.message || 'Erro ao verificar email.');
+    }
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+async function handleLoginEmail(e) {
+  e.preventDefault();
+  const senha = document.getElementById('login-email-pass').value;
+  const btn = document.getElementById('btn-login-email');
+
+  setLoading(btn, true);
+  hideError();
+
+  try {
+    const data = await apiLoginEmail(_loginEmail, senha);
+
+    if (data.destino === 'ambos') {
+      // Mostrar escolha de destino
+      document.getElementById('step-email-senha').classList.add('hidden');
+      document.getElementById('step-destino').classList.remove('hidden');
+      document.getElementById('destino-nome').textContent = data.nome || '';
+      document.getElementById('login-title').textContent = 'Escolha seu destino';
+      document.getElementById('login-desc').textContent = '';
+      // Salvar SSO token e redirect URLs na sessão para uso posterior
+      window._ssoData = data;
+    } else {
+      // Direto para o portal
+      aplicarPermissoes(getSession());
+      showPortal();
+    }
+  } catch (err) {
+    showError(err.message || 'Credenciais inválidas.');
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+function irDestino(destino) {
+  const data = window._ssoData || getSession() || {};
+  if (destino === 'crm' && data.redirect_crm) {
+    window.location.href = data.redirect_crm;
+  } else {
+    // Conecta: já tem sessão local, apenas entrar
+    aplicarPermissoes(getSession());
+    showPortal();
+  }
+}
+
+function voltarEmail() {
+  document.getElementById('step-email-senha').classList.add('hidden');
+  document.getElementById('step-destino')?.classList.add('hidden');
+  document.getElementById('step-email').classList.remove('hidden');
+  document.getElementById('login-title').textContent = 'Bem-vindo';
+  document.getElementById('login-desc').textContent = 'Acesse com seu email cadastrado na ACIC-DF.';
+  hideError();
+}
+
+// ============================================================
+// LOGIN POR CPF/CNPJ — Fluxo legado (mantido)
 // ============================================================
 async function handleCheckDoc(e) {
   e.preventDefault();
@@ -1199,12 +1552,15 @@ function handleLogout() {
   pararNotificacoes();
   apiLogout();
   // Reset telas
-  showStep('step-doc');
+  showStep('step-email');
+  document.getElementById('login-email').value = '';
   document.getElementById('login-doc').value = '';
   document.getElementById('login-title').textContent = 'Bem-vindo';
-  document.getElementById('login-desc').textContent = 'Acesse com seu CPF ou CNPJ cadastrado na ACIC-DF.';
+  document.getElementById('login-desc').textContent = 'Acesse com seu email ou CPF/CNPJ cadastrado na ACIC-DF.';
   hideError();
   docAtual = '';
+  _loginEmail = '';
+  window._ssoData = null;
   showLogin();
 }
 
@@ -1212,7 +1568,7 @@ function handleLogout() {
 // HELPERS DE LOGIN
 // ============================================================
 function showStep(stepId) {
-  ['step-doc','step-senha','step-novo'].forEach(id => {
+  ['step-doc','step-senha','step-novo','step-email','step-email-senha','step-destino','step-convite'].forEach(id => {
     document.getElementById(id)?.classList.add('hidden');
   });
   document.getElementById(stepId)?.classList.remove('hidden');

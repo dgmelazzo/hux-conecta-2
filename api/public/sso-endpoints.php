@@ -1,0 +1,351 @@
+<?php
+/**
+ * SSO Unificado — Endpoints para login unificado + onboarding
+ * Incluído por index.php antes do 404
+ */
+
+// Bridge middleware para endpoints protegidos
+if (in_array($uri, ["/auth/validate-sso", "/auth/check-tipo", "/colaboradores/convidar"], true)) {
+    $bridgeSecret = $_ENV["CONECTA_BRIDGE_SECRET"] ?? "";
+    $incoming     = $_SERVER["HTTP_X_CONECTA_SECRET"] ?? "";
+    if (!$bridgeSecret || !hash_equals($bridgeSecret, $incoming)) {
+        json_out(["ok" => false, "error" => "Forbidden"], 403);
+    }
+}
+
+// ── POST /auth/login-unificado (PÚBLICO) ──────────────────────────────────────
+if ($method === 'POST' && $uri === '/auth/login-unificado') {
+    $b = body();
+    $email = trim($b['email'] ?? '');
+    $senha = $b['senha'] ?? '';
+    if (!$email || !$senha) json_out(['error' => 'Email e senha obrigatórios'], 422);
+
+    $tid = tenant_id();
+    $stmt = pdo()->prepare('SELECT * FROM usuarios WHERE email = ? AND (tenant_id = ? OR tenant_id IS NULL) LIMIT 1');
+    $stmt->execute([$email, $tid]);
+    $user = $stmt->fetch();
+
+    if (!$user || !password_verify($senha, $user['senha_hash'])) {
+        json_out(['error' => 'Credenciais inválidas'], 401);
+    }
+    if (!$user['ativo']) json_out(['error' => 'Usuário inativo. Contate a ACIC-DF.'], 403);
+
+    pdo()->prepare('UPDATE usuarios SET ultimo_login = NOW() WHERE id = ?')->execute([$user['id']]);
+
+    $role = $user['role'];
+    $destino = match($role) {
+        'superadmin', 'gestor', 'atendente' => 'ambos',
+        'associado_empresa' => 'ambos',
+        default => 'conecta'
+    };
+
+    $nome = $user['nome'];
+    $empresa_cnpj = $user['empresa_cnpj'] ?? null;
+    if ($user['associado_id']) {
+        $stA = pdo()->prepare('SELECT razao_social, nome_fantasia, cnpj FROM associados WHERE id = ?');
+        $stA->execute([$user['associado_id']]);
+        $assoc = $stA->fetch();
+        if ($assoc) {
+            $nome = $assoc['razao_social'] ?: $assoc['nome_fantasia'] ?: $nome;
+            $empresa_cnpj = $assoc['cnpj'] ?: $empresa_cnpj;
+        }
+    }
+
+    $ssoToken = bin2hex(random_bytes(32));
+    $perfil = json_encode([
+        'usuario_id' => (int)$user['id'],
+        'tipo' => $role,
+        'nome' => $nome,
+        'email' => $user['email'],
+        'empresa_cnpj' => $empresa_cnpj,
+        'associado_id' => $user['associado_id'] ? (int)$user['associado_id'] : null,
+        'tenant_id' => (int)($user['tenant_id'] ?? $tid),
+        'primeiro_acesso' => (bool)($user['primeiro_acesso'] ?? false),
+    ], JSON_UNESCAPED_UNICODE);
+
+    pdo()->prepare(
+        'INSERT INTO sso_tokens (usuario_id, token, perfil, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))'
+    )->execute([(int)$user['id'], $ssoToken, $perfil]);
+
+    json_out([
+        'sso_token' => $ssoToken,
+        'destino' => $destino,
+        'tipo' => $role,
+        'nome' => $nome,
+        'email' => $user['email'],
+        'empresa_cnpj' => $empresa_cnpj,
+        'redirect_crm' => 'https://crm.acicdf.org.br/?sso=' . $ssoToken,
+        'redirect_conecta' => 'https://acicdf.org.br/conecta/?sso=' . $ssoToken,
+    ]);
+}
+
+// ── POST /auth/validate-sso (X-Conecta-Secret) ───────────────────────────────
+if ($method === 'POST' && $uri === '/auth/validate-sso') {
+    $b = body();
+    $token = $b['sso_token'] ?? '';
+    if (!$token) json_out(['error' => 'sso_token obrigatório'], 422);
+
+    $st = pdo()->prepare('SELECT * FROM sso_tokens WHERE token = ? AND expires_at > NOW() AND used_at IS NULL LIMIT 1');
+    $st->execute([$token]);
+    $row = $st->fetch();
+    if (!$row) json_out(['error' => 'Token inválido ou expirado'], 401);
+
+    pdo()->prepare('UPDATE sso_tokens SET used_at = NOW() WHERE id = ?')->execute([$row['id']]);
+
+    $perfil = json_decode($row['perfil'], true) ?? [];
+    $tipo = $perfil['tipo'] ?? 'colaborador';
+
+    $permMap = [
+        'superadmin' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>true,'acesso_crm'=>true,'gerenciar_produtos'=>true,'ver_usuarios'=>true,'ver_metricas'=>true,'cadastrar_superadmin'=>true],
+        'gestor' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>true,'acesso_crm'=>true,'gerenciar_produtos'=>true,'ver_usuarios'=>true,'ver_metricas'=>true,'cadastrar_superadmin'=>false],
+        'atendente' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>false,'acesso_crm'=>true,'gerenciar_produtos'=>false,'ver_usuarios'=>false,'ver_metricas'=>false,'cadastrar_superadmin'=>false],
+        'associado_empresa' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>false,'acesso_crm'=>true,'gerenciar_produtos'=>false,'ver_usuarios'=>false,'ver_metricas'=>false,'cadastrar_superadmin'=>false],
+    ];
+    $defaultPerm = ['ver_taxas'=>false,'ver_empresa'=>false,'enviar_comunicados'=>false,'acesso_crm'=>false,'gerenciar_produtos'=>false,'ver_usuarios'=>false,'ver_metricas'=>false,'cadastrar_superadmin'=>false];
+
+    json_out([
+        'usuario_id' => $perfil['usuario_id'] ?? null,
+        'tipo' => $tipo,
+        'nome' => $perfil['nome'] ?? '',
+        'email' => $perfil['email'] ?? '',
+        'empresa_cnpj' => $perfil['empresa_cnpj'] ?? null,
+        'associado_id' => $perfil['associado_id'] ?? null,
+        'primeiro_acesso' => $perfil['primeiro_acesso'] ?? false,
+        'permissoes' => $permMap[$tipo] ?? $defaultPerm,
+    ]);
+}
+
+// ── GET /auth/check-tipo?email=X (X-Conecta-Secret) ──────────────────────────
+if ($method === 'GET' && $uri === '/auth/check-tipo') {
+    $email = trim($_GET['email'] ?? '');
+    if (!$email) json_out(['error' => 'email obrigatório'], 422);
+
+    $tid = tenant_id();
+    $st = pdo()->prepare('SELECT id, nome, role, ativo FROM usuarios WHERE email = ? AND (tenant_id = ? OR tenant_id IS NULL) LIMIT 1');
+    $st->execute([$email, $tid]);
+    $user = $st->fetch();
+    if (!$user) json_out(['error' => 'Usuário não encontrado'], 404);
+    if (!$user['ativo']) json_out(['error' => 'Usuário inativo'], 403);
+
+    $tipo = $user['role'];
+    $destino = match($tipo) {
+        'superadmin','gestor','atendente' => 'ambos',
+        'associado_empresa' => 'ambos',
+        default => 'conecta'
+    };
+    json_out(['tipo' => $tipo, 'nome' => $user['nome'], 'destino_possivel' => $destino]);
+}
+
+// ── POST /colaboradores/convidar (X-Conecta-Secret) ──────────────────────────
+if ($method === 'POST' && $uri === '/colaboradores/convidar') {
+    $b = body();
+    $associado_id = (int)($b['associado_id'] ?? 0);
+    $nome  = trim($b['nome'] ?? '');
+    $email = trim($b['email'] ?? '');
+    $cpf   = preg_replace('/\D/', '', $b['cpf'] ?? '');
+    $tipo  = in_array($b['tipo'] ?? '', ['colaborador','dependente']) ? $b['tipo'] : 'colaborador';
+
+    if (!$associado_id || !$nome || !$email) json_out(['error' => 'associado_id, nome e email obrigatórios'], 422);
+
+    $tid = tenant_id();
+    $stA = pdo()->prepare('SELECT id, razao_social, cnpj, status FROM associados WHERE id = ? AND tenant_id = ?');
+    $stA->execute([$associado_id, $tid]);
+    $assoc = $stA->fetch();
+    if (!$assoc) json_out(['error' => 'Associado não encontrado'], 404);
+    if ($assoc['status'] !== 'ativo') json_out(['error' => 'Associado não está ativo'], 403);
+
+    $stE = pdo()->prepare('SELECT id FROM usuarios WHERE email = ? AND (tenant_id = ? OR tenant_id IS NULL)');
+    $stE->execute([$email, $tid]);
+    if ($stE->fetch()) json_out(['error' => 'Este email já está cadastrado'], 409);
+
+    $conviteToken  = bin2hex(random_bytes(32));
+    $conviteExpira = date('Y-m-d H:i:s', strtotime('+72 hours'));
+
+    pdo()->prepare(
+        'INSERT INTO usuarios (tenant_id, nome, email, senha_hash, role, associado_id, empresa_cnpj, convite_token, convite_expira, primeiro_acesso, ativo)
+         VALUES (?, ?, ?, "", ?, ?, ?, ?, ?, 1, 1)'
+    )->execute([$tid, $nome, $email, $tipo, $associado_id, $assoc['cnpj'], $conviteToken, $conviteExpira]);
+    $uid = (int)pdo()->lastInsertId();
+
+    // Enviar email de convite
+    $linkConvite = 'https://acicdf.org.br/conecta/?convite=' . $conviteToken;
+    $tplFile = '/var/www/hux-crm-association/emails/convite_' . $tipo . '.html';
+    if (file_exists($tplFile)) {
+        $html = file_get_contents($tplFile);
+        $vars = ['{{nome}}','{{empresa}}','{{link}}','{{expira}}'];
+        $vals = [$nome, $assoc['razao_social'] ?? '', $linkConvite, date('d/m/Y H:i', strtotime($conviteExpira))];
+        $html = str_replace($vars, $vals, $html);
+        $headers  = "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: ACIC Conecta <noreply@acicdf.org.br>\r\n";
+        @mail($email, ($assoc['razao_social'] ?? '') . ' te convidou para o Portal ACIC-DF', $html, $headers);
+    }
+
+    pdo()->prepare(
+        'INSERT INTO notificacoes_log (tenant_id, usuario_id, tipo, destinatario_email, assunto, status, enviado_at)
+         VALUES (?, ?, ?, ?, ?, "enviado", NOW())'
+    )->execute([$tid, $uid, 'convite_' . $tipo, $email, ($assoc['razao_social'] ?? '') . ' te convidou para o Portal ACIC-DF']);
+
+    json_out(['usuario_id' => $uid, 'convite_token' => $conviteToken, 'convite_enviado' => true, 'convite_expira' => $conviteExpira]);
+}
+
+// ── POST /auth/aceitar-convite (PÚBLICO) ──────────────────────────────────────
+if ($method === 'POST' && $uri === '/auth/aceitar-convite') {
+    $b = body();
+    $conviteToken = $b['convite_token'] ?? '';
+    $senha    = $b['senha'] ?? '';
+    $confirmar = $b['confirmar_senha'] ?? '';
+
+    if (!$conviteToken) json_out(['error' => 'convite_token obrigatório'], 422);
+    if (strlen($senha) < 8) json_out(['error' => 'Senha mínima: 8 caracteres'], 422);
+    if ($senha !== $confirmar) json_out(['error' => 'Senhas não conferem'], 422);
+
+    $st = pdo()->prepare('SELECT * FROM usuarios WHERE convite_token = ? AND convite_expira > NOW() LIMIT 1');
+    $st->execute([$conviteToken]);
+    $user = $st->fetch();
+    if (!$user) json_out(['error' => 'Convite inválido ou expirado'], 401);
+
+    $hash = password_hash($senha, PASSWORD_BCRYPT);
+    pdo()->prepare('UPDATE usuarios SET senha_hash = ?, primeiro_acesso = 0, convite_token = NULL, convite_expira = NULL WHERE id = ?')
+        ->execute([$hash, $user['id']]);
+
+    $ssoToken = bin2hex(random_bytes(32));
+    $perfil = json_encode([
+        'usuario_id' => (int)$user['id'], 'tipo' => $user['role'], 'nome' => $user['nome'],
+        'email' => $user['email'], 'empresa_cnpj' => $user['empresa_cnpj'],
+        'associado_id' => $user['associado_id'] ? (int)$user['associado_id'] : null,
+        'tenant_id' => (int)($user['tenant_id'] ?? tenant_id()), 'primeiro_acesso' => false,
+    ], JSON_UNESCAPED_UNICODE);
+
+    pdo()->prepare(
+        'INSERT INTO sso_tokens (usuario_id, token, perfil, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))'
+    )->execute([(int)$user['id'], $ssoToken, $perfil]);
+
+    json_out(['sso_token' => $ssoToken, 'redirect_conecta' => 'https://acicdf.org.br/conecta/?sso=' . $ssoToken]);
+}
+
+// ── GET /public/planos (PÚBLICO — para associe-se) ────────────────────────────
+if ($method === 'GET' && $uri === '/public/planos') {
+    $tid = tenant_id();
+    $stmt = pdo()->prepare(
+        'SELECT id, nome, tipo, descricao, valor, valor_adesao, valor_recorrencia, periodicidade
+         FROM planos WHERE tenant_id = ? AND ativo = 1 AND tem_link_publico = 1
+         ORDER BY ordem ASC, valor ASC'
+    );
+    $stmt->execute([$tid]);
+    $rows = $stmt->fetchAll();
+    foreach ($rows as &$row) {
+        $stI = pdo()->prepare('SELECT pi.nome, pi.descricao FROM plano_itens pi WHERE pi.plano_id = ? AND pi.tenant_id = ?');
+        $stI->execute([$row['id'], $tid]);
+        $row['itens'] = $stI->fetchAll();
+    }
+    unset($row);
+    json_out(['data' => $rows, 'total' => count($rows)]);
+}
+
+// ── POST /public/onboarding (PÚBLICO) ─────────────────────────────────────────
+if ($method === 'POST' && $uri === '/public/onboarding') {
+    $b = body();
+    $emp = $b['empresa'] ?? [];
+    $rsp = $b['responsavel'] ?? [];
+    $end = $b['endereco'] ?? [];
+    $plano_id = (int)($b['plano_id'] ?? 0);
+    $senha = $b['senha'] ?? '';
+
+    $cnpj  = preg_replace('/\D/', '', $emp['cnpj'] ?? '');
+    $cpf   = preg_replace('/\D/', '', $rsp['cpf'] ?? '');
+    $email = trim($rsp['email'] ?? '');
+
+    if (strlen($cnpj) !== 14) json_out(['error' => 'CNPJ inválido'], 422);
+    if (strlen($cpf) !== 11)  json_out(['error' => 'CPF inválido'], 422);
+    if (!$email || !str_contains($email, '@')) json_out(['error' => 'Email inválido'], 422);
+    if (strlen($senha) < 8)   json_out(['error' => 'Senha mínima: 8 caracteres'], 422);
+    if (!$plano_id)            json_out(['error' => 'Selecione um plano'], 422);
+
+    $tid = tenant_id();
+    $cnpjFmt = substr($cnpj,0,2).'.'.substr($cnpj,2,3).'.'.substr($cnpj,5,3).'/'.substr($cnpj,8,4).'-'.substr($cnpj,12,2);
+
+    $stC = pdo()->prepare("SELECT id FROM associados WHERE (cnpj = ? OR REPLACE(REPLACE(REPLACE(cnpj,'.',''),'/',''),'-','') = ?) AND tenant_id = ?");
+    $stC->execute([$cnpjFmt, $cnpj, $tid]);
+    if ($stC->fetch()) json_out(['error' => 'CNPJ já cadastrado. Faça login ou entre em contato.'], 409);
+
+    $stE = pdo()->prepare('SELECT id FROM usuarios WHERE email = ? AND (tenant_id = ? OR tenant_id IS NULL)');
+    $stE->execute([$email, $tid]);
+    if ($stE->fetch()) json_out(['error' => 'Email já cadastrado. Faça login.'], 409);
+
+    $stP = pdo()->prepare('SELECT * FROM planos WHERE id = ? AND tenant_id = ? AND ativo = 1');
+    $stP->execute([$plano_id, $tid]);
+    $plano = $stP->fetch();
+    if (!$plano) json_out(['error' => 'Plano não encontrado'], 404);
+
+    $valor = (float)($plano['valor_recorrencia'] ?: $plano['valor'] ?: 0);
+    if ($valor <= 0) json_out(['error' => 'Plano sem valor definido'], 422);
+
+    pdo()->prepare(
+        'INSERT INTO associados (tenant_id, plano_id, tipo_pessoa, categoria, razao_social, nome_fantasia, cnpj,
+         nome_responsavel, cpf, email, telefone, whatsapp, cep, logradouro, numero, complemento, bairro, cidade, uf,
+         status, campos_extras, criado_em)
+         VALUES (?, ?, "pj", "empresa", ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "prospecto", ?, NOW())'
+    )->execute([
+        $tid, $plano_id,
+        $emp['razao_social'] ?? '', $emp['nome_fantasia'] ?? '', $cnpjFmt,
+        $rsp['nome'] ?? '', $cpf, $email, $rsp['telefone'] ?? '', $rsp['telefone'] ?? '',
+        $end['cep'] ?? '', $end['logradouro'] ?? '', $end['numero'] ?? '',
+        $end['complemento'] ?? '', $end['bairro'] ?? '', $end['cidade'] ?? '', $end['estado'] ?? '',
+        json_encode(['capital_social'=>$emp['capital_social']??null,'data_abertura'=>$emp['data_abertura']??null,
+            'faturamento_faixa'=>$emp['faturamento_faixa']??null,'num_funcionarios'=>$emp['num_funcionarios']??null], JSON_UNESCAPED_UNICODE)
+    ]);
+    $assocId = (int)pdo()->lastInsertId();
+
+    $hash = password_hash($senha, PASSWORD_BCRYPT);
+    pdo()->prepare(
+        'INSERT INTO usuarios (tenant_id, nome, email, senha_hash, role, associado_id, empresa_cnpj, primeiro_acesso, ativo)
+         VALUES (?, ?, ?, ?, "associado_empresa", ?, ?, 0, 1)'
+    )->execute([$tid, $rsp['nome'] ?? '', $email, $hash, $assocId, $cnpjFmt]);
+    $uid = (int)pdo()->lastInsertId();
+
+    $pixData = null;
+    $vencimento = date('Y-m-d', strtotime('+3 days'));
+    try {
+        $customer = asaasReq('POST', '/customers', ['name' => $emp['razao_social'] ?? $rsp['nome'] ?? '', 'cpfCnpj' => $cnpj, 'email' => $email]);
+        $chargeData = [
+            'customer' => $customer['id'] ?? '', 'billingType' => 'PIX', 'value' => $valor,
+            'dueDate' => $vencimento, 'description' => 'Associação ACIC-DF — ' . ($plano['nome'] ?? ''),
+            'externalReference' => 'onboarding_associado_' . $assocId,
+        ];
+        $charge = asaasReq('POST', '/payments', $chargeData);
+        if (!empty($charge['id'])) {
+            pdo()->prepare(
+                'INSERT INTO cobrancas (tenant_id, associado_id, plano_id, valor, modalidade, status,
+                 data_vencimento, gateway, gateway_charge_id, gateway_customer_id, descricao, referencia, criado_em)
+                 VALUES (?, ?, ?, ?, "PIX", "pendente", ?, "asaas", ?, ?, ?, ?, NOW())'
+            )->execute([$tid, $assocId, $plano_id, $valor, $vencimento, $charge['id'], $customer['id'] ?? '',
+                $chargeData['description'], 'onboarding_associado_' . $assocId]);
+            $pixResp = asaasReq('GET', '/payments/' . $charge['id'] . '/pixQrCode');
+            $pixData = ['pix_code'=>$pixResp['payload']??'', 'pix_qr_base64'=>$pixResp['encodedImage']??'', 'gateway_url'=>$charge['invoiceUrl']??''];
+        }
+    } catch (\Throwable $e) {
+        error_log('[ONBOARDING] Asaas error: ' . $e->getMessage());
+    }
+
+    pdo()->prepare(
+        'INSERT INTO notificacoes_log (tenant_id, usuario_id, tipo, destinatario_email, assunto, status)
+         VALUES (?, ?, "onboarding_pendente", ?, "Bem-vindo à ACIC-DF", "pendente")'
+    )->execute([$tid, $uid, $email]);
+
+    json_out([
+        'associado_id' => $assocId, 'usuario_id' => $uid, 'plano' => $plano['nome'] ?? '',
+        'valor' => $valor, 'vencimento' => $vencimento,
+        'pix_code' => $pixData['pix_code'] ?? null, 'pix_qr_base64' => $pixData['pix_qr_base64'] ?? null,
+        'gateway_url' => $pixData['gateway_url'] ?? null,
+    ]);
+}
+
+// ── GET /public/onboarding/{id}/status ────────────────────────────────────────
+if ($method === 'GET' && preg_match('#^/public/onboarding/(\d+)/status$#', $uri, $m)) {
+    $aid = (int)$m[1];
+    $st = pdo()->prepare('SELECT status FROM associados WHERE id = ?');
+    $st->execute([$aid]);
+    $row = $st->fetch();
+    if (!$row) json_out(['error' => 'Não encontrado'], 404);
+    json_out(['status' => $row['status'], 'ativo' => $row['status'] === 'ativo']);
+}
