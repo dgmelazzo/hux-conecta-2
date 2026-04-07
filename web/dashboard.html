@@ -569,6 +569,8 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <!-- Formulário adicionar — visualmente separado -->
     <div style="background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:16px">
       <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:10px">Adicionar Produto</div>
+      <div class="fg" style="margin-bottom:10px"><label class="fl3">Importar do Conecta 2.0</label><select class="fc" id="item-conecta-sel" style="background:#fff" onchange="preencherDoConecta(this.value)"><option value="">Digitar manualmente</option></select></div>
+      <input type="hidden" id="item-conecta-id" value="">
       <div class="fg"><label class="fl3">Nome *</label><input type="text" class="fc" id="item-nome" placeholder="Nome do produto ou serviço" style="background:#fff"></div>
       <div class="fr">
         <div class="fg"><label class="fl3">Adesão (R$)</label><input type="number" class="fc" id="item-adesao" step="0.01" placeholder="0,00" style="background:#fff"></div>
@@ -1393,10 +1395,36 @@ async function editPlanoItens(planoId){
   document.getElementById('itens-title').textContent='Itens do Plano #'+planoId;
   om('mitens');
   loadItens();
+  carregarProdutosConecta();
   const pars=await api('/parceiros');
   const sel=document.getElementById('item-parceiro');
   sel.innerHTML='<option value="">Nenhum</option>'+((pars?.data||[]).map(p=>'<option value="'+p.id+'">'+p.nome+'</option>').join(''));
 }
+
+// Conecta 2.0 product integration
+let _conectaProdutos=[];
+async function carregarProdutosConecta(){
+  if(_conectaProdutos.length)return;
+  try{
+    const r=await fetch('https://acicdf.org.br/conecta/api.php?action=produtos',{headers:{'X-Bridge-Secret':'conecta_crm_bridge_2026'}});
+    const d=await r.json();
+    _conectaProdutos=d.data||[];
+    const sel=document.getElementById('item-conecta-sel');
+    if(sel){
+      sel.innerHTML="<option value=''>Digitar manualmente</option>"+_conectaProdutos.map(p=>
+        "<option value='"+p.id+"'>"+p.nome+(p.parceiro_nome?" ("+p.parceiro_nome+")":"")+"</option>"
+      ).join('');
+    }
+  }catch(e){console.error('Conecta API:',e);}
+}
+function preencherDoConecta(id){
+  if(!id){document.getElementById('item-conecta-id').value='';return;}
+  const p=_conectaProdutos.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  document.getElementById('item-conecta-id').value=p.id;
+  document.getElementById('item-nome').value=p.nome;
+}
+
 async function loadItens(){
   if(!_itensPlanoId)return;
   document.getElementById('itens-list').innerHTML='<div class="ld"><div class="sp"></div></div>';
@@ -1417,9 +1445,9 @@ async function addItem(){
   if(!_itensPlanoId)return;
   const nome=document.getElementById('item-nome').value.trim();
   if(!nome){toast('Informe o nome do item','err');return;}
-  const b={nome,valor_adesao:parseFloat(document.getElementById('item-adesao').value)||0,valor_recorrencia:parseFloat(document.getElementById('item-recorr').value)||0,tipo_cobranca:document.getElementById('item-tipo').value,parceiro_id:document.getElementById('item-parceiro').value||null};
+  const b={nome,valor_adesao:parseFloat(document.getElementById('item-adesao').value)||0,valor_recorrencia:parseFloat(document.getElementById('item-recorr').value)||0,tipo_cobranca:document.getElementById('item-tipo').value,parceiro_id:document.getElementById('item-parceiro').value||null,conecta_produto_id:document.getElementById('item-conecta-id')?.value||null};
   const r=await api('/planos/'+_itensPlanoId+'/itens',{method:'POST',body:JSON.stringify(b)});
-  if(r?.id||r?.message){document.getElementById('item-nome').value='';document.getElementById('item-adesao').value='';document.getElementById('item-recorr').value='';loadItens();toast('Item adicionado!');}
+  if(r?.id||r?.message){document.getElementById('item-nome').value='';document.getElementById('item-adesao').value='';document.getElementById('item-recorr').value='';if(document.getElementById('item-conecta-id'))document.getElementById('item-conecta-id').value='';if(document.getElementById('item-conecta-sel'))document.getElementById('item-conecta-sel').value='';loadItens();toast('Item adicionado!');}
   else toast(r?.error||'Erro','err');
 }
 async function delItem(itemId){

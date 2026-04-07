@@ -192,6 +192,7 @@ function aplicarPermissoes(sessao) {
     'nav-taxas':           p.ver_taxas !== false,
     'nav-empresa':         p.ver_empresa !== false,
     'nav-admin-produtos':  p.gerenciar_produtos === true,
+    'nav-parceiros':       p.gerenciar_produtos === true,
     'nav-usuarios':        p.ver_usuarios === true,
     'nav-metricas':        p.ver_metricas === true,
     'nav-admins':          p.cadastrar_superadmin === true,
@@ -833,6 +834,8 @@ function abrirFormProduto(p = null) {
   document.getElementById('fp-tipo').value            = p?.tipo || 'produto';
   document.getElementById('fp-status').value          = p?.status || 'pendente';
   document.getElementById('fp-marca').value           = p?.marca || '';
+  // Popular select de parceiros
+  popularSelectParceiros(p?.parceiro_id || '');
   // categoria é setada dentro de atualizarSelectCategorias após carregar as opções
   document.getElementById('fp-imagem').value          = p?.imagem || '';
   document.getElementById('fp-destaque').checked      = !!p?.destaque;
@@ -954,6 +957,7 @@ async function salvarProduto(e) {
     status:          document.getElementById('fp-status').value || 'ativo',
     categoria_id:    document.getElementById('fp-categoria').value || null,
     marca:           document.getElementById('fp-marca').value,
+    parceiro_id:     document.getElementById('fp-parceiro').value || null,
     imagem:          document.getElementById('fp-imagem').value,
     destaque:        document.getElementById('fp-destaque').checked ? 1 : 0,
     link_venda_tipo: linkTipo,
@@ -2115,7 +2119,7 @@ function showSection(id) {
   if (window.innerWidth <= 900) closeSidebar();
   if (id === 'catalogo') { loadCatalogoProdutos(); carregarCategoriasFiltro(); }
   if (id === 'comunicados') iniciarComunicados();
-  const adminSections = ['admin-produtos','admin-usuarios','admin-metricas','admin-admins'];
+  const adminSections = ['admin-produtos','admin-usuarios','admin-metricas','admin-admins','admin-parceiros'];
   if (adminSections.includes(id)) {
     const navAdmin = document.getElementById('nav-admin');
     if (!navAdmin || navAdmin.classList.contains('hidden')) {
@@ -2130,6 +2134,7 @@ function showSection(id) {
     if (id === 'admin-admins') carregarAdmins();
     if (id === 'admin-metricas') carregarMetricas();
     if (id === 'admin-comunicados') iniciarComunicados();
+    if (id === 'admin-parceiros') carregarParceiros();
   }
 }
 
@@ -2214,7 +2219,7 @@ let _adminChecked = false;
 function mostrarNavAdmin(isSuperadmin) {
   const navAdmin = document.getElementById('nav-admin');
   if (navAdmin) navAdmin.classList.remove('hidden');
-  ['nav-usuarios','nav-metricas','nav-comunicados'].forEach(id => {
+  ['nav-usuarios','nav-metricas','nav-comunicados','nav-parceiros'].forEach(id => {
     document.getElementById(id)?.classList.remove('hidden');
   });
   document.getElementById('btn-novo-link')?.style && (document.getElementById('btn-novo-link').style.display = '');
@@ -2227,7 +2232,7 @@ function mostrarNavAdmin(isSuperadmin) {
 }
 
 function ocultarElementosAdmin() {
-  ['nav-admin','nav-usuarios','nav-metricas','nav-comunicados','nav-admins'].forEach(id => {
+  ['nav-admin','nav-usuarios','nav-metricas','nav-comunicados','nav-admins','nav-parceiros'].forEach(id => {
     document.getElementById(id)?.classList.add('hidden');
   });
   const btn = document.getElementById('btn-novo-link');
@@ -3229,6 +3234,131 @@ const notify = {
   aviso:   (msg, titulo) => mostrarToast(titulo || 'Atenção', msg, 'aviso', 6000),
   info:    (msg, titulo) => mostrarToast(titulo || '', msg, 'info')
 };
+
+// ============================================================
+// ADMIN — PARCEIROS
+// ============================================================
+let _parceirosCache = [];
+
+async function popularSelectParceiros(selectedId) {
+  const sel = document.getElementById('fp-parceiro');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Sem parceiro</option>';
+  try {
+    if (!_parceirosCache.length) {
+      const lista = await adminApi('parceiros', {}, 'GET');
+      _parceirosCache = lista || [];
+    }
+    _parceirosCache.filter(p => p.ativo).forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.nome;
+      if (String(p.id) === String(selectedId)) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  } catch(e) { /* silencioso */ }
+}
+
+async function carregarParceiros() {
+  const grid = document.getElementById('parceiros-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px;grid-column:1/-1"><div class="spinner" style="width:20px;height:20px;margin:0 auto 8px"></div></div>';
+  try {
+    const lista = await adminApi('parceiros', {}, 'GET');
+    _parceirosCache = lista || [];
+    if (!lista || !lista.length) {
+      grid.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px;grid-column:1/-1"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 12px;display:block;opacity:.4"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg><div style="font-weight:600;margin-bottom:4px">Nenhum parceiro cadastrado</div><div style="font-size:12px">Clique em "+ Novo Parceiro" para começar.</div></div>';
+      return;
+    }
+    grid.innerHTML = lista.map(p => `
+      <div class="card" style="padding:16px;display:flex;gap:14px;align-items:flex-start">
+        <div style="width:56px;height:56px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          ${p.logo_url ? `<img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\\'font-size:20px;color:var(--text3)\\'>${escHtml(p.nome.substring(0,2).toUpperCase())}</span>'">` : `<span style="font-size:20px;font-weight:600;color:var(--text3)">${escHtml(p.nome.substring(0,2).toUpperCase())}</span>`}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px;color:var(--text)">${escHtml(p.nome)}</div>
+          ${p.categoria ? `<span class="badge" style="font-size:10px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);margin-top:2px;display:inline-block">${escHtml(p.categoria)}</span>` : ''}
+          ${p.cnpj ? `<div style="font-size:11px;color:var(--text3);margin-top:4px">${escHtml(p.cnpj)}</div>` : ''}
+          <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+            <button class="btn-sm" onclick="editarParceiro(${p.id})" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer">Editar</button>
+            <button class="btn-sm" onclick="toggleParceiro(${p.id})" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid ${p.ativo ? 'var(--danger)' : '#1D9E75'};background:transparent;color:${p.ativo ? 'var(--danger)' : '#1D9E75'};cursor:pointer">${p.ativo ? 'Desativar' : 'Ativar'}</button>
+            <span style="font-size:10px;padding:3px 8px;border-radius:99px;background:${p.ativo ? 'rgba(29,158,117,.12)' : 'rgba(226,75,74,.12)'};color:${p.ativo ? '#1D9E75' : '#E24B4A'}">${p.ativo ? 'Ativo' : 'Inativo'}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { grid.innerHTML = `<div style="color:var(--danger);padding:20px;grid-column:1/-1">Erro: ${e.message}</div>`; }
+}
+
+function abrirFormParceiro(p = null) {
+  document.getElementById('parceiro-form-titulo').textContent = p ? 'Editar Parceiro' : 'Novo Parceiro';
+  document.getElementById('parc-id').value = p?.id || '';
+  document.getElementById('parc-nome').value = p?.nome || '';
+  document.getElementById('parc-fantasia').value = p?.nome_fantasia || '';
+  document.getElementById('parc-cnpj').value = p?.cnpj || '';
+  document.getElementById('parc-categoria').value = p?.categoria || '';
+  document.getElementById('parc-email').value = p?.email || '';
+  document.getElementById('parc-telefone').value = p?.telefone || '';
+  document.getElementById('parc-site').value = p?.site || '';
+  document.getElementById('parc-logo').value = p?.logo_url || '';
+  document.getElementById('parc-desc').value = p?.descricao || '';
+  const prev = document.getElementById('parc-logo-preview');
+  if (p?.logo_url) { prev.src = p.logo_url; prev.style.display = 'block'; } else { prev.style.display = 'none'; }
+  document.getElementById('modal-parceiro').classList.remove('hidden');
+}
+
+function fecharFormParceiro() {
+  document.getElementById('modal-parceiro').classList.add('hidden');
+}
+
+// Logo preview on URL change
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('parc-logo');
+  if (inp) inp.addEventListener('input', () => {
+    const prev = document.getElementById('parc-logo-preview');
+    if (inp.value.trim()) { prev.src = inp.value.trim(); prev.style.display = 'block'; prev.onerror = () => { prev.style.display = 'none'; }; }
+    else { prev.style.display = 'none'; }
+  });
+});
+
+async function salvarParceiro() {
+  const id = document.getElementById('parc-id').value;
+  const nome = document.getElementById('parc-nome').value.trim();
+  if (!nome) { notify.aviso('Nome do parceiro é obrigatório.'); return; }
+  const btn = document.getElementById('btn-salvar-parceiro');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    const body = {
+      id: id || undefined,
+      nome,
+      nome_fantasia: document.getElementById('parc-fantasia').value.trim(),
+      cnpj: document.getElementById('parc-cnpj').value.trim(),
+      categoria: document.getElementById('parc-categoria').value.trim(),
+      email: document.getElementById('parc-email').value.trim(),
+      telefone: document.getElementById('parc-telefone').value.trim(),
+      site: document.getElementById('parc-site').value.trim(),
+      logo_url: document.getElementById('parc-logo').value.trim(),
+      descricao: document.getElementById('parc-desc').value.trim(),
+    };
+    await adminApi(id ? 'parceiro_editar' : 'parceiro_criar', body);
+    fecharFormParceiro();
+    carregarParceiros();
+    mostrarToast('Parceiro salvo', id ? 'Parceiro atualizado.' : 'Novo parceiro criado.', 'sucesso');
+  } catch(e) { notify.erro(e.message); }
+  finally { btn.disabled = false; btn.textContent = 'Salvar Parceiro'; }
+}
+
+function editarParceiro(id) {
+  const p = _parceirosCache.find(x => x.id === id);
+  if (p) abrirFormParceiro(p);
+}
+
+async function toggleParceiro(id) {
+  try {
+    await adminApi('parceiro_toggle', { id });
+    carregarParceiros();
+  } catch(e) { notify.erro(e.message); }
+}
 
 // ============================================================
 // ADMIN — ENVIAR NOTIFICAÇÃO
