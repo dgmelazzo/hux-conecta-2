@@ -156,7 +156,7 @@ a{color:var(--accent);text-decoration:none}
     </div>
     <div class="step-labels">
       <span class="active" id="lbl1">Empresa</span>
-      <span id="lbl2">Responsavel</span>
+      <span id="lbl2">Responsável</span>
       <span id="lbl3">Plano</span>
     </div>
 
@@ -197,7 +197,7 @@ a{color:var(--accent);text-decoration:none}
         <div class="field"><label>CEP <span class="req">*</span></label><input id="cep" placeholder="00000-000" maxlength="9" required><span class="hint">Preencha o CEP para buscar o endereço automaticamente</span></div>
         <div class="row">
           <div class="field" style="flex:3"><label>Logradouro <span class="req">*</span></label><input id="logradouro" required></div>
-          <div class="field" style="flex:1"><label>Numero <span class="req">*</span></label><input id="numero" required></div>
+          <div class="field" style="flex:1"><label>Número <span class="req">*</span></label><input id="numero" required></div>
         </div>
         <div class="field"><label>Complemento</label><input id="complemento"></div>
         <div class="row">
@@ -215,7 +215,7 @@ a{color:var(--accent);text-decoration:none}
         <div class="field"><label>Senha <span class="req">*</span> <small>(mín. 8 caracteres, 1 maiúscula, 1 número)</small></label><input type="password" id="senha" minlength="8" required><div class="strength-bar"><div class="fill" id="strengthFill"></div></div><div class="strength-text" id="strengthText"></div></div>
         <div class="field"><label>Confirmar Senha <span class="req">*</span></label><input type="password" id="senha_confirm" required><span class="error-msg">Senhas não coincidem</span></div>
         <div class="check-row"><input type="checkbox" id="termos" required><label for="termos">Li e aceito os <a href="#" onclick="openModal();return false">termos de associacao</a></label></div>
-        <div class="form-nav"><button type="button" class="btn btn-secondary" onclick="goStep(2)">&larr; Voltar</button><button type="submit" class="btn btn-primary">Finalizar Associacao &rarr;</button></div>
+        <div class="form-nav"><button type="button" class="btn btn-secondary" onclick="goStep(2)">&larr; Voltar</button><button type="submit" class="btn btn-primary">Finalizar Associação &rarr;</button></div>
       </div>
 
     </form>
@@ -240,7 +240,7 @@ a{color:var(--accent);text-decoration:none}
     <p>Ao se associar a ACIC-DF, o associado declara estar ciente e de acordo com o Estatuto Social e o Regimento Interno da Associação Comercial e Industrial de Ceilândia e Distrito Federal.</p>
     <p>O associado compromete-se a manter seus dados cadastrais atualizados e a cumprir com as obrigacoes financeiras referentes ao plano escolhido.</p>
     <p>A ACIC-DF reserva-se o direito de suspender ou cancelar a associacao em caso de inadimplência superior a 90 dias, mediante notificacao previa.</p>
-    <p>Os beneficios serao disponibilizados apos a confirmacao do pagamento e estarão sujeitos às condições de cada parceiro conveniado.</p>
+    <p>Os benefícios serão disponibilizados após a confirmação do pagamento e estarão sujeitos às condições de cada parceiro conveniado.</p>
     <button class="btn btn-primary" onclick="closeModal()">Entendi</button>
   </div>
 </div>
