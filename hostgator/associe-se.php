@@ -138,11 +138,11 @@ a{color:var(--accent);text-decoration:none}
   <!-- Left Hero -->
   <div class="hero">
     <h1>Associe-se a ACIC-DF</h1>
-    <p class="subtitle">Junte-se a mais de 3.000 empresas e tenha acesso a uma rede de beneficios exclusivos para o crescimento do seu negocio.</p>
-    <div class="benefit"><div class="icon">&#128640;</div><div><h4>Networking Estrategico</h4><p>Conecte-se com empresarios e tomadores de decisao do Distrito Federal.</p></div></div>
-    <div class="benefit"><div class="icon">&#128176;</div><div><h4>Economia Real</h4><p>Descontos exclusivos em servicos, saude, educacao e muito mais.</p></div></div>
-    <div class="benefit"><div class="icon">&#128218;</div><div><h4>Capacitacao Gratuita</h4><p>Workshops, palestras e cursos para voce e sua equipe.</p></div></div>
-    <div class="benefit"><div class="icon">&#9878;</div><div><h4>Assessoria Juridica</h4><p>Orientacao juridica e tributaria para sua empresa.</p></div></div>
+    <p class="subtitle">Junte-se a mais de 3.000 empresas e tenha acesso a uma rede de benefícios exclusivos para o crescimento do seu negócio.</p>
+    <div class="benefit"><div class="icon">&#128640;</div><div><h4>Networking Estratégico</h4><p>Conecte-se com empresários e tomadores de decisão do Distrito Federal.</p></div></div>
+    <div class="benefit"><div class="icon">&#128176;</div><div><h4>Economia Real</h4><p>Descontos exclusivos em serviços, saúde, educação e muito mais.</p></div></div>
+    <div class="benefit"><div class="icon">&#128218;</div><div><h4>Capacitação Gratuita</h4><p>Workshops, palestras e cursos para você e sua equipe.</p></div></div>
+    <div class="benefit"><div class="icon">&#9878;</div><div><h4>Assessoria Jurídica</h4><p>Orientação jurídica e tributária para sua empresa.</p></div></div>
   </div>
 
   <!-- Right Form -->
@@ -165,9 +165,9 @@ a{color:var(--accent);text-decoration:none}
       <!-- STEP 1 -->
       <div class="form-step visible" id="step1">
         <h3 class="form-title">Dados da Empresa</h3>
-        <div class="field"><label>Razao Social <span class="req">*</span></label><input id="razao_social" required></div>
+        <div class="field"><label>Razão Social <span class="req">*</span></label><input id="razao_social" required></div>
         <div class="field"><label>Nome Fantasia</label><input id="nome_fantasia"></div>
-        <div class="field"><label>CNPJ <span class="req">*</span></label><input id="cnpj" placeholder="00.000.000/0000-00" maxlength="18" required><span class="error-msg">CNPJ invalido</span></div>
+        <div class="field"><label>CNPJ <span class="req">*</span></label><input id="cnpj" placeholder="00.000.000/0000-00" maxlength="18" required><span class="error-msg">CNPJ inválido</span></div>
         <div class="field"><label>Capital Social <span class="req">*</span></label><input id="capital_social" placeholder="R$ 0,00" required></div>
         <div class="field"><label>Data de Abertura <span class="req">*</span></label><input type="date" id="data_abertura" required></div>
         <div class="field">
@@ -181,20 +181,20 @@ a{color:var(--accent);text-decoration:none}
             <option value="acima_500k">Acima de R$ 500.000</option>
           </select>
         </div>
-        <div class="field"><label>Numero de Funcionarios <span class="req">*</span></label><input type="number" id="num_funcionarios" min="0" required></div>
-        <div class="form-nav"><span></span><button type="button" class="btn btn-primary" onclick="goStep(2)">Proximo &rarr;</button></div>
+        <div class="field"><label>Número de Funcionários <span class="req">*</span></label><input type="number" id="num_funcionarios" min="0" required></div>
+        <div class="form-nav"><span></span><button type="button" class="btn btn-primary" onclick="goStep(2)">Próximo &rarr;</button></div>
       </div>
 
       <!-- STEP 2 -->
       <div class="form-step" id="step2">
-        <h3 class="form-title">Responsavel Legal &amp; Endereco</h3>
+        <h3 class="form-title">Responsável Legal &amp; Endereço</h3>
         <div class="field"><label>Nome completo <span class="req">*</span></label><input id="nome_completo" required></div>
         <div class="row">
-          <div class="field"><label>CPF <span class="req">*</span></label><input id="cpf" placeholder="000.000.000-00" maxlength="14" required><span class="error-msg">CPF invalido</span></div>
+          <div class="field"><label>CPF <span class="req">*</span></label><input id="cpf" placeholder="000.000.000-00" maxlength="14" required><span class="error-msg">CPF inválido</span></div>
           <div class="field"><label>WhatsApp <span class="req">*</span></label><input id="whatsapp" placeholder="(00) 00000-0000" maxlength="15" required></div>
         </div>
         <div class="field"><label>Email <span class="req">*</span></label><input type="email" id="email" required></div>
-        <div class="field"><label>CEP <span class="req">*</span></label><input id="cep" placeholder="00000-000" maxlength="9" required><span class="hint">Preencha o CEP para buscar o endereco automaticamente</span></div>
+        <div class="field"><label>CEP <span class="req">*</span></label><input id="cep" placeholder="00000-000" maxlength="9" required><span class="hint">Preencha o CEP para buscar o endereço automaticamente</span></div>
         <div class="row">
           <div class="field" style="flex:3"><label>Logradouro <span class="req">*</span></label><input id="logradouro" required></div>
           <div class="field" style="flex:1"><label>Numero <span class="req">*</span></label><input id="numero" required></div>
@@ -205,15 +205,15 @@ a{color:var(--accent);text-decoration:none}
           <div class="field"><label>Cidade <span class="req">*</span></label><input id="cidade" readonly required></div>
           <div class="field" style="flex:.5"><label>UF <span class="req">*</span></label><input id="estado" readonly maxlength="2" required></div>
         </div>
-        <div class="form-nav"><button type="button" class="btn btn-secondary" onclick="goStep(1)">&larr; Voltar</button><button type="button" class="btn btn-primary" onclick="goStep(3)">Proximo &rarr;</button></div>
+        <div class="form-nav"><button type="button" class="btn btn-secondary" onclick="goStep(1)">&larr; Voltar</button><button type="button" class="btn btn-primary" onclick="goStep(3)">Próximo &rarr;</button></div>
       </div>
 
       <!-- STEP 3 -->
       <div class="form-step" id="step3">
         <h3 class="form-title">Plano &amp; Acesso</h3>
         <div id="plansGrid" class="plans-grid"><p style="color:var(--text-muted)">Carregando planos...</p></div>
-        <div class="field"><label>Senha <span class="req">*</span> <small>(min 8 caracteres, 1 maiuscula, 1 numero)</small></label><input type="password" id="senha" minlength="8" required><div class="strength-bar"><div class="fill" id="strengthFill"></div></div><div class="strength-text" id="strengthText"></div></div>
-        <div class="field"><label>Confirmar Senha <span class="req">*</span></label><input type="password" id="senha_confirm" required><span class="error-msg">Senhas nao coincidem</span></div>
+        <div class="field"><label>Senha <span class="req">*</span> <small>(mín. 8 caracteres, 1 maiúscula, 1 número)</small></label><input type="password" id="senha" minlength="8" required><div class="strength-bar"><div class="fill" id="strengthFill"></div></div><div class="strength-text" id="strengthText"></div></div>
+        <div class="field"><label>Confirmar Senha <span class="req">*</span></label><input type="password" id="senha_confirm" required><span class="error-msg">Senhas não coincidem</span></div>
         <div class="check-row"><input type="checkbox" id="termos" required><label for="termos">Li e aceito os <a href="#" onclick="openModal();return false">termos de associacao</a></label></div>
         <div class="form-nav"><button type="button" class="btn btn-secondary" onclick="goStep(2)">&larr; Voltar</button><button type="submit" class="btn btn-primary">Finalizar Associacao &rarr;</button></div>
       </div>
@@ -236,17 +236,17 @@ a{color:var(--accent);text-decoration:none}
 <!-- Terms modal -->
 <div class="modal-overlay" id="termsModal">
   <div class="modal">
-    <h3>Termos de Associacao</h3>
-    <p>Ao se associar a ACIC-DF, o associado declara estar ciente e de acordo com o Estatuto Social e o Regimento Interno da Associacao Comercial e Industrial de Ceilandia e Distrito Federal.</p>
+    <h3>Termos de Associação</h3>
+    <p>Ao se associar a ACIC-DF, o associado declara estar ciente e de acordo com o Estatuto Social e o Regimento Interno da Associação Comercial e Industrial de Ceilândia e Distrito Federal.</p>
     <p>O associado compromete-se a manter seus dados cadastrais atualizados e a cumprir com as obrigacoes financeiras referentes ao plano escolhido.</p>
-    <p>A ACIC-DF reserva-se o direito de suspender ou cancelar a associacao em caso de inadimplencia superior a 90 dias, mediante notificacao previa.</p>
-    <p>Os beneficios serao disponibilizados apos a confirmacao do pagamento e estarao sujeitos as condicoes de cada parceiro conveniado.</p>
+    <p>A ACIC-DF reserva-se o direito de suspender ou cancelar a associacao em caso de inadimplência superior a 90 dias, mediante notificacao previa.</p>
+    <p>Os beneficios serao disponibilizados apos a confirmacao do pagamento e estarão sujeitos às condições de cada parceiro conveniado.</p>
     <button class="btn btn-primary" onclick="closeModal()">Entendi</button>
   </div>
 </div>
 
 <!-- Loading overlay -->
-<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><span>Processando sua associacao...</span></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><span>Processando sua associação...</span></div>
 
 <script>
 const API = '<?= $API ?>';
@@ -324,7 +324,7 @@ document.getElementById('senha').addEventListener('input',function(){
   const v=this.value,fill=document.getElementById('strengthFill'),txt=document.getElementById('strengthText');
   let score=0;
   if(v.length>=8)score++;if(/[A-Z]/.test(v))score++;if(/\d/.test(v))score++;if(/[^A-Za-z0-9]/.test(v))score++;
-  const w=['0%','25%','50%','75%','100%'],c=['#E24B4A','#E24B4A','#E8640A','#E8701A','#1D9E75'],l=['','Fraca','Razoavel','Boa','Forte'];
+  const w=['0%','25%','50%','75%','100%'],c=['#E24B4A','#E24B4A','#E8640A','#E8701A','#1D9E75'],l=['','Fraca','Razoável','Boa','Forte'];
   fill.style.width=w[score];fill.style.background=c[score]||'';
   txt.textContent=l[score]||'';txt.style.color=c[score]||'';
 });
@@ -342,7 +342,7 @@ async function loadPlans(){
       card.dataset.id=p.id;
       const items=(p.items||p.beneficios||[]).map(i=>'<li>'+i+'</li>').join('');
       const price=typeof p.valor==='number'?p.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):(p.preco||p.valor||'');
-      card.innerHTML='<h4>'+p.nome+'</h4><div class="price">'+price+' <small>/mes</small></div><p>'+(p.descricao||'')+'</p>'+(items?'<ul>'+items+'</ul>':'');
+      card.innerHTML='<h4>'+p.nome+'</h4><div class="price">'+price+' <small>/mês</small></div><p>'+(p.descricao||'')+'</p>'+(items?'<ul>'+items+'</ul>':'');
       card.addEventListener('click',()=>{
         document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
         card.classList.add('selected');
@@ -351,7 +351,7 @@ async function loadPlans(){
       grid.appendChild(card);
     });
   }catch(e){
-    document.getElementById('plansGrid').innerHTML='<p style="color:var(--danger)">Erro ao carregar planos. Recarregue a pagina.</p>';
+    document.getElementById('plansGrid').innerHTML='<p style="color:var(--danger)">Erro ao carregar planos. Recarregue a página.</p>';
   }
 }
 loadPlans();
@@ -404,7 +404,7 @@ function validateStep(step){
     const s=document.getElementById('senha'),sc=document.getElementById('senha_confirm');
     if(s.value.length<8||!/[A-Z]/.test(s.value)||!/\d/.test(s.value)){mark(s);ok=false;}else clear(s);
     if(sc.value!==s.value){mark(sc);ok=false;}else clear(sc);
-    if(!document.getElementById('termos').checked){alert('Aceite os termos de associacao.');ok=false;}
+    if(!document.getElementById('termos').checked){alert('Aceite os termos de associação.');ok=false;}
   }
   return ok;
 }
@@ -493,10 +493,10 @@ async function pollStatus(){
         setTimeout(()=>window.location.href='/conecta/',1500);
       }else if(attempts>=18){
         clearInterval(pollTimer);
-        msg.textContent='Pagamento ainda nao identificado. Tente novamente em alguns minutos.';
+        msg.textContent='Pagamento ainda não identificado. Tente novamente em alguns minutos.';
         btn.disabled=false;
       }else{
-        msg.textContent='Aguardando confirmacao... ('+attempts+'/18)';
+        msg.textContent='Aguardando confirmação... ('+attempts+'/18)';
       }
     }catch(e){
       msg.textContent='Erro ao verificar. Tentando novamente...';
