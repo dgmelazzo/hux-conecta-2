@@ -1402,7 +1402,7 @@ if ($method === 'GET' && in_array($uri, ['/dashboard', '/dashboard/stats'])) {
             ['icon'=>'user-check',   'label'=>'Ativos',           'value'=>$ativos,       'color'=>'green'],
             ['icon'=>'alert-circle', 'label'=>'Inadimplentes',    'value'=>$inadimp,      'color'=>'red'],
             ['icon'=>'clock',        'label'=>'Prospectos',       'value'=>$prospecto,    'color'=>'yellow'],
-            ['icon'=>'dollar-sign',  'label'=>'Receita do Mes',   'value'=>$fM($receitaMes), 'color'=>'green'],
+            ['icon'=>'dollar-sign',  'label'=>'Receita do Mês',   'value'=>$fM($receitaMes), 'color'=>'green'],
             ['icon'=>'trending-up',  'label'=>'A Receber',        'value'=>$fM($pendentes),  'color'=>'blue'],
             ['icon'=>'alert-circle', 'label'=>'Em Atraso',        'value'=>$fM($vencidas),   'color'=>'red'],
             ['icon'=>'inbox',        'label'=>'Inscrições Pendentes', 'value'=>$inscPend, 'color'=>'orange'],
