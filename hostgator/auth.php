@@ -557,10 +557,11 @@ if ($action === 'check-tipo') {
     if (($crm['_http'] ?? 0) === 403) err(403, 'Usuario inativo');
     if (($crm['_http'] ?? 200) >= 400) err((int)($crm['_http'] ?? 500), $crm['error'] ?? 'Erro ao verificar');
 
+    $d = $crm['data'] ?? $crm;
     ok([
-        'tipo'             => $crm['tipo'] ?? 'associado_empresa',
-        'nome'             => $crm['nome'] ?? '',
-        'destino_possivel' => $crm['destino_possivel'] ?? 'conecta',
+        'tipo'             => $d['tipo'] ?? 'associado_empresa',
+        'nome'             => $d['nome'] ?? '',
+        'destino_possivel' => $d['destino_possivel'] ?? 'conecta',
     ]);
 }
 
@@ -577,31 +578,35 @@ if ($action === 'login-email') {
     if (($crm['_http'] ?? 0) === 403) err(403, $crm['error'] ?? 'Usuario inativo');
     if (($crm['_http'] ?? 200) >= 400) err((int)($crm['_http'] ?? 500), $crm['error'] ?? 'Falha ao autenticar');
 
-    $ssoToken = $crm['sso_token'] ?? '';
-    $tipo = $crm['tipo'] ?? 'associado_empresa';
-    $destino = $crm['destino'] ?? 'conecta';
-    $nome = $crm['nome'] ?? '';
-    $empresaCnpj = $crm['empresa_cnpj'] ?? null;
+    $d = $crm['data'] ?? $crm;
+    $ssoToken = $d['sso_token'] ?? '';
+    $tipo = $d['tipo'] ?? 'associado_empresa';
+    $destino = $d['destino'] ?? 'conecta';
+    $nome = $d['nome'] ?? '';
+    $empresaCnpj = $d['empresa_cnpj'] ?? null;
 
     // Criar sessao local
     $localToken = makeToken();
     $permissoes = null;
 
-    // Pegar permissoes via validate-sso (consome o SSO token mas ganha permissoes)
-    // Gerar um segundo SSO token para o frontend redirecionar
-    $crmValidate = crmPost('/auth/validate-sso', ['sso_token' => $ssoToken]);
-    if (($crmValidate['_http'] ?? 200) < 300) {
-        $permissoes = $crmValidate['permissoes'] ?? null;
+    // Pegar permissoes via validate-sso (consome o SSO token)
+    if ($ssoToken) {
+        $crmValidate = crmPost('/auth/validate-sso', ['sso_token' => $ssoToken]);
+        $dv = $crmValidate['data'] ?? $crmValidate;
+        if (($crmValidate['_http'] ?? 200) < 300) {
+            $permissoes = $dv['permissoes'] ?? null;
+        }
     }
 
-    // Gerar novo SSO token para redirect
+    // Gerar novo SSO token para redirect (segundo login)
     $crmLogin2 = crmPost('/auth/login-unificado', ['email' => $email, 'senha' => $senha]);
-    $newSsoToken = $crmLogin2['sso_token'] ?? '';
+    $d2 = $crmLogin2['data'] ?? $crmLogin2;
+    $newSsoToken = $d2['sso_token'] ?? '';
 
     // Salvar sessao local com dados
     $st = $pdo->prepare('SELECT id FROM conecta_users WHERE cpf_cnpj = ? OR cpf_cnpj = ? LIMIT 1');
     $doc = normalizeDoc($empresaCnpj ?? '');
-    $st->execute([$doc, $empresaCnpj ?? '']);
+    $st->execute([$doc ?: $email, $empresaCnpj ?: $email]);
     $u = $st->fetch();
     $uid = $u ? (int)$u['id'] : 0;
 
@@ -614,7 +619,7 @@ if ($action === 'login-email') {
     $pdo->prepare(
         'INSERT INTO conecta_sessions (user_id, token, created_at, expires_at, tipo, permissoes, empresa_cnpj, nome, crm_usuario_id)
          VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY), ?, ?, ?, ?, ?)'
-    )->execute([$uid, $localToken, $tipo, json_encode($permissoes), $empresaCnpj, $nome, $crm['usuario_id'] ?? null]);
+    )->execute([$uid, $localToken, $tipo, json_encode($permissoes), $empresaCnpj, $nome, $d['usuario_id'] ?? null]);
 
     $isAdmin = in_array($tipo, ['superadmin', 'gestor', 'atendente']);
 
@@ -629,8 +634,8 @@ if ($action === 'login-email') {
         'is_admin'         => $isAdmin,
         'is_superadmin'    => $tipo === 'superadmin',
         'permissoes'       => $permissoes,
-        'redirect_crm'     => $crm['redirect_crm'] ?? null,
-        'redirect_conecta' => $crm['redirect_conecta'] ?? null,
+        'redirect_crm'     => $d2['redirect_crm'] ?? null,
+        'redirect_conecta' => $d2['redirect_conecta'] ?? null,
     ]);
 }
 
@@ -645,12 +650,13 @@ if ($action === 'validate-sso') {
     if (($crm['_http'] ?? 0) === 401) err(401, 'Token invalido ou expirado');
     if (($crm['_http'] ?? 200) >= 400) err((int)($crm['_http'] ?? 500), $crm['error'] ?? 'Falha ao validar SSO');
 
-    $tipo = $crm['tipo'] ?? 'associado_empresa';
-    $nome = $crm['nome'] ?? '';
-    $email = $crm['email'] ?? '';
-    $empresaCnpj = $crm['empresa_cnpj'] ?? null;
-    $permissoes = $crm['permissoes'] ?? null;
-    $associadoId = $crm['associado_id'] ?? null;
+    $d = $crm['data'] ?? $crm;
+    $tipo = $d['tipo'] ?? 'associado_empresa';
+    $nome = $d['nome'] ?? '';
+    $email = $d['email'] ?? '';
+    $empresaCnpj = $d['empresa_cnpj'] ?? null;
+    $permissoes = $d['permissoes'] ?? null;
+    $associadoId = $d['associado_id'] ?? null;
 
     // Criar sessao local
     $localToken = makeToken();
@@ -669,7 +675,7 @@ if ($action === 'validate-sso') {
     $pdo->prepare(
         'INSERT INTO conecta_sessions (user_id, token, created_at, expires_at, tipo, permissoes, empresa_cnpj, nome, crm_usuario_id)
          VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY), ?, ?, ?, ?, ?)'
-    )->execute([$uid, $localToken, $tipo, json_encode($permissoes), $empresaCnpj, $nome, $crm['usuario_id'] ?? null]);
+    )->execute([$uid, $localToken, $tipo, json_encode($permissoes), $empresaCnpj, $nome, $d['usuario_id'] ?? null]);
 
     $isAdmin = in_array($tipo, ['superadmin', 'gestor', 'atendente']);
 
@@ -706,26 +712,28 @@ if ($action === 'aceitar-convite') {
     if (($crm['_http'] ?? 0) === 401) err(401, 'Convite invalido ou expirado');
     if (($crm['_http'] ?? 200) >= 400) err((int)($crm['_http'] ?? 500), $crm['error'] ?? 'Falha ao aceitar convite');
 
-    $ssoToken = $crm['sso_token'] ?? '';
+    $dc = $crm['data'] ?? $crm;
+    $ssoToken = $dc['sso_token'] ?? '';
     if (!$ssoToken) err(500, 'SSO token nao retornado');
 
     // Validar SSO e criar sessao local
     $validate = crmPost('/auth/validate-sso', ['sso_token' => $ssoToken]);
     if (($validate['_http'] ?? 200) >= 400) err(500, 'Falha ao validar SSO apos convite');
 
-    $tipo = $validate['tipo'] ?? 'colaborador';
-    $nome = $validate['nome'] ?? '';
+    $dv = $validate['data'] ?? $validate;
+    $tipo = $dv['tipo'] ?? 'colaborador';
+    $nome = $dv['nome'] ?? '';
     $localToken = makeToken();
-    $permissoes = $validate['permissoes'] ?? null;
+    $permissoes = $dv['permissoes'] ?? null;
 
     $pdo->prepare("INSERT INTO conecta_users (cpf_cnpj, tipo, primeiro_acesso, ativo, created_at) VALUES (?, ?, 0, 1, NOW())")
-        ->execute([$validate['email'] ?? '', $tipo]);
+        ->execute([$dv['email'] ?? '', $tipo]);
     $uid = (int)$pdo->lastInsertId();
 
     $pdo->prepare(
         'INSERT INTO conecta_sessions (user_id, token, created_at, expires_at, tipo, permissoes, empresa_cnpj, nome, crm_usuario_id)
          VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY), ?, ?, ?, ?, ?)'
-    )->execute([$uid, $localToken, $tipo, json_encode($permissoes), $validate['empresa_cnpj'] ?? null, $nome, $validate['usuario_id'] ?? null]);
+    )->execute([$uid, $localToken, $tipo, json_encode($permissoes), $dv['empresa_cnpj'] ?? null, $nome, $dv['usuario_id'] ?? null]);
 
     ok([
         'token'       => $localToken,
