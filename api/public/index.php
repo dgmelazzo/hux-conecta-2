@@ -1307,6 +1307,7 @@ if ($method === 'GET' && preg_match('#^/cobrancas/(\d+)/status$#', $uri, $m)) {
 }
 
 // ============================================================
+require_once __DIR__ . '/webhook-onboarding.php';
 // WEBHOOK ASAAS — POST /webhooks/asaas
 // ============================================================
 if ($method === 'POST' && $uri === '/webhooks/asaas') {
@@ -1365,6 +1366,7 @@ if ($method === 'POST' && $uri === '/webhooks/asaas') {
                 pdo()->prepare(
                     'UPDATE inscricoes_publicas SET status = "pago" WHERE cobranca_id = ? AND status = "aguardando_pagamento"'
                 )->execute([$row['id']]);
+                processOnboardingActivation((int)$row['associado_id']);
             }
         }
     }
@@ -1375,7 +1377,7 @@ if ($method === 'POST' && $uri === '/webhooks/asaas') {
 // ============================================================
 // DASHBOARD — GET /dashboard
 // ============================================================
-if ($method === 'GET' && $uri === '/dashboard') {
+if ($method === 'GET' && in_array($uri, ['/dashboard', '/dashboard/stats'])) {
     $p   = auth_required();
     require_role($p, ['superadmin', 'gestor']);
     $tid = $p['tenant_id'] ?? tenant_id();
@@ -2500,4 +2502,7 @@ if ($method === 'GET' && $uri === '/associado/carteirinha') {
 // ============================================================
 // 404
 // ============================================================
+// SSO Unificado endpoints
+require_once __DIR__ . "/sso-endpoints.php";
+
 json_out(['error' => 'Rota não encontrada', 'path' => $uri, 'method' => $method], 404);

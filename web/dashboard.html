@@ -748,12 +748,12 @@ if(usr.nome){
   }
 
   // Portal do Associado — only for associado roles (gestores usam CRM)
+  const role=usr.role;
   if(['associado_empresa','colaborador'].includes(role)){
     document.getElementById('ni-portal').style.display='';
   }
 
   // Role-based sidebar visibility
-  const role=usr.role;
   if(role==='superadmin'){
     // Show everything including Gateway
     document.getElementById('sec-adm').style.display='';
