@@ -33,7 +33,7 @@ function getDB() {
 // ── HELPERS ─────────────────────────────────────────────────
 function ok($d)     { echo json_encode(['success'=>true,'data'=>$d]); exit; }
 function err($c,$m) { http_response_code($c); echo json_encode(['success'=>false,'message'=>$m]); exit; }
-function input()    { return json_decode(file_get_contents('php://input'),true)?:[]; }
+function input()    { static $c=null; if($c!==null)return $c; $c=json_decode(file_get_contents('php://input'),true)?:[]; return $c; }
 
 // ── AUTH SUPERADMIN ─────────────────────────────────────────
 function requireSuperAdmin() {
