@@ -44,11 +44,14 @@ function requireSuperAdmin() {
         $tok = $in['token'] ?? '';
     }
     if (!$tok) err(401,'Token ausente.');
-    $st = $db->prepare('SELECT u.cpf_cnpj FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
+    $st = $db->prepare('SELECT u.cpf_cnpj, u.tipo, s.tipo AS sess_tipo FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
     $st->execute([$tok]);
     $row = $st->fetch(PDO::FETCH_ASSOC);
     if (!$row) err(401,'Sessão inválida ou expirada.');
-    if (preg_replace('/\D/','',$row['cpf_cnpj']) !== preg_replace('/\D/','',ADMIN_DOC))
+    // Admin por CPF (fluxo legado) ou por tipo de sessão SSO (superadmin/gestor)
+    $docMatch = preg_replace('/\D/','',$row['cpf_cnpj']) === preg_replace('/\D/','',ADMIN_DOC);
+    $tipoMatch = in_array($row['tipo'] ?? $row['sess_tipo'] ?? '', ['admin','superadmin','gestor']);
+    if (!$docMatch && !$tipoMatch)
         err(403,'Acesso restrito ao superadmin.');
     return $tok;
 }

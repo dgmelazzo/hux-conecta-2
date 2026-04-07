@@ -542,39 +542,75 @@
   <!-- SEÇÃO: Parceiros (Superadmin) -->
   <section class="portal-section" id="section-admin-parceiros">
     <div class="section-header">
-      <h2>Parceiros</h2>
-      <button class="btn-primary" onclick="abrirFormParceiro()">+ Novo Parceiro</button>
+      <div><h2>Parceiros</h2><p class="section-sub" style="font-size:12.5px;color:var(--text3);margin-top:2px">Fornecedores de produtos e serviços do catálogo</p></div>
+      <button class="btn-primary" onclick="abrirFormParceiro()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo Parceiro
+      </button>
     </div>
-    <div id="parceiros-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px">
-      <div style="text-align:center;color:var(--text3);padding:40px;grid-column:1/-1"><div class="spinner" style="width:20px;height:20px;margin:0 auto 8px"></div>Carregando...</div>
+    <div id="parceiros-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:16px">
+      <div style="text-align:center;color:var(--text3);padding:40px;grid-column:1/-1"><div class="spinner" style="width:20px;height:20px;margin:0 auto 8px"></div></div>
     </div>
   </section>
 
-  <!-- Modal Parceiro -->
-  <div class="modal-overlay hidden" id="modal-parceiro" onclick="if(event.target===this)fecharFormParceiro()">
-    <div class="modal-box" style="max-width:520px">
-      <button class="modal-close" onclick="fecharFormParceiro()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      <h2 id="parceiro-form-titulo" style="font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:16px">Novo Parceiro</h2>
+  <!-- Drawer Parceiro (lateral direita) -->
+  <div id="drawer-parceiro-overlay" class="hidden" onclick="fecharFormParceiro()" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:201;animation:fadeIn .2s ease"></div>
+  <div id="drawer-parceiro" style="position:fixed;top:0;right:-500px;width:480px;max-width:100vw;height:100vh;background:var(--surface);z-index:202;box-shadow:-8px 0 32px rgba(0,0,0,.18);display:flex;flex-direction:column;transition:right .3s cubic-bezier(.4,0,.2,1);overflow:hidden">
+    <!-- Header -->
+    <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <h2 id="parceiro-form-titulo" style="font-family:var(--font-display);font-size:17px;font-weight:700;margin:0">Novo Parceiro</h2>
+      <button onclick="fecharFormParceiro()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);transition:var(--trans)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <!-- Body (scroll) -->
+    <div style="flex:1;overflow-y:auto;padding:24px">
       <input type="hidden" id="parc-id">
-      <div class="field"><label>Nome *</label><input type="text" id="parc-nome" placeholder="Nome do parceiro" required></div>
-      <div class="field"><label>Nome Fantasia</label><input type="text" id="parc-fantasia" placeholder="Nome fantasia"></div>
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:20px">
+        <div id="parc-logo-circle" style="width:88px;height:88px;border-radius:50%;background:var(--surface2);border:2px dashed var(--border);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <svg id="parc-logo-placeholder" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <img id="parc-logo-preview" style="display:none;width:100%;height:100%;object-fit:cover">
+        </div>
+        <div class="field" style="max-width:320px;margin:0 auto"><input type="url" id="parc-logo" placeholder="URL do logo (https://...)" style="text-align:center;font-size:12px"></div>
+      </div>
+      <!-- Campos -->
+      <div class="field"><label>Nome *</label><input type="text" id="parc-nome" placeholder="Nome oficial do parceiro" required></div>
+      <div class="field"><label>Nome Fantasia</label><input type="text" id="parc-fantasia" placeholder="Nome fantasia (exibido no catálogo)"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>CNPJ</label><input type="text" id="parc-cnpj" placeholder="00.000.000/0001-00"></div>
-        <div class="field"><label>Categoria</label><input type="text" id="parc-categoria" placeholder="Saúde, Educação..."></div>
+        <div class="field"><label>Categoria</label>
+          <select id="parc-categoria" style="width:100%;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+            <option value="">Selecione</option>
+            <option value="Saúde">Saúde</option>
+            <option value="Tecnologia">Tecnologia</option>
+            <option value="Financeiro">Financeiro</option>
+            <option value="Seguros">Seguros</option>
+            <option value="Educação">Educação</option>
+            <option value="Jurídico">Jurídico</option>
+            <option value="Contabilidade">Contabilidade</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>Email</label><input type="email" id="parc-email" placeholder="contato@parceiro.com"></div>
         <div class="field"><label>Telefone</label><input type="text" id="parc-telefone" placeholder="(61) 99999-9999"></div>
       </div>
-      <div class="field"><label>Site</label><input type="url" id="parc-site" placeholder="https://"></div>
-      <div class="field"><label>URL do Logo</label><input type="url" id="parc-logo" placeholder="https://...logo.png">
-        <img id="parc-logo-preview" style="display:none;width:60px;height:60px;border-radius:10px;object-fit:cover;margin-top:8px;border:1px solid var(--border)">
+      <div class="field"><label>Site</label>
+        <div style="display:flex;border-radius:var(--radius-sm);border:1px solid var(--border);overflow:hidden">
+          <span style="padding:9px 10px;background:var(--surface2);color:var(--text3);font-size:12px;border-right:1px solid var(--border);white-space:nowrap">https://</span>
+          <input type="text" id="parc-site" placeholder="www.parceiro.com.br" style="border:none;flex:1;padding:9px 12px;background:var(--surface2);color:var(--text);font-size:13px">
+        </div>
       </div>
-      <div class="field"><label>Descrição</label><textarea id="parc-desc" rows="3" placeholder="Breve descrição do parceiro..." style="width:100%;resize:vertical;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font-body);font-size:13px"></textarea></div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-        <button class="btn-secondary" onclick="fecharFormParceiro()">Cancelar</button>
-        <button class="btn-primary" id="btn-salvar-parceiro" onclick="salvarParceiro()">Salvar Parceiro</button>
-      </div>
+      <div class="field"><label>Descrição</label><textarea id="parc-desc" rows="3" placeholder="Breve descrição do parceiro e seus serviços..." style="width:100%;resize:vertical;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--font-body);font-size:13px"></textarea></div>
+    </div>
+    <!-- Footer fixo -->
+    <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;background:var(--surface)">
+      <button class="btn-secondary" onclick="fecharFormParceiro()" style="padding:9px 18px;font-size:13px">Cancelar</button>
+      <button class="btn-primary" id="btn-salvar-parceiro" onclick="salvarParceiro()" style="padding:9px 20px;font-size:13px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar Parceiro
+      </button>
     </div>
   </div>
 
@@ -768,7 +804,13 @@
         <div class="field"><label>Status</label><select id="fp-status"><option value="pendente">Pendente</option><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div>
         <div class="field"><label>Categoria</label><select id="fp-categoria"><option value="">Carregando...</option></select></div>
         <div class="field"><label>Marca</label><input type="text" id="fp-marca" placeholder="Ex: HapVida"/></div>
-        <div class="field"><label>Parceiro</label><select id="fp-parceiro"><option value="">Sem parceiro</option></select></div>
+        <div class="field"><label>Parceiro responsável</label>
+          <select id="fp-parceiro" style="padding-left:10px"><option value="">Sem parceiro vinculado</option></select>
+          <div id="fp-parceiro-badge" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent-border);display:none;align-items:center;gap:8px;font-size:12px">
+            <img id="fp-parceiro-logo" style="width:20px;height:20px;border-radius:50%;object-fit:cover;display:none">
+            <span id="fp-parceiro-nome" style="font-weight:600;color:var(--accent)"></span>
+          </div>
+        </div>
         <div class="field" style="grid-column:1/-1"><label>Descrição curta <small>(exibida no card)</small></label><input type="text" id="fp-descricao-curta" maxlength="200" placeholder="Máx. 200 caracteres"/></div>
         <div class="field" style="grid-column:1/-1">
           <label>Descrição completa</label>

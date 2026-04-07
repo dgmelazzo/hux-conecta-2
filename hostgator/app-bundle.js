@@ -3270,23 +3270,33 @@ async function carregarParceiros() {
       grid.innerHTML = '<div style="text-align:center;color:var(--text3);padding:40px;grid-column:1/-1"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 12px;display:block;opacity:.4"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg><div style="font-weight:600;margin-bottom:4px">Nenhum parceiro cadastrado</div><div style="font-size:12px">Clique em "+ Novo Parceiro" para começar.</div></div>';
       return;
     }
-    grid.innerHTML = lista.map(p => `
-      <div class="card" style="padding:16px;display:flex;gap:14px;align-items:flex-start">
-        <div style="width:56px;height:56px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-          ${p.logo_url ? `<img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\\'font-size:20px;color:var(--text3)\\'>${escHtml(p.nome.substring(0,2).toUpperCase())}</span>'">` : `<span style="font-size:20px;font-weight:600;color:var(--text3)">${escHtml(p.nome.substring(0,2).toUpperCase())}</span>`}
-        </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:14px;color:var(--text)">${escHtml(p.nome)}</div>
-          ${p.categoria ? `<span class="badge" style="font-size:10px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);margin-top:2px;display:inline-block">${escHtml(p.categoria)}</span>` : ''}
-          ${p.cnpj ? `<div style="font-size:11px;color:var(--text3);margin-top:4px">${escHtml(p.cnpj)}</div>` : ''}
-          <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-            <button class="btn-sm" onclick="editarParceiro(${p.id})" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer">Editar</button>
-            <button class="btn-sm" onclick="toggleParceiro(${p.id})" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid ${p.ativo ? 'var(--danger)' : '#1D9E75'};background:transparent;color:${p.ativo ? 'var(--danger)' : '#1D9E75'};cursor:pointer">${p.ativo ? 'Desativar' : 'Ativar'}</button>
-            <span style="font-size:10px;padding:3px 8px;border-radius:99px;background:${p.ativo ? 'rgba(29,158,117,.12)' : 'rgba(226,75,74,.12)'};color:${p.ativo ? '#1D9E75' : '#E24B4A'}">${p.ativo ? 'Ativo' : 'Inativo'}</span>
+    grid.innerHTML = lista.map(p => {
+      const initials = escHtml((p.nome || '').substring(0,2).toUpperCase());
+      const catColors = {
+        'Saúde':'#10B981','Tecnologia':'#3B82F6','Financeiro':'#8B5CF6','Seguros':'#F59E0B',
+        'Educação':'#EC4899','Jurídico':'#6366F1','Contabilidade':'#14B8A6','Marketing':'#F97316'
+      };
+      const catColor = catColors[p.categoria] || 'var(--accent)';
+      return `
+      <div class="card" style="padding:18px;border-radius:14px;border:1px solid var(--border);background:var(--surface);transition:var(--trans);position:relative${!p.ativo ? ';opacity:.55' : ''}">
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            ${p.logo_url ? `<img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display=''"><span style="display:none;font-size:18px;font-weight:700;color:var(--text3)">${initials}</span>` : `<span style="font-size:18px;font-weight:700;color:var(--text3)">${initials}</span>`}
           </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nome_fantasia || p.nome)}</div>
+            ${p.categoria ? `<span style="display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;background:${catColor}18;color:${catColor};font-weight:600;margin-top:3px">${escHtml(p.categoria)}</span>` : ''}
+          </div>
+          <span style="font-size:9px;padding:3px 8px;border-radius:99px;background:${p.ativo ? 'rgba(29,158,117,.12)' : 'rgba(226,75,74,.12)'};color:${p.ativo ? '#1D9E75' : '#E24B4A'};font-weight:600;white-space:nowrap">${p.ativo ? 'Ativo' : 'Inativo'}</span>
         </div>
-      </div>
-    `).join('');
+        ${p.cnpj ? `<div style="font-size:11.5px;color:var(--text3);margin-bottom:4px">CNPJ: ${escHtml(p.cnpj)}</div>` : ''}
+        ${p.email ? `<div style="font-size:11.5px;color:var(--text2);display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>${escHtml(p.email)}</div>` : ''}
+        <div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+          <button onclick="editarParceiro(${p.id})" style="flex:1;font-size:12px;padding:7px 0;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-weight:500;transition:var(--trans)">Editar</button>
+          <button onclick="toggleParceiro(${p.id})" style="flex:1;font-size:12px;padding:7px 0;border-radius:8px;border:1px solid ${p.ativo ? 'rgba(226,75,74,.3)' : 'rgba(29,158,117,.3)'};background:transparent;color:${p.ativo ? '#E24B4A' : '#1D9E75'};cursor:pointer;font-weight:500;transition:var(--trans)">${p.ativo ? 'Desativar' : 'Ativar'}</button>
+        </div>
+      </div>`;
+    }).join('');
   } catch(e) { grid.innerHTML = `<div style="color:var(--danger);padding:20px;grid-column:1/-1">Erro: ${e.message}</div>`; }
 }
 
@@ -3299,16 +3309,24 @@ function abrirFormParceiro(p = null) {
   document.getElementById('parc-categoria').value = p?.categoria || '';
   document.getElementById('parc-email').value = p?.email || '';
   document.getElementById('parc-telefone').value = p?.telefone || '';
-  document.getElementById('parc-site').value = p?.site || '';
+  document.getElementById('parc-site').value = (p?.site || '').replace(/^https?:\/\//,'');
   document.getElementById('parc-logo').value = p?.logo_url || '';
   document.getElementById('parc-desc').value = p?.descricao || '';
+  // Logo preview
   const prev = document.getElementById('parc-logo-preview');
-  if (p?.logo_url) { prev.src = p.logo_url; prev.style.display = 'block'; } else { prev.style.display = 'none'; }
-  document.getElementById('modal-parceiro').classList.remove('hidden');
+  const ph = document.getElementById('parc-logo-placeholder');
+  if (p?.logo_url) { prev.src = p.logo_url; prev.style.display = 'block'; if(ph) ph.style.display='none'; }
+  else { prev.style.display = 'none'; if(ph) ph.style.display=''; }
+  // Open drawer
+  document.getElementById('drawer-parceiro-overlay').classList.remove('hidden');
+  document.getElementById('drawer-parceiro').style.right = '0';
+  document.body.style.overflow = 'hidden';
 }
 
 function fecharFormParceiro() {
-  document.getElementById('modal-parceiro').classList.add('hidden');
+  document.getElementById('drawer-parceiro').style.right = '-500px';
+  document.getElementById('drawer-parceiro-overlay').classList.add('hidden');
+  document.body.style.overflow = '';
 }
 
 // Logo preview on URL change
@@ -3316,8 +3334,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const inp = document.getElementById('parc-logo');
   if (inp) inp.addEventListener('input', () => {
     const prev = document.getElementById('parc-logo-preview');
-    if (inp.value.trim()) { prev.src = inp.value.trim(); prev.style.display = 'block'; prev.onerror = () => { prev.style.display = 'none'; }; }
-    else { prev.style.display = 'none'; }
+    const ph = document.getElementById('parc-logo-placeholder');
+    if (inp.value.trim()) {
+      prev.src = inp.value.trim();
+      prev.style.display = 'block';
+      if(ph) ph.style.display = 'none';
+      prev.onerror = () => { prev.style.display = 'none'; if(ph) ph.style.display = ''; };
+    } else { prev.style.display = 'none'; if(ph) ph.style.display = ''; }
   });
 });
 
