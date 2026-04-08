@@ -1,3 +1,31 @@
+<?php
+// ── Server-side auth: detectar admin antes de qualquer output ──
+require_once __DIR__ . '/config.php';
+$_token = $_GET['token'] ?? $_COOKIE['acic_token'] ?? '';
+$_is_admin = false;
+$_user_nome = '';
+$_user_doc = '';
+$_user_tipo = '';
+if ($_token) {
+    try {
+        $_pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $_st = $_pdo->prepare('SELECT u.cpf_cnpj, u.tipo, s.tipo AS sess_tipo, s.nome AS sess_nome
+            FROM conecta_sessions s JOIN conecta_users u ON u.id = s.user_id
+            WHERE s.token = ? AND s.expires_at > NOW() AND u.ativo = 1 LIMIT 1');
+        $_st->execute([$_token]);
+        $_row = $_st->fetch(PDO::FETCH_ASSOC);
+        if ($_row) {
+            $_user_doc = $_row['cpf_cnpj'] ?? '';
+            $_user_tipo = $_row['tipo'] ?? $_row['sess_tipo'] ?? '';
+            $_user_nome = $_row['sess_nome'] ?? '';
+            $_is_admin = (preg_replace('/\D/', '', $_user_doc) === ADMIN_DOC)
+                || in_array($_user_tipo, ['admin', 'superadmin', 'gestor'])
+                || in_array($_row['sess_tipo'] ?? '', ['admin', 'superadmin', 'gestor']);
+        }
+    } catch (Throwable $e) { /* silencioso */ }
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
@@ -147,10 +175,26 @@
     </div>
 
     <div id="summary-card"></div>
+<?php if ($_is_admin): ?>
+    <div id="page-content">
+      <div style="text-align:center;padding:48px 24px">
+        <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#1B2B6B,#2d3f8a);margin:0 auto 16px;display:flex;align-items:center;justify-content:center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3 style="font-family:Montserrat,sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Painel Administrativo</h3>
+        <p style="font-size:13px;color:var(--text3);max-width:400px;margin:0 auto 20px;line-height:1.5">Como administrador, gerencie as cobranças e taxas dos associados diretamente pelo CRM.</p>
+        <a href="https://crm.acicdf.org.br" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E8701A;color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;text-decoration:none;transition:all .2s;font-family:Inter,sans-serif">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Acessar CRM
+        </a>
+      </div>
+    </div>
+<?php else: ?>
     <div id="page-content">
       <div class="taxas-skel"></div>
       <div class="taxas-skel"></div>
     </div>
+<?php endif; ?>
   </div>
 </main>
 
@@ -321,24 +365,9 @@ async function loadCobrancas(){
     showError('Erro de conexao. Verifique sua internet.');
   }
 }
-// Admin: mostrar card informativo em vez de buscar cobranças
-if (session.is_admin || session.is_superadmin || session.tipo === 'superadmin' || session.tipo === 'admin') {
-  document.getElementById('taxas-content').innerHTML = `
-    <div style="text-align:center;padding:48px 24px">
-      <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#1B2B6B,#2d3f8a);margin:0 auto 16px;display:flex;align-items:center;justify-content:center">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      </div>
-      <h3 style="font-family:Montserrat,sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Painel Administrativo</h3>
-      <p style="font-size:13px;color:var(--text3);max-width:400px;margin:0 auto 20px;line-height:1.5">Como administrador, gerencie as cobranças e taxas dos associados diretamente pelo CRM.</p>
-      <a href="https://crm.acicdf.org.br" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#E8701A;color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;text-decoration:none;transition:all .2s">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Acessar CRM
-      </a>
-    </div>
-  `;
-} else {
-  loadCobrancas();
-}
+<?php if (!$_is_admin): ?>
+loadCobrancas();
+<?php endif; ?>
 </script>
 </body>
 </html>

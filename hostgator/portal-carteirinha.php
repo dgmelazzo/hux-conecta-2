@@ -1,3 +1,27 @@
+<?php
+// ── Server-side auth: detectar admin antes de qualquer output ──
+require_once __DIR__ . '/config.php';
+$_token = $_GET['token'] ?? $_COOKIE['acic_token'] ?? '';
+$_is_admin = false;
+$_admin_nome = '';
+if ($_token) {
+    try {
+        $_pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $_st = $_pdo->prepare('SELECT u.cpf_cnpj, u.tipo, s.tipo AS sess_tipo, s.nome AS sess_nome
+            FROM conecta_sessions s JOIN conecta_users u ON u.id = s.user_id
+            WHERE s.token = ? AND s.expires_at > NOW() AND u.ativo = 1 LIMIT 1');
+        $_st->execute([$_token]);
+        $_row = $_st->fetch(PDO::FETCH_ASSOC);
+        if ($_row) {
+            $_admin_nome = $_row['sess_nome'] ?? '';
+            $_is_admin = (preg_replace('/\D/', '', $_row['cpf_cnpj'] ?? '') === ADMIN_DOC)
+                || in_array($_row['tipo'] ?? '', ['admin', 'superadmin', 'gestor'])
+                || in_array($_row['sess_tipo'] ?? '', ['admin', 'superadmin', 'gestor']);
+        }
+    } catch (Throwable $e) { /* silencioso */ }
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
@@ -147,22 +171,19 @@ function updateSidebarUser(nm){document.getElementById('sb-company').textContent
   // Usar dados do acic_session (preenchido pelo auth.php no login)
   const nome=session.nome||'Associado';
   updateSidebarUser(nome);
+  // Server-side admin detection (PHP) injeta flag confiável
+  const _phpIsAdmin = <?php echo $_is_admin ? 'true' : 'false'; ?>;
+  const _phpAdminNome = <?php echo json_encode($_admin_nome ?: ''); ?>;
+
   const dados={
-    nome:nome,
+    nome: _phpIsAdmin && _phpAdminNome ? _phpAdminNome : nome,
     doc:session.cpf_cnpj||session.cpf||'',
-    status:session.status||'ativo',
-    plano:session.plano||'Associado',
-    valido_ate:session.data_vencimento||null,
-    qr_data:JSON.stringify({id:session.crm_associado_id||null,doc:session.cpf_cnpj||session.cpf||'',nome:nome,plano:session.plano||'',validade:session.data_vencimento||null,src:'acic-conecta'}),
-    associado_desde:session.data_associacao||''
+    status: _phpIsAdmin ? 'ativo' : (session.status||'ativo'),
+    plano: _phpIsAdmin ? 'Administrador' : (session.plano||'Associado'),
+    valido_ate: _phpIsAdmin ? null : (session.data_vencimento||null),
+    qr_data:JSON.stringify({id:session.crm_associado_id||null,doc:session.cpf_cnpj||session.cpf||'',nome:nome,plano: _phpIsAdmin ? 'Administrador' : (session.plano||''),validade:session.data_vencimento||null,src:'acic-conecta'}),
+    associado_desde: _phpIsAdmin ? 'ACIC-DF' : (session.data_associacao||'')
   };
-  // Admin: override campos da carteirinha
-  if (session.is_admin || session.is_superadmin || session.tipo === 'superadmin' || session.tipo === 'admin') {
-    dados.plano = 'Administrador';
-    dados.associado_desde = 'ACIC-DF';
-    dados.status = 'ativo';
-    dados.valido_ate = null;
-  }
   localStorage.setItem(CACHE_KEY,JSON.stringify(dados));
   render(dados);
 })();
