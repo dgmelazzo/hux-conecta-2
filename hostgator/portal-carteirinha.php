@@ -156,6 +156,13 @@ function updateSidebarUser(nm){document.getElementById('sb-company').textContent
     qr_data:JSON.stringify({id:session.crm_associado_id||null,doc:session.cpf_cnpj||session.cpf||'',nome:nome,plano:session.plano||'',validade:session.data_vencimento||null,src:'acic-conecta'}),
     associado_desde:session.data_associacao||''
   };
+  // Admin: override campos da carteirinha
+  if (session.is_admin || session.is_superadmin || session.tipo === 'superadmin' || session.tipo === 'admin') {
+    dados.plano = 'Administrador';
+    dados.associado_desde = 'ACIC-DF';
+    dados.status = 'ativo';
+    dados.valido_ate = null;
+  }
   localStorage.setItem(CACHE_KEY,JSON.stringify(dados));
   render(dados);
 })();
