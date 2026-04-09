@@ -34,6 +34,7 @@ if ($method === 'POST' && $uri === '/auth/login-unificado') {
 
     $role = $user['role'];
     $destino = match($role) {
+        'superadmin', 'gestor', 'atendente' => 'ambos',
         'associado_empresa' => 'ambos',
         default => 'conecta'
     };
@@ -97,6 +98,7 @@ if ($method === 'POST' && $uri === '/auth/validate-sso') {
     $permMap = [
         'superadmin' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>true,'acesso_crm'=>true,'gerenciar_produtos'=>true,'ver_usuarios'=>true,'ver_metricas'=>true,'cadastrar_superadmin'=>true],
         'gestor' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>true,'acesso_crm'=>true,'gerenciar_produtos'=>true,'ver_usuarios'=>true,'ver_metricas'=>true,'cadastrar_superadmin'=>false],
+        'atendente' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>false,'acesso_crm'=>true,'gerenciar_produtos'=>false,'ver_usuarios'=>false,'ver_metricas'=>false,'cadastrar_superadmin'=>false],
         'associado_empresa' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>false,'acesso_crm'=>true,'gerenciar_produtos'=>false,'ver_usuarios'=>false,'ver_metricas'=>false,'cadastrar_superadmin'=>false],
     ];
     $defaultPerm = ['ver_taxas'=>false,'ver_empresa'=>false,'enviar_comunicados'=>false,'acesso_crm'=>false,'gerenciar_produtos'=>false,'ver_usuarios'=>false,'ver_metricas'=>false,'cadastrar_superadmin'=>false];
@@ -127,6 +129,7 @@ if ($method === 'GET' && $uri === '/auth/check-tipo') {
 
     $tipo = $user['role'];
     $destino = match($tipo) {
+        'superadmin','gestor','atendente' => 'ambos',
         'associado_empresa' => 'ambos',
         default => 'conecta'
     };

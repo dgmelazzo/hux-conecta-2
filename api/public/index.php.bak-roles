@@ -268,7 +268,7 @@ if ($uri === '/' || $uri === '/api') {
 }
 
 // ============================================================
-// AUTH — login de usuários internos (gestor) e
+// AUTH — login de usuários internos (gestor/atendente) e
 //        associados via CPF/CNPJ (SSO Conecta 2.0)
 // POST /auth/login  { email, senha } ou { documento, senha }
 // ============================================================
@@ -541,15 +541,15 @@ if ($method === 'POST' && $uri === '/auth/sso-conecta') {
     ]);
 }
 
-// ── POST /auth/criar-usuario — cria gestor (só superadmin/gestor) ───
+// ── POST /auth/criar-usuario — cria gestor/atendente (só superadmin/gestor) ───
 if ($method === 'POST' && $uri === '/auth/criar-usuario') {
     $p = auth_required();
     require_role($p, ['superadmin', 'gestor']);
     required_fields(['nome', 'email', 'senha', 'role']);
     $b = body();
 
-    if (!in_array($b['role'], ['gestor'])) {
-        json_out(['error' => 'Role inválida. Use: gestor'], 422);
+    if (!in_array($b['role'], ['gestor', 'atendente', 'associado_empresa', 'colaborador'])) {
+        json_out(['error' => 'Role inválida. Use: gestor, atendente, associado_empresa ou colaborador'], 422);
     }
 
     $check = pdo()->prepare('SELECT id FROM usuarios WHERE email = ? AND tenant_id = ?');

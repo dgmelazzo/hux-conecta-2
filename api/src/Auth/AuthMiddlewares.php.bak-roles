@@ -167,8 +167,8 @@ use CRM\Shared\Http\Response;
 
 class RbacMiddleware
 {
-    /** Hierarquia: superadmin > gestor */
-    private const HIERARCHY = ['gestor' => 1, 'superadmin' => 3];
+    /** Hierarquia: superadmin > gestor > atendente */
+    private const HIERARCHY = ['atendente' => 1, 'gestor' => 2, 'superadmin' => 3];
 
     /** @param string[] $rolesPermitidas */
     public function __construct(private readonly array $rolesPermitidas) {}

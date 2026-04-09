@@ -100,7 +100,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 /* Planos */
 .assoc-tab{padding:6px 14px;border:1px solid var(--bd);border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;background:none;color:var(--t2);transition:all .15s}
 .assoc-tab.on{background:var(--or);color:#fff;border-color:var(--or)}
-.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
 .pl-card{background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;padding:20px;position:relative;transition:all .15s}
 .pl-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(37,99,235,.1)}
 .pl-tipo{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
@@ -726,9 +726,9 @@ if(usr.nome){
 function abrirPortal(){
   const token=sessionStorage.getItem('conecta_token');
   if(token){
-    window.open('https://conecta.acicdf.org.br/?sso_token='+encodeURIComponent(token),'_blank');
+    window.open('https://acicdf.org.br/conecta/?sso_token='+encodeURIComponent(token),'_blank');
   } else {
-    window.open('https://conecta.acicdf.org.br/','_blank');
+    window.open('https://acicdf.org.br/conecta/','_blank');
   }
 }
 
@@ -1416,7 +1416,7 @@ let _conectaSelecionado=null;
 async function carregarProdutosConecta(){
   const grid=document.getElementById('conecta-grid');if(!grid)return;
   try{
-    const r=await fetch('https://conecta.acicdf.org.br/api.php?action=produtos',{headers:{'X-Bridge-Secret':'conecta_crm_bridge_2026'}});
+    const r=await fetch('https://acicdf.org.br/conecta/api.php?action=produtos',{headers:{'X-Bridge-Secret':'conecta_crm_bridge_2026'}});
     const d=await r.json();_conectaProdutos=d.data||[];renderConectaGrid(_conectaProdutos);
   }catch(e){if(grid)grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;color:#EF4444;font-size:12px">Erro ao carregar <a href="#" onclick="carregarProdutosConecta();return false" style="color:var(--or)">Tentar novamente</a></div>';}
 }

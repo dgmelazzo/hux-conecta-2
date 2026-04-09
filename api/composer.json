@@ -37,7 +37,8 @@
     "optimize-autoloader": true,
     "sort-packages": true,
     "audit": {
-      "abandoned": "ignore"
+      "abandoned": "ignore",
+      "block-insecure": false
     }
   }
 }

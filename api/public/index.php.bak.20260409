@@ -142,7 +142,7 @@ function require_role(array $payload, array $roles): void {
 // ── CONECTA 2.0 HELPERS ──────────────────────────────────────────────────────
 
 function conectaApi(string $action, array $data): array {
-    $url = 'https://conecta.acicdf.org.br/auth.php?action=' . $action;
+    $url = 'https://acicdf.org.br/conecta/auth.php?action=' . $action;
     $ch  = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -268,7 +268,7 @@ if ($uri === '/' || $uri === '/api') {
 }
 
 // ============================================================
-// AUTH — login de usuários internos (gestor) e
+// AUTH — login de usuários internos (gestor/atendente) e
 //        associados via CPF/CNPJ (SSO Conecta 2.0)
 // POST /auth/login  { email, senha } ou { documento, senha }
 // ============================================================
@@ -483,7 +483,7 @@ if ($method === 'POST' && $uri === '/auth/sso-conecta') {
     if (!$conectaToken) json_out(['error' => 'conecta_token obrigatório'], 422);
 
     // Validar token no Conecta 2.0 via action=validate (token no header Authorization)
-    $ch = curl_init('https://conecta.acicdf.org.br/auth.php?action=validate');
+    $ch = curl_init('https://acicdf.org.br/conecta/auth.php?action=validate');
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 15,
@@ -541,15 +541,15 @@ if ($method === 'POST' && $uri === '/auth/sso-conecta') {
     ]);
 }
 
-// ── POST /auth/criar-usuario — cria gestor (só superadmin/gestor) ───
+// ── POST /auth/criar-usuario — cria gestor/atendente (só superadmin/gestor) ───
 if ($method === 'POST' && $uri === '/auth/criar-usuario') {
     $p = auth_required();
     require_role($p, ['superadmin', 'gestor']);
     required_fields(['nome', 'email', 'senha', 'role']);
     $b = body();
 
-    if (!in_array($b['role'], ['gestor'])) {
-        json_out(['error' => 'Role inválida. Use: gestor'], 422);
+    if (!in_array($b['role'], ['gestor', 'atendente', 'associado_empresa', 'colaborador'])) {
+        json_out(['error' => 'Role inválida. Use: gestor, atendente, associado_empresa ou colaborador'], 422);
     }
 
     $check = pdo()->prepare('SELECT id FROM usuarios WHERE email = ? AND tenant_id = ?');
@@ -2132,7 +2132,7 @@ if ($method === 'POST' && preg_match('#^/associados/(\d+)/redefinir-senha$#', $u
     $conectaOk = false;
 
     if ($docClean) {
-        $ch = curl_init('https://conecta.acicdf.org.br/auth.php?action=reset_password');
+        $ch = curl_init('https://acicdf.org.br/conecta/auth.php?action=reset_password');
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 15,
@@ -2338,7 +2338,7 @@ if ($method === 'GET' && $uri === '/conecta/produtos') {
     }
 
     $ctx = stream_context_create(['http' => ['timeout' => 10]]);
-    $resp = @file_get_contents('https://conecta.acicdf.org.br/produtos.php?action=listar', false, $ctx);
+    $resp = @file_get_contents('https://acicdf.org.br/conecta/produtos.php?action=listar', false, $ctx);
 
     if ($resp === false) {
         json_out(['error' => 'Erro ao buscar produtos do Conecta'], 502);

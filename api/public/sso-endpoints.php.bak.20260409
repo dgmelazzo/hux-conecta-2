@@ -34,6 +34,7 @@ if ($method === 'POST' && $uri === '/auth/login-unificado') {
 
     $role = $user['role'];
     $destino = match($role) {
+        'superadmin', 'gestor', 'atendente' => 'ambos',
         'associado_empresa' => 'ambos',
         default => 'conecta'
     };
@@ -74,7 +75,7 @@ if ($method === 'POST' && $uri === '/auth/login-unificado') {
         'email' => $user['email'],
         'empresa_cnpj' => $empresa_cnpj,
         'redirect_crm' => 'https://crm.acicdf.org.br/?sso=' . $ssoToken,
-        'redirect_conecta' => 'https://conecta.acicdf.org.br/?sso=' . $ssoToken,
+        'redirect_conecta' => 'https://acicdf.org.br/conecta/?sso=' . $ssoToken,
     ]);
 }
 
@@ -97,6 +98,7 @@ if ($method === 'POST' && $uri === '/auth/validate-sso') {
     $permMap = [
         'superadmin' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>true,'acesso_crm'=>true,'gerenciar_produtos'=>true,'ver_usuarios'=>true,'ver_metricas'=>true,'cadastrar_superadmin'=>true],
         'gestor' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>true,'acesso_crm'=>true,'gerenciar_produtos'=>true,'ver_usuarios'=>true,'ver_metricas'=>true,'cadastrar_superadmin'=>false],
+        'atendente' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>false,'acesso_crm'=>true,'gerenciar_produtos'=>false,'ver_usuarios'=>false,'ver_metricas'=>false,'cadastrar_superadmin'=>false],
         'associado_empresa' => ['ver_taxas'=>true,'ver_empresa'=>true,'enviar_comunicados'=>false,'acesso_crm'=>true,'gerenciar_produtos'=>false,'ver_usuarios'=>false,'ver_metricas'=>false,'cadastrar_superadmin'=>false],
     ];
     $defaultPerm = ['ver_taxas'=>false,'ver_empresa'=>false,'enviar_comunicados'=>false,'acesso_crm'=>false,'gerenciar_produtos'=>false,'ver_usuarios'=>false,'ver_metricas'=>false,'cadastrar_superadmin'=>false];
@@ -127,6 +129,7 @@ if ($method === 'GET' && $uri === '/auth/check-tipo') {
 
     $tipo = $user['role'];
     $destino = match($tipo) {
+        'superadmin','gestor','atendente' => 'ambos',
         'associado_empresa' => 'ambos',
         default => 'conecta'
     };
@@ -165,7 +168,7 @@ if ($method === 'POST' && $uri === '/colaboradores/convidar') {
     $uid = (int)pdo()->lastInsertId();
 
     // Enviar email de convite
-    $linkConvite = 'https://conecta.acicdf.org.br/?convite=' . $conviteToken;
+    $linkConvite = 'https://acicdf.org.br/conecta/?convite=' . $conviteToken;
     $tplFile = '/var/www/hux-crm-association/emails/convite_' . $tipo . '.html';
     if (file_exists($tplFile)) {
         $html = file_get_contents($tplFile);
@@ -217,7 +220,7 @@ if ($method === 'POST' && $uri === '/auth/aceitar-convite') {
         'INSERT INTO sso_tokens (usuario_id, token, perfil, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))'
     )->execute([(int)$user['id'], $ssoToken, $perfil]);
 
-    json_out(['sso_token' => $ssoToken, 'redirect_conecta' => 'https://conecta.acicdf.org.br/?sso=' . $ssoToken]);
+    json_out(['sso_token' => $ssoToken, 'redirect_conecta' => 'https://acicdf.org.br/conecta/?sso=' . $ssoToken]);
 }
 
 // ── GET /public/planos (PÚBLICO — para associe-se) ────────────────────────────
