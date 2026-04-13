@@ -882,12 +882,13 @@ if(usr.nome){
   if(role==='superadmin'){
     // Show everything including Gateway
     document.getElementById('sec-adm').style.display='';
-    document.getElementById('ni-gw').style.display='';
     document.getElementById('ni-usr').style.display='';
+    document.getElementById('ni-cfg').style.display='';
   } else if(role==='gestor'){
     // Show admin section but NOT Gateway
     document.getElementById('sec-adm').style.display='';
     document.getElementById('ni-usr').style.display='';
+    document.getElementById('ni-cfg').style.display='';
   } else if(role==='associado_empresa'){
     // Hide: Dashboard global, Associados list, Planos, Cobranças (all), Inscrições, Comunicados, Usuários, Gateway
     // Show ONLY: Meu Perfil, Meus Colaboradores, Meus Dependentes, Minhas Taxas, Portal do Associado
