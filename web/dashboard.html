@@ -100,7 +100,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 /* Planos */
 .assoc-tab{padding:6px 14px;border:1px solid var(--bd);border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;background:none;color:var(--t2);transition:all .15s}
 .assoc-tab.on{background:var(--or);color:#fff;border-color:var(--or)}
-.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
 .pl-card{background:var(--sf);border:1.5px solid var(--bd);border-radius:12px;padding:20px;position:relative;transition:all .15s}
 .pl-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(37,99,235,.1)}
 .pl-tipo{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:8px}
@@ -204,15 +204,6 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 .wh-box{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12px;color:var(--t2);word-break:break-all;cursor:pointer}
 .wh-box:hover{border-color:var(--blue)}
 </style>
-
-  <style>
-    .badge-status { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-    .badge-lead { background: #e3f2fd; color: #1565c0; }
-    .badge-em_aprovacao { background: #fff3e0; color: #e65100; }
-    .badge-ativo { background: #e8f5e9; color: #2e7d32; }
-    .badge-inadimplente { background: #fce4ec; color: #b71c1c; }
-    .badge-inativo { background: #f5f5f5; color: #616161; }
-  </style>
 </head>
 <body>
 <div class="sb-ov" id="sb-ov" onclick="closeSb()"></div>
@@ -234,6 +225,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <button class="ni" id="ni-gw" data-nav="gw" onclick="go('gw')" style="display:none"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>Gateway</button>
     <button class="ni" data-nav="par" onclick="go('par')"><svg class="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>Parceiros</button>
     <button class="ni" id="ni-usr" data-nav="u" onclick="go('u')" style="display:none"><svg class="ic" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Usuários</button>
+        <button class="ni" id="ni-cfg" data-nav="cfg" onclick="showCfg()" style="display:none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</button>
     <div class="sc">Sistema</div>
     <button class="ni" onclick="logout()"><svg class="ic" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair</button>
   </nav>
@@ -385,6 +377,8 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     </div>
 
   </div>
+
+<div id="pg2-cfg" style="display:none;padding:24px;width:100%"><div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Configurações</h2><p style="color:#888;font-size:13px">Perfis e permissões de acesso.</p></div><div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;overflow:hidden"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="background:#1B2B6B;color:#fff"><th style="padding:12px 16px;text-align:left">Módulo</th><th style="padding:12px 16px;text-align:center">Superadmin</th><th style="padding:12px 16px;text-align:center">Gestor</th><th style="padding:12px 16px;text-align:center">Empresa</th><th style="padding:12px 16px;text-align:center">Colaborador</th></tr></thead><tbody id="cfg-tb"></tbody></table></div><p style="margin-top:12px;font-size:12px;color:#aaa">* Superadmin e Gestor acessam o CRM. Empresa e Colaborador acessam apenas o Conecta 2.0.</p></div>
 </main>
 
 <!-- Modal Detalhe Inscrição -->
@@ -485,33 +479,14 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <div class="fg"><label class="fl3">Nome do Plano *</label><input type="text" class="fc" id="pl-nome" placeholder="Ex: Combo MEI + Conecta"></div>
     <div class="fg"><label class="fl3">Tipo</label>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="pl-tipo-pills">
-        <button type="button" class="assoc-tab on" onclick="setPlTipo('taxa',this)">Taxa Associativa</button>
-        <button type="button" class="assoc-tab" onclick="setPlTipo('combo',this)">Combo de Adesão</button>
+        <button type="button" class="assoc-tab on" onclick="setPlTipo('mei',this)">MEI</button>
+        <button type="button" class="assoc-tab" onclick="setPlTipo('me',this)">ME</button>
+        <button type="button" class="assoc-tab" onclick="setPlTipo('epp',this)">EPP</button>
+        <button type="button" class="assoc-tab" onclick="setPlTipo('combo',this)">Combo</button>
+        <button type="button" class="assoc-tab" onclick="setPlTipo('isento',this)">Isento</button>
+        <button type="button" class="assoc-tab" onclick="setPlTipo('personalizado',this)">Outro</button>
       </div>
-      <input type="hidden" id="pl-tipo" value="taxa">
-    </div>
-    <!-- Segmento (only for taxa) -->
-    <div class="fg" id="pl-segmento-wrap"><label class="fl3">Segmento</label>
-      <select class="fc" id="pl-segmento">
-        <option value="">Selecionar...</option>
-        <option value="mei">MEI</option>
-        <option value="me">ME</option>
-        <option value="epp">EPP</option>
-        <option value="isento">Isento</option>
-        <option value="personalizado">Personalizado</option>
-      </select>
-    </div>
-    <!-- Taxa vinculada (only for combo) -->
-    <div class="fg" id="pl-taxa-wrap" style="display:none"><label class="fl3">Taxa Recorrente Vinculada</label>
-      <select class="fc" id="pl-taxa-vinculada">
-        <option value="">Nenhuma (só adesão)</option>
-      </select>
-    </div>
-    <!-- Produtos Conecta (only for combo) -->
-    <div class="fg" id="pl-produtos-wrap" style="display:none"><label class="fl3">Produtos Conecta</label>
-      <div id="pl-produtos-grid" style="display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;padding:4px">
-        <span style="color:var(--t3);font-size:12px">Carregando produtos...</span>
-      </div>
+      <input type="hidden" id="pl-tipo" value="mei">
     </div>
     <!-- Row 2: Periodicidade + Valor Recorrência -->
     <div class="fr">
@@ -754,20 +729,17 @@ if(usr.nome){
 function abrirPortal(){
   const token=sessionStorage.getItem('conecta_token');
   if(token){
-    window.open('https://conecta.acicdf.org.br/?sso_token='+encodeURIComponent(token),'_blank');
+    window.open('https://acicdf.org.br/conecta/?sso_token='+encodeURIComponent(token),'_blank');
   } else {
-    window.open('https://conecta.acicdf.org.br/','_blank');
+    window.open('https://acicdf.org.br/conecta/','_blank');
   }
 }
 
 // API
-let _refreshingToken=null;
-function getSSOCookie(){var m=document.cookie.match(/(?:^|;\s*)conecta_sso=([^;]+)/);return m?m[1]:null;}
-async function tryRefreshToken(){var sso=getSSOCookie();if(!sso)return false;try{var r=await fetch(A+'/auth/sso-conecta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conecta_token:sso})});var d=await r.json();if(d.ok&&d.data&&d.data.token){tk=d.data.token;localStorage.setItem('crm_token',tk);if(d.data.user)localStorage.setItem('crm_user',JSON.stringify(d.data.user));return true;}}catch(e){}return false;}
 async function api(u,o={}){
   try{
     const r=await fetch(A+u,{headers:{'Authorization':'Bearer '+tk,'Content-Type':'application/json'},method:o.method||'GET',body:o.body});
-    if(r.status===401){if(!_refreshingToken)_refreshingToken=tryRefreshToken();var refreshed=await _refreshingToken;_refreshingToken=null;if(refreshed)return api(u,o);logout();return null;}
+    if(r.status===401){logout();return null;}
     return r.json().then(d=>d.data!==undefined?d.data:d);
   }catch(e){toast('Erro de conexão','err');return null;}
 }
@@ -783,7 +755,7 @@ const PM={par:{t:'Parceiros',s:'Fornecedores de produtos',b:'Novo Parceiro'},d:{
 function openSb(){document.getElementById('sb').classList.add('open');document.getElementById('sb-ov').classList.add('on');}
 function closeSb(){document.getElementById('sb').classList.remove('open');document.getElementById('sb-ov').classList.remove('on');}
 function go(n){
-  closeSb();
+  try{closeSb();}catch(e){}
   document.querySelectorAll('.pg2').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
   document.getElementById('p'+n).classList.add('on');
@@ -975,27 +947,23 @@ async function delAssoc(id,nome){
 async function lp(){
   const d=await api('/planos');if(!d)return;pls=d.data;upSelects();
   _plCache={};d.data.forEach(p=>_plCache[p.id]=p);
-  const seg={mei:'MEI',me:'ME',epp:'EPP',isento:'Isento',personalizado:'Personalizado'};
+  const tp={mei:'MEI',me:'ME',epp:'EPP',isento:'Isento',combo:'Combo',personalizado:'Personalizado'};
   document.getElementById('pg3').innerHTML=d.data.length===0
     ?'<div class="em">Nenhum plano configurado.</div>'
     :d.data.map(p=>{
   const itemCount=(p.itens||[]).length;
-  const prodCount=(p.produtos||[]).length;
-  const totalAdesao=parseFloat(p.valor_adesao||0)+(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_adesao||0),0);
+  const totalAdesao=(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_adesao||0),0);
   const totalRecorr=parseFloat(p.valor||0)+(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_recorrencia||0),0);
-  const tipoBadge=p.tipo==='combo'?'<span class="bx" style="font-size:10px;background:#7C3AED;color:#fff">Combo</span>':'<span class="bx" style="font-size:10px;background:#0EA5E9;color:#fff">Taxa</span>';
-  const segBadge=p.segmento?`<span class="bx" style="font-size:10px;background:var(--lt);color:var(--tx)">${seg[p.segmento]||p.segmento}</span>`:'';
   return`<div class="pl-card">
-      <div style="display:flex;gap:6px;margin-bottom:8px">${tipoBadge}${segBadge}</div>
+      <div class="pl-tipo">${tp[p.tipo]||p.tipo}</div>
       <div class="pl-nome">${p.nome}</div>
       <div style="font-size:13px;color:var(--t2);margin-bottom:8px">
-        ${p.tipo==='combo'?'Adesão: <strong>'+money(totalAdesao)+'</strong> · ':''}Recorrência: <strong>${money(totalRecorr)}</strong>/${p.periodicidade}
-        ${p.taxa_vinculada?' · Taxa: '+p.taxa_vinculada.nome:''}
+        Adesão: <strong>${money(totalAdesao)}</strong> · Recorrência: <strong>${money(totalRecorr)}</strong>/${p.periodicidade}
       </div>
-      <div style="font-size:12px;color:var(--t3);margin-bottom:12px">${itemCount} item${itemCount!==1?'ns':''}${prodCount?' · '+prodCount+' produto'+(prodCount!==1?'s':'')+' Conecta':''}</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:12px">${itemCount} produto${itemCount!==1?'s':''} incluído${itemCount!==1?'s':''}</div>
       <div class="plan-badges" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
         ${p.split_ativo?'<span class="bx bb" style="font-size:10px">Split</span>':''}
-        ${prodCount?'<span class="bx bg" style="font-size:10px">Conecta</span>':''}
+        ${p.tem_conecta?'<span class="bx bg" style="font-size:10px">Conecta</span>':''}
       </div>
       ${p.slug_link?'<div class="pl-link">\ud83d\udd17 /associe-se/'+p.slug_link+'</div>':''}
       <div class="pl-acts">
@@ -1004,75 +972,32 @@ async function lp(){
         <button class="btn-r" onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Desativar</button>
       </div>
     </div>`}).join('');
-  // Cache taxas for combo modal
-  window._taxasCache=d.data.filter(p=>p.tipo==='taxa');
 }
 async function spl(){
-  const tipo=document.getElementById('pl-tipo').value;
-  const b={nome:document.getElementById('pl-nome').value,tipo:tipo,valor:document.getElementById('pl-val').value,periodicidade:document.getElementById('pl-per').value,descricao:document.getElementById('pl-desc').value,valor_adesao:parseFloat(document.getElementById('pl-val-adesao')?.value)||0,valor_recorrencia:parseFloat(document.getElementById('pl-val-recorr')?.value)||0,split_ativo:document.getElementById('pl-split-ativo')?.checked?1:0,split_percentual:parseFloat(document.getElementById('pl-split-pct')?.value)||0};
-  if(tipo==='taxa'){b.segmento=document.getElementById('pl-segmento').value||null;}
-  if(tipo==='combo'){b.taxa_vinculada_id=document.getElementById('pl-taxa-vinculada').value||null;const selProds=[];document.querySelectorAll('#pl-produtos-grid .prod-chip.on').forEach(c=>selProds.push(parseInt(c.dataset.id)));b.produtos=selProds;}
-  if(!b.nome||!b.valor){toast('Informe o nome e o valor','err');return;}
+  const b={nome:document.getElementById('pl-nome').value,tipo:document.getElementById('pl-tipo').value,valor:document.getElementById('pl-val').value,periodicidade:document.getElementById('pl-per').value,descricao:document.getElementById('pl-desc').value,valor_adesao:parseFloat(document.getElementById('pl-val-adesao')?.value)||0,valor_recorrencia:parseFloat(document.getElementById('pl-val-recorr')?.value)||0,split_ativo:document.getElementById('pl-split-ativo')?.checked?1:0,split_percentual:parseFloat(document.getElementById('pl-split-pct')?.value)||0};
+  if(!b.nome||!b.valor){toast('Informe o nome e o valor de recorrência','err');return;}
   const pid=document.getElementById('pl-id').value;
   const r=pid
     ?await api('/planos/'+pid,{method:'PUT',body:JSON.stringify(b)})
     :await api('/planos',{method:'POST',body:JSON.stringify(b)});
-  if(r?.id||r?.message||r?.ok){cm('mpl');document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';lp();toast(pid?'Plano atualizado!':'Plano criado!');}
+  if(r?.id||r?.message){cm('mpl');document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';lp();toast(pid?'Plano atualizado!':'Plano criado!');}
   else toast(r?.error||'Erro','err');
 }
 function setPlTipo(tipo,btn){
   document.getElementById('pl-tipo').value=tipo;
   document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>b.classList.remove('on'));
   if(btn)btn.classList.add('on');
-  // Toggle segmento/combo fields
-  document.getElementById('pl-segmento-wrap').style.display=tipo==='taxa'?'':'none';
-  document.getElementById('pl-taxa-wrap').style.display=tipo==='combo'?'':'none';
-  document.getElementById('pl-produtos-wrap').style.display=tipo==='combo'?'':'none';
-  if(tipo==='combo'){loadTaxasSelect();loadProdutosConecta();}
-}
-async function loadTaxasSelect(){
-  const sel=document.getElementById('pl-taxa-vinculada');
-  sel.innerHTML='<option value="">Nenhuma (só adesão)</option>';
-  const taxas=window._taxasCache||(await api('/planos'))?.data?.filter(p=>p.tipo==='taxa')||[];
-  taxas.forEach(t=>{sel.innerHTML+=`<option value="${t.id}">${t.nome} - ${money(t.valor)}/${t.periodicidade}</option>`;});
-}
-async function loadProdutosConecta(){
-  const grid=document.getElementById('pl-produtos-grid');
-  if(grid.dataset.loaded)return;
-  grid.innerHTML='<span style="color:var(--t3);font-size:12px">Carregando...</span>';
-  const d=await api('/produtos-conecta');
-  if(!d||!d.data){grid.innerHTML='<span style="color:var(--t3);font-size:12px">Erro ao carregar produtos</span>';return;}
-  window._conectaProds=d.data;
-  grid.innerHTML=d.data.map(p=>`<div class="prod-chip" data-id="${p.id}" onclick="this.classList.toggle('on')" style="padding:6px 10px;border:1px solid var(--bd);border-radius:6px;font-size:12px;cursor:pointer;transition:all .15s">${p.nome}</div>`).join('');
-  grid.dataset.loaded='1';
-  // Add CSS for selected state
-  if(!document.getElementById('prod-chip-css')){const s=document.createElement('style');s.id='prod-chip-css';s.textContent='.prod-chip.on{background:#7C3AED;color:#fff;border-color:#7C3AED;}';document.head.appendChild(s);}
 }
 function editPlano(p){
   document.getElementById('pl-id').value=p.id||'';
   document.getElementById('pl-nome').value=p.nome||'';
   // Set tipo via pills
-  const tipo=p.tipo||'taxa';
-  document.getElementById('pl-tipo').value=tipo;
-  document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>{b.classList.remove('on');});
-  document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>{if((tipo==='taxa'&&b.textContent.includes('Taxa'))||(tipo==='combo'&&b.textContent.includes('Combo')))b.classList.add('on');});
-  // Segmento
-  document.getElementById('pl-segmento').value=p.segmento||'';
-  document.getElementById('pl-segmento-wrap').style.display=tipo==='taxa'?'':'none';
-  // Combo fields
-  document.getElementById('pl-taxa-wrap').style.display=tipo==='combo'?'':'none';
-  document.getElementById('pl-produtos-wrap').style.display=tipo==='combo'?'':'none';
-  if(tipo==='combo'){
-    loadTaxasSelect().then(()=>{document.getElementById('pl-taxa-vinculada').value=p.taxa_vinculada_id||'';});
-    loadProdutosConecta().then(()=>{
-      document.querySelectorAll('#pl-produtos-grid .prod-chip').forEach(c=>c.classList.remove('on'));
-      (p.produtos||[]).forEach(pp=>{const c=document.querySelector('#pl-produtos-grid .prod-chip[data-id="'+pp.produto_conecta_id+'"]');if(c)c.classList.add('on');});
-    });
-  }
+  document.getElementById('pl-tipo').value=p.tipo||'mei';
+  document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>{b.classList.remove('on');if(b.textContent.toLowerCase()===p.tipo||(p.tipo==='personalizado'&&b.textContent==='Outro'))b.classList.add('on');});
   document.getElementById('pl-val').value=p.valor||'';
   document.getElementById('pl-val-adesao').value=p.valor_adesao||'';
   document.getElementById('pl-val-recorr')&&(document.getElementById('pl-val-recorr').value=p.valor_recorrencia||'');
-  document.getElementById('pl-anual')&&(document.getElementById('pl-anual').value=p.valor_anual||'');
+  document.getElementById('pl-anual').value=p.valor_anual||'';
   document.getElementById('pl-per').value=p.periodicidade||'mensal';
   document.getElementById('pl-desc').value=p.descricao||'';
   document.getElementById('pl-title').textContent='Editar Plano';
@@ -1494,7 +1419,7 @@ let _conectaSelecionado=null;
 async function carregarProdutosConecta(){
   const grid=document.getElementById('conecta-grid');if(!grid)return;
   try{
-    const r=await fetch('https://conecta.acicdf.org.br/api.php?action=produtos',{headers:{'X-Bridge-Secret':'conecta_crm_bridge_2026'}});
+    const r=await fetch('https://acicdf.org.br/conecta/api.php?action=produtos',{headers:{'X-Bridge-Secret':'conecta_crm_bridge_2026'}});
     const d=await r.json();_conectaProdutos=d.data||[];renderConectaGrid(_conectaProdutos);
   }catch(e){if(grid)grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;color:#EF4444;font-size:12px">Erro ao carregar <a href="#" onclick="carregarProdutosConecta();return false" style="color:var(--or)">Tentar novamente</a></div>';}
 }
@@ -1585,6 +1510,70 @@ async function lgw(){var d=await api('/gateway');var bar=document.getElementById
 function gwPreview(){var pct=parseFloat(document.getElementById('gw-sp-pct').value)||0;var prev=document.getElementById('sp-prev');if(!pct){prev.style.display='none';return;}var base=89.90;var hux=(base*pct/100).toFixed(2);var assoc=(base-parseFloat(hux)).toFixed(2);prev.style.display='block';prev.innerHTML='Exemplo R$89,90 - HUX R$'+hux+' ACIC R$'+assoc;}
 async function gwTestar(){var btn=document.querySelector('[onclick="gwTestar()"]');if(btn){btn.disabled=true;btn.textContent='Testando...';}var r=await api('/gateway/testar',{method:'POST',body:JSON.stringify({})});if(btn){btn.disabled=false;btn.textContent='Testar Conexao';}var bar=document.getElementById('gw-st-bar');var txt=document.getElementById('gw-st-txt');if(r&&r.sucesso){bar.className='gw-st ok';txt.textContent='OK - '+r.conta_nome;toast('Conexao confirmada!');}else{bar.className='gw-st err';txt.textContent='Erro: '+(r&&r.erro?r.erro:'falha');toast('Erro','err');}}
 async function gwSalvar(){var key=document.getElementById('gw-key').value.trim();var btn=document.querySelector('[onclick="gwSalvar()"]');if(btn){btn.disabled=true;btn.textContent='Salvando...';}var body={ambiente:document.getElementById('gw-amb').value,split_ativo:document.getElementById('gw-sp-ativo').checked?1:0,split_percentual:parseFloat(document.getElementById('gw-sp-pct').value)||0,split_wallet_id:document.getElementById('gw-sp-wallet').value.trim()||null};if(key)body.api_key=key;else body.manter_key=1;var r=await api('/gateway',{method:'POST',body:JSON.stringify(body)});if(btn){btn.disabled=false;btn.textContent='Salvar';}if(r&&r.id!=null){if(r.webhook_token)document.getElementById('gw-wht').value=r.webhook_token;toast('Configuracao salva!');lgw();}else toast(r&&r.error?r.error:'Erro ao salvar','err');}
+
+
+// Configuracoes - sub-tabs e Matriz
+function cfgTab(tab){
+  document.getElementById('cfg-perm').style.display=tab==='perm'?'block':'none';
+  document.getElementById('cfg-gw').style.display=tab==='gw'?'block':'none';
+  var styleOn='padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;color:#1B2B6B;border-bottom:3px solid #1B2B6B;margin-bottom:-2px';
+  var styleOff='padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px';
+  document.getElementById('cfg-tab-perm').style.cssText=tab==='perm'?styleOn:styleOff;
+  document.getElementById('cfg-tab-gw').style.cssText=tab==='gw'?styleOn:styleOff;
+  if(tab==='gw'){var inner=document.getElementById('cfg-gw-inner');var gwo=document.getElementById('pgw');if(inner&&gwo&&inner.children.length<=1)inner.innerHTML=gwo.innerHTML;}
+}
+function showCfg(){
+  document.querySelectorAll('.pg2').forEach(function(p){p.classList.remove('on');});
+  var el=document.getElementById('pg2-cfg');if(el)el.style.display='block';
+  document.querySelectorAll('.ni').forEach(function(b){b.classList.remove('on');});
+  var nb=document.getElementById('ni-cfg');if(nb)nb.classList.add('on');
+  var pt=document.getElementById('pt');if(pt)pt.textContent='Configurações';
+  var ps=document.getElementById('ps');if(ps)ps.textContent='Acesso, permissões e gateway.';
+  cfgTab('perm');
+  var tb=document.getElementById('cfg-tb');
+  if(!tb||tb.children.length>0)return;
+  var H='<b style="color:#555;font-size:11px">';
+  var rows=[
+    [H+'CRM</b>','','','','',''],
+    ['Dashboard CRM',1,1,0,0,'CRM'],
+    ['Associados — ver/editar',1,1,0,0,'CRM'],
+    ['Cobranças — ver/emitir',1,1,0,0,'CRM'],
+    ['Comunicados — enviar',1,1,0,0,'CRM'],
+    ['Planos e Taxas — configurar',1,0,0,0,'CRM'],
+    ['Gateway — configurar',1,0,0,0,'CRM'],
+    ['Usuários — gerenciar',1,0,0,0,'CRM'],
+    ['Configurações do sistema',1,0,0,0,'CRM'],
+    [H+'CONECTA 2.0</b>','','','','',''],
+    ['Dashboard do associado',1,1,1,1,'Conecta'],
+    ['Catálogo de benefícios',1,1,1,1,'Conecta'],
+    ['Minha Carteirinha',1,1,1,1,'Conecta'],
+    ['Comunicados — receber',1,1,1,1,'Conecta'],
+    ['Minhas Taxas / Cobranças',1,1,1,0,'Conecta'],
+    ['Minha Empresa',1,1,1,0,'Conecta'],
+    ['Comunicados — enviar (portal)',1,1,0,0,'Conecta']
+  ];
+  var ok='<span style="color:#22c55e;font-size:17px">&#10003;</span>';
+  var no='<span style="color:#ef4444;font-size:17px">&#10007;</span>';
+  tb.innerHTML=rows.map(function(r,i){
+    if(typeof r[1]==='string')return '<tr><td colspan="6" style="padding:10px 16px;background:#f0f2f8">'+r[0]+'</td></tr>';
+    var bg=i%2===0?'#f8f9fc':'#fff';
+    var sys=r[5];
+    var bc=sys==='CRM'?'background:#e0e7ff;color:#3730a3':'background:#dcfce7;color:#166534';
+    var badge='<span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;'+bc+'">'+sys+'</span>';
+    return '<tr style="background:'+bg+';border-bottom:1px solid #f0f0f5">'+'<td style="padding:10px 16px;font-weight:500">'+r[0]+'</td>'+r.slice(1,5).map(function(v){return '<td style="text-align:center;padding:10px 16px">'+(v?ok:no)+'</td>';}).join('')+'<td style="text-align:center;padding:8px 12px">'+badge+'</td></tr>';
+  }).join('');
+}
+// Mostrar ni-cfg// Mostrar ni-cfg para superadmin apos login
+document.addEventListener('DOMContentLoaded',function(){
+  var ni=document.getElementById('ni-cfg');if(!ni)return;
+  try{var u=window.currentUser||JSON.parse(localStorage.getItem('crm_user')||'{}');
+    if(u&&(u.role==='superadmin'||u.role==='gestor'))ni.style.display='';}catch(e){}
+  document.querySelectorAll('.ni:not(#ni-cfg)').forEach(function(b){
+    b.addEventListener('click',function(){
+      var el=document.getElementById('pg2-cfg');if(el)el.style.display='none';
+    });
+  });
+});
 
 // Init
 go('d');
