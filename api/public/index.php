@@ -2712,3 +2712,12 @@ if ($method === 'GET' && $uri === '/associado/carteirinha') {
 require_once __DIR__ . "/sso-endpoints.php";
 
 json_out(['error' => 'Rota não encontrada', 'path' => $uri, 'method' => $method], 404);
+// GRU-79: Endpoint de permisses
+if ($method === 'GET' && $path === '/permissoes') {
+    $perfil = $_GET['perfil'] ?? 'gestor';
+    $stmt = $pdo->prepare("SELECT modulo, acao, permitido FROM permissoes WHERE perfil = ?");
+    $stmt->execute([$perfil]);
+    $perms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode(['perfil' => $perfil, 'permissoes' => $perms]);
+    exit;
+}
