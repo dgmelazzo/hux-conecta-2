@@ -1320,6 +1320,14 @@ function _restaurarSecao() {
 // ============================================================
 
 
+
+function showColaboradorMenu() {
+  // Colaborador v apenas: Catlogo, Minha Carteirinha
+  const allowed = ['nav-catalogo','nav-carteirinha'];
+  document.querySelectorAll('[id^="nav-"]').forEach(el => {
+    el.style.display = allowed.includes(el.id) ? '' : 'none';
+  });
+}
 function showGestorMenu() {
   // Gestor v apenas: Comunicados, Produtos, Parceiros, Mtricas
   const allowed = ['nav-comunicados','nav-produtos','nav-parceiros','nav-metricas'];
@@ -1341,6 +1349,7 @@ function showLogin() {
 function showPortal() {
   hideAuthLoading();
   if(window._userRole === 'gestor') showGestorMenu();
+  if(window._userRole === 'colaborador') showColaboradorMenu();
   _adminChecked = false;
   // Garante que elementos admin começam ocultos a cada login
   ['nav-admin','nav-metricas'].forEach(id => {
