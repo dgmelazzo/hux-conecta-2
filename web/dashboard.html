@@ -476,14 +476,33 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
     <div class="fg"><label class="fl3">Nome do Plano *</label><input type="text" class="fc" id="pl-nome" placeholder="Ex: Combo MEI + Conecta"></div>
     <div class="fg"><label class="fl3">Tipo</label>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="pl-tipo-pills">
-        <button type="button" class="assoc-tab on" onclick="setPlTipo('mei',this)">MEI</button>
-        <button type="button" class="assoc-tab" onclick="setPlTipo('me',this)">ME</button>
-        <button type="button" class="assoc-tab" onclick="setPlTipo('epp',this)">EPP</button>
-        <button type="button" class="assoc-tab" onclick="setPlTipo('combo',this)">Combo</button>
-        <button type="button" class="assoc-tab" onclick="setPlTipo('isento',this)">Isento</button>
-        <button type="button" class="assoc-tab" onclick="setPlTipo('personalizado',this)">Outro</button>
+        <button type="button" class="assoc-tab on" onclick="setPlTipo('taxa',this)">Taxa Associativa</button>
+        <button type="button" class="assoc-tab" onclick="setPlTipo('combo',this)">Combo de Adesão</button>
       </div>
-      <input type="hidden" id="pl-tipo" value="mei">
+      <input type="hidden" id="pl-tipo" value="taxa">
+    </div>
+    <!-- Segmento (only for taxa) -->
+    <div class="fg" id="pl-segmento-wrap"><label class="fl3">Segmento</label>
+      <select class="fc" id="pl-segmento">
+        <option value="">Selecionar...</option>
+        <option value="mei">MEI</option>
+        <option value="me">ME</option>
+        <option value="epp">EPP</option>
+        <option value="isento">Isento</option>
+        <option value="personalizado">Personalizado</option>
+      </select>
+    </div>
+    <!-- Taxa vinculada (only for combo) -->
+    <div class="fg" id="pl-taxa-wrap" style="display:none"><label class="fl3">Taxa Recorrente Vinculada</label>
+      <select class="fc" id="pl-taxa-vinculada">
+        <option value="">Nenhuma (só adesão)</option>
+      </select>
+    </div>
+    <!-- Produtos Conecta (only for combo) -->
+    <div class="fg" id="pl-produtos-wrap" style="display:none"><label class="fl3">Produtos Conecta</label>
+      <div id="pl-produtos-grid" style="display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;padding:4px">
+        <span style="color:var(--t3);font-size:12px">Carregando produtos...</span>
+      </div>
     </div>
     <!-- Row 2: Periodicidade + Valor Recorrência -->
     <div class="fr">
@@ -655,7 +674,7 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 </div>
 
 <script>
-const A='https://api.acicdf.org.br';
+const A='https://api-crm.acicdf.org.br';
 let tk=localStorage.getItem('crm_token'),usr=JSON.parse(localStorage.getItem('crm_user')||'{}');
 let pls=[],_plCache={},assocs=[],acp=1,ccp=1,st3,editId=null;
 if(!tk)location.href='/';
@@ -733,10 +752,13 @@ function abrirPortal(){
 }
 
 // API
+let _refreshingToken=null;
+function getSSOCookie(){var m=document.cookie.match(/(?:^|;\s*)conecta_sso=([^;]+)/);return m?m[1]:null;}
+async function tryRefreshToken(){var sso=getSSOCookie();if(!sso)return false;try{var r=await fetch(A+'/auth/sso-conecta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conecta_token:sso})});var d=await r.json();if(d.ok&&d.data&&d.data.token){tk=d.data.token;localStorage.setItem('crm_token',tk);if(d.data.user)localStorage.setItem('crm_user',JSON.stringify(d.data.user));return true;}}catch(e){}return false;}
 async function api(u,o={}){
   try{
     const r=await fetch(A+u,{headers:{'Authorization':'Bearer '+tk,'Content-Type':'application/json'},method:o.method||'GET',body:o.body});
-    if(r.status===401){logout();return null;}
+    if(r.status===401){if(!_refreshingToken)_refreshingToken=tryRefreshToken();var refreshed=await _refreshingToken;_refreshingToken=null;if(refreshed)return api(u,o);logout();return null;}
     return r.json().then(d=>d.data!==undefined?d.data:d);
   }catch(e){toast('Erro de conexão','err');return null;}
 }
@@ -944,23 +966,27 @@ async function delAssoc(id,nome){
 async function lp(){
   const d=await api('/planos');if(!d)return;pls=d.data;upSelects();
   _plCache={};d.data.forEach(p=>_plCache[p.id]=p);
-  const tp={mei:'MEI',me:'ME',epp:'EPP',isento:'Isento',combo:'Combo',personalizado:'Personalizado'};
+  const seg={mei:'MEI',me:'ME',epp:'EPP',isento:'Isento',personalizado:'Personalizado'};
   document.getElementById('pg3').innerHTML=d.data.length===0
     ?'<div class="em">Nenhum plano configurado.</div>'
     :d.data.map(p=>{
   const itemCount=(p.itens||[]).length;
-  const totalAdesao=(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_adesao||0),0);
+  const prodCount=(p.produtos||[]).length;
+  const totalAdesao=parseFloat(p.valor_adesao||0)+(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_adesao||0),0);
   const totalRecorr=parseFloat(p.valor||0)+(p.itens||[]).reduce((s,i)=>s+parseFloat(i.valor_recorrencia||0),0);
+  const tipoBadge=p.tipo==='combo'?'<span class="bx" style="font-size:10px;background:#7C3AED;color:#fff">Combo</span>':'<span class="bx" style="font-size:10px;background:#0EA5E9;color:#fff">Taxa</span>';
+  const segBadge=p.segmento?`<span class="bx" style="font-size:10px;background:var(--lt);color:var(--tx)">${seg[p.segmento]||p.segmento}</span>`:'';
   return`<div class="pl-card">
-      <div class="pl-tipo">${tp[p.tipo]||p.tipo}</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">${tipoBadge}${segBadge}</div>
       <div class="pl-nome">${p.nome}</div>
       <div style="font-size:13px;color:var(--t2);margin-bottom:8px">
-        Adesão: <strong>${money(totalAdesao)}</strong> · Recorrência: <strong>${money(totalRecorr)}</strong>/${p.periodicidade}
+        ${p.tipo==='combo'?'Adesão: <strong>'+money(totalAdesao)+'</strong> · ':''}Recorrência: <strong>${money(totalRecorr)}</strong>/${p.periodicidade}
+        ${p.taxa_vinculada?' · Taxa: '+p.taxa_vinculada.nome:''}
       </div>
-      <div style="font-size:12px;color:var(--t3);margin-bottom:12px">${itemCount} produto${itemCount!==1?'s':''} incluído${itemCount!==1?'s':''}</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:12px">${itemCount} item${itemCount!==1?'ns':''}${prodCount?' · '+prodCount+' produto'+(prodCount!==1?'s':'')+' Conecta':''}</div>
       <div class="plan-badges" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
         ${p.split_ativo?'<span class="bx bb" style="font-size:10px">Split</span>':''}
-        ${p.tem_conecta?'<span class="bx bg" style="font-size:10px">Conecta</span>':''}
+        ${prodCount?'<span class="bx bg" style="font-size:10px">Conecta</span>':''}
       </div>
       ${p.slug_link?'<div class="pl-link">\ud83d\udd17 /associe-se/'+p.slug_link+'</div>':''}
       <div class="pl-acts">
@@ -969,32 +995,75 @@ async function lp(){
         <button class="btn-r" onclick="delPlano(${p.id},'${p.nome.replace(/'/g,"\\'")}')">Desativar</button>
       </div>
     </div>`}).join('');
+  // Cache taxas for combo modal
+  window._taxasCache=d.data.filter(p=>p.tipo==='taxa');
 }
 async function spl(){
-  const b={nome:document.getElementById('pl-nome').value,tipo:document.getElementById('pl-tipo').value,valor:document.getElementById('pl-val').value,periodicidade:document.getElementById('pl-per').value,descricao:document.getElementById('pl-desc').value,valor_adesao:parseFloat(document.getElementById('pl-val-adesao')?.value)||0,valor_recorrencia:parseFloat(document.getElementById('pl-val-recorr')?.value)||0,split_ativo:document.getElementById('pl-split-ativo')?.checked?1:0,split_percentual:parseFloat(document.getElementById('pl-split-pct')?.value)||0};
-  if(!b.nome||!b.valor){toast('Informe o nome e o valor de recorrência','err');return;}
+  const tipo=document.getElementById('pl-tipo').value;
+  const b={nome:document.getElementById('pl-nome').value,tipo:tipo,valor:document.getElementById('pl-val').value,periodicidade:document.getElementById('pl-per').value,descricao:document.getElementById('pl-desc').value,valor_adesao:parseFloat(document.getElementById('pl-val-adesao')?.value)||0,valor_recorrencia:parseFloat(document.getElementById('pl-val-recorr')?.value)||0,split_ativo:document.getElementById('pl-split-ativo')?.checked?1:0,split_percentual:parseFloat(document.getElementById('pl-split-pct')?.value)||0};
+  if(tipo==='taxa'){b.segmento=document.getElementById('pl-segmento').value||null;}
+  if(tipo==='combo'){b.taxa_vinculada_id=document.getElementById('pl-taxa-vinculada').value||null;const selProds=[];document.querySelectorAll('#pl-produtos-grid .prod-chip.on').forEach(c=>selProds.push(parseInt(c.dataset.id)));b.produtos=selProds;}
+  if(!b.nome||!b.valor){toast('Informe o nome e o valor','err');return;}
   const pid=document.getElementById('pl-id').value;
   const r=pid
     ?await api('/planos/'+pid,{method:'PUT',body:JSON.stringify(b)})
     :await api('/planos',{method:'POST',body:JSON.stringify(b)});
-  if(r?.id||r?.message){cm('mpl');document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';lp();toast(pid?'Plano atualizado!':'Plano criado!');}
+  if(r?.id||r?.message||r?.ok){cm('mpl');document.getElementById('pl-id').value='';document.getElementById('pl-title').textContent='Novo Plano';lp();toast(pid?'Plano atualizado!':'Plano criado!');}
   else toast(r?.error||'Erro','err');
 }
 function setPlTipo(tipo,btn){
   document.getElementById('pl-tipo').value=tipo;
   document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>b.classList.remove('on'));
   if(btn)btn.classList.add('on');
+  // Toggle segmento/combo fields
+  document.getElementById('pl-segmento-wrap').style.display=tipo==='taxa'?'':'none';
+  document.getElementById('pl-taxa-wrap').style.display=tipo==='combo'?'':'none';
+  document.getElementById('pl-produtos-wrap').style.display=tipo==='combo'?'':'none';
+  if(tipo==='combo'){loadTaxasSelect();loadProdutosConecta();}
+}
+async function loadTaxasSelect(){
+  const sel=document.getElementById('pl-taxa-vinculada');
+  sel.innerHTML='<option value="">Nenhuma (só adesão)</option>';
+  const taxas=window._taxasCache||(await api('/planos'))?.data?.filter(p=>p.tipo==='taxa')||[];
+  taxas.forEach(t=>{sel.innerHTML+=`<option value="${t.id}">${t.nome} - ${money(t.valor)}/${t.periodicidade}</option>`;});
+}
+async function loadProdutosConecta(){
+  const grid=document.getElementById('pl-produtos-grid');
+  if(grid.dataset.loaded)return;
+  grid.innerHTML='<span style="color:var(--t3);font-size:12px">Carregando...</span>';
+  const d=await api('/produtos-conecta');
+  if(!d||!d.data){grid.innerHTML='<span style="color:var(--t3);font-size:12px">Erro ao carregar produtos</span>';return;}
+  window._conectaProds=d.data;
+  grid.innerHTML=d.data.map(p=>`<div class="prod-chip" data-id="${p.id}" onclick="this.classList.toggle('on')" style="padding:6px 10px;border:1px solid var(--bd);border-radius:6px;font-size:12px;cursor:pointer;transition:all .15s">${p.nome}</div>`).join('');
+  grid.dataset.loaded='1';
+  // Add CSS for selected state
+  if(!document.getElementById('prod-chip-css')){const s=document.createElement('style');s.id='prod-chip-css';s.textContent='.prod-chip.on{background:#7C3AED;color:#fff;border-color:#7C3AED;}';document.head.appendChild(s);}
 }
 function editPlano(p){
   document.getElementById('pl-id').value=p.id||'';
   document.getElementById('pl-nome').value=p.nome||'';
   // Set tipo via pills
-  document.getElementById('pl-tipo').value=p.tipo||'mei';
-  document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>{b.classList.remove('on');if(b.textContent.toLowerCase()===p.tipo||(p.tipo==='personalizado'&&b.textContent==='Outro'))b.classList.add('on');});
+  const tipo=p.tipo||'taxa';
+  document.getElementById('pl-tipo').value=tipo;
+  document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>{b.classList.remove('on');});
+  document.querySelectorAll('#pl-tipo-pills .assoc-tab').forEach(b=>{if((tipo==='taxa'&&b.textContent.includes('Taxa'))||(tipo==='combo'&&b.textContent.includes('Combo')))b.classList.add('on');});
+  // Segmento
+  document.getElementById('pl-segmento').value=p.segmento||'';
+  document.getElementById('pl-segmento-wrap').style.display=tipo==='taxa'?'':'none';
+  // Combo fields
+  document.getElementById('pl-taxa-wrap').style.display=tipo==='combo'?'':'none';
+  document.getElementById('pl-produtos-wrap').style.display=tipo==='combo'?'':'none';
+  if(tipo==='combo'){
+    loadTaxasSelect().then(()=>{document.getElementById('pl-taxa-vinculada').value=p.taxa_vinculada_id||'';});
+    loadProdutosConecta().then(()=>{
+      document.querySelectorAll('#pl-produtos-grid .prod-chip').forEach(c=>c.classList.remove('on'));
+      (p.produtos||[]).forEach(pp=>{const c=document.querySelector('#pl-produtos-grid .prod-chip[data-id="'+pp.produto_conecta_id+'"]');if(c)c.classList.add('on');});
+    });
+  }
   document.getElementById('pl-val').value=p.valor||'';
   document.getElementById('pl-val-adesao').value=p.valor_adesao||'';
   document.getElementById('pl-val-recorr')&&(document.getElementById('pl-val-recorr').value=p.valor_recorrencia||'');
-  document.getElementById('pl-anual').value=p.valor_anual||'';
+  document.getElementById('pl-anual')&&(document.getElementById('pl-anual').value=p.valor_anual||'');
   document.getElementById('pl-per').value=p.periodicidade||'mensal';
   document.getElementById('pl-desc').value=p.descricao||'';
   document.getElementById('pl-title').textContent='Editar Plano';

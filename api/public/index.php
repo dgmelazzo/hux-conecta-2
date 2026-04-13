@@ -8,7 +8,6 @@ declare(strict_types=1);
 // ============================================================
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
 
 set_exception_handler(function(\Throwable $e) {
     if (!headers_sent()) {
@@ -18,10 +17,7 @@ set_exception_handler(function(\Throwable $e) {
     echo json_encode(['ok' => false, 'error' => 'Erro interno: ' . $e->getMessage()]);
     exit;
 });
-header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Tenant');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
 // ============================================================
 // .ENV LOADER
@@ -251,6 +247,7 @@ function asaasEnsureCustomer(array $assoc): string {
 $method = $_SERVER['REQUEST_METHOD'];
 $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri    = rtrim($uri, '/') ?: '/';
+if (str_starts_with($uri, '/api')) $uri = substr($uri, 4) ?: '/';
 
 // ── Health check ─────────────────────────────────────────────────────────────
 if ($uri === '/' || $uri === '/api') {
@@ -323,6 +320,24 @@ if ($method === 'POST' && $uri === '/auth/login') {
 
         if (!$loginResp['_ok']) {
             json_out(['error' => 'Credenciais inválidas'], 401);
+        }
+
+        // -- ADMIN_DOC: login superadmin via CPF --
+        $ADMIN_DOC = '01057808121';
+        if ($docClean === $ADMIN_DOC) {
+            $adminStmt = pdo()->prepare('SELECT * FROM usuarios WHERE role = ? AND ativo = 1 ORDER BY id ASC LIMIT 1');
+            $adminStmt->execute(['superadmin']);
+            $adminUser = $adminStmt->fetch();
+            if ($adminUser) {
+                pdo()->prepare('UPDATE usuarios SET ultimo_login = NOW() WHERE id = ?')->execute([$adminUser['id']]);
+                $conectaToken = $loginResp['data']['token'] ?? $loginResp['token'] ?? null;
+                $ssoToken = bin2hex(random_bytes(32));
+                $perfil = json_encode(['usuario_id' => (int)$adminUser['id'], 'tipo' => 'superadmin', 'nome' => $adminUser['nome'], 'email' => $adminUser['email'], 'tenant_id' => (int)($adminUser['tenant_id'] ?? tenant_id())], JSON_UNESCAPED_UNICODE);
+                pdo()->prepare('INSERT INTO sso_tokens (usuario_id, token, perfil, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))')->execute([(int)$adminUser['id'], $ssoToken, $perfil]);
+                $token = jwt_encode(['sub' => $adminUser['id'], 'email' => $adminUser['email'], 'nome' => $adminUser['nome'], 'role' => 'superadmin', 'tenant_id' => $adminUser['tenant_id'] ?? tenant_id()]);
+                setcookie('conecta_sso', $conectaToken ?: $ssoToken, ['expires' => time() + 604800, 'path' => '/', 'domain' => '.acicdf.org.br', 'secure' => true, 'httponly' => false, 'samesite' => 'Lax']);
+                json_out(['token' => $token, 'user' => ['id' => $adminUser['id'], 'nome' => $adminUser['nome'], 'email' => $adminUser['email'], 'role' => 'superadmin'], 'conecta_token' => $conectaToken, 'sso_token' => $ssoToken]);
+            }
         }
 
         // Login OK — busca associado no CRM
@@ -476,6 +491,29 @@ if ($method === 'POST' && $uri === '/auth/primeiro-acesso') {
     json_out($response);
 }
 
+
+// ── POST /auth/refresh — renova JWT expirado (grace period 30 dias) ──────────
+if ($method === 'POST' && $uri === '/auth/refresh') {
+    $h = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if (!preg_match('/^Bearer\s+(.+)$/i', $h, $m)) json_out(['error' => 'Token não fornecido'], 401);
+    $token = $m[1];
+    $secret = $_ENV['JWT_SECRET'] ?? 'conecta_crm_secret_change_me_32c';
+    $parts = explode('.', $token);
+    if (count($parts) !== 3) json_out(['error' => 'Token inválido'], 401);
+    [$hdr, $bdy, $sig] = $parts;
+    $expected = base64url_enc(hash_hmac('sha256', "$hdr.$bdy", $secret, true));
+    if (!hash_equals($expected, $sig)) json_out(['error' => 'Token inválido'], 401);
+    $payload = json_decode(base64url_dec($bdy), true);
+    if (!$payload) json_out(['error' => 'Token inválido'], 401);
+    $gracePeriod = 86400 * 30;
+    if (($payload['exp'] ?? 0) < time() - $gracePeriod) json_out(['error' => 'Token expirado além do período de renovação'], 401);
+    unset($payload['iat'], $payload['exp']);
+    $newToken = jwt_encode($payload);
+    $user = ['id' => $payload['sub'], 'nome' => $payload['nome'] ?? '', 'email' => $payload['email'] ?? '', 'role' => $payload['role'] ?? ''];
+    if (isset($payload['associado_id'])) $user['associado_id'] = $payload['associado_id'];
+    json_out(['token' => $newToken, 'user' => $user]);
+}
+
 // ── POST /auth/sso-conecta — troca token Conecta 2.0 por JWT CRM ─────────────
 if ($method === 'POST' && $uri === '/auth/sso-conecta') {
     $b = body();
@@ -568,7 +606,7 @@ if ($method === 'POST' && $uri === '/auth/criar-usuario') {
 // ASSOCIADOS
 // ============================================================
 
-// GET /associados
+// GET /associados — busca em conecta2.conecta_users (fonte real) com LEFT JOIN em conecta_crm.associados
 if ($method === 'GET' && $uri === '/associados') {
     $p = auth_required();
     $tid = $p['tenant_id'] ?? tenant_id();
@@ -577,16 +615,33 @@ if ($method === 'GET' && $uri === '/associados') {
     if (in_array($p['role'] ?? '', ['associado_empresa', 'colaborador'])) {
         $assocId = $p['associado_id'] ?? $p['sub'];
         $stmt = pdo()->prepare(
-            'SELECT a.id, a.tipo_pessoa, a.categoria, a.vinculo_id, a.razao_social, a.nome_fantasia,
-                    a.cpf, a.cnpj, a.email, a.telefone, a.whatsapp,
-                    a.cidade, a.uf, a.status, a.data_associacao, a.data_vencimento,
-                    a.conecta_user_id, a.criado_em,
-                    p.nome AS plano_nome, p.valor AS plano_valor
-             FROM associados a
+            "SELECT u.id,
+                CASE
+                    WHEN u.cpf_cnpj REGEXP '^[0-9]{11}$' THEN 'pf'
+                    WHEN u.cpf_cnpj REGEXP '^[0-9]{14}$' THEN 'pj'
+                    ELSE 'pj'
+                END AS tipo_pessoa,
+                COALESCE(a.categoria, CASE u.tipo WHEN 'empresa' THEN 'empresa' WHEN 'associado_empresa' THEN 'empresa' ELSE 'colaborador' END) AS categoria,
+                a.vinculo_id,
+                COALESCE(a.razao_social, u.nome, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.razao_social'))) AS razao_social,
+                COALESCE(a.nome_fantasia, u.nome, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia'))) AS nome_fantasia,
+                CASE WHEN u.cpf_cnpj REGEXP '^[0-9]{11}$' THEN u.cpf_cnpj ELSE a.cpf END AS cpf,
+                CASE WHEN u.cpf_cnpj REGEXP '^[0-9]{14}$' THEN u.cpf_cnpj ELSE a.cnpj END AS cnpj,
+                COALESCE(a.email, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.email'))) AS email,
+                a.telefone, a.whatsapp, a.cidade, a.uf,
+                COALESCE(a.status, CASE WHEN u.ativo = 1 THEN 'ativo' ELSE 'cancelado' END) AS status,
+                a.data_associacao,
+                COALESCE(a.data_vencimento, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.data_vencimento'))) AS data_vencimento,
+                u.id AS conecta_user_id,
+                COALESCE(a.criado_em, u.created_at) AS criado_em,
+                p.nome AS plano_nome,
+                COALESCE(p.valor, CAST(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.plano_valor')) AS DECIMAL(10,2))) AS plano_valor
+             FROM conecta2.conecta_users u
+             LEFT JOIN associados a ON a.id = u.crm_associado_id
              LEFT JOIN planos p ON p.id = a.plano_id
-             WHERE a.id = ? AND a.tenant_id = ?'
+             WHERE u.id = ?"
         );
-        $stmt->execute([$assocId, $tid]);
+        $stmt->execute([$assocId]);
         $row = $stmt->fetch();
         json_out([
             'data'  => $row ? [$row] : [],
@@ -597,29 +652,39 @@ if ($method === 'GET' && $uri === '/associados') {
         ]);
     }
 
-    $where  = 'a.tenant_id = ?';
-    $params = [$tid];
+    // Filtra tipos internos (admin, gestor)
+    $where  = "u.tipo IN ('empresa', 'contribuinte', 'associado_empresa')";
+    $params = [];
 
     if (!empty($_GET['busca'])) {
-        $like     = '%' . $_GET['busca'] . '%';
-        $where   .= ' AND (a.nome_fantasia LIKE ? OR a.razao_social LIKE ? OR a.cnpj LIKE ? OR a.cpf LIKE ?)';
-        $params   = array_merge($params, [$like, $like, $like, $like]);
+        $like   = '%' . $_GET['busca'] . '%';
+        $where .= " AND (u.nome LIKE ? OR u.cpf_cnpj LIKE ? OR COALESCE(a.nome_fantasia, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia'))) LIKE ?)";
+        $params = array_merge($params, [$like, $like, $like]);
     }
     if (!empty($_GET['status'])) {
-        $where   .= ' AND a.status = ?';
-        $params[] = $_GET['status'];
-    } else {
-        // Por padrão, oculta arquivados
-        $where .= ' AND a.status != ?';
-        $params[] = 'arquivado';
+        $st = $_GET['status'];
+        if ($st === 'ativo') {
+            $where .= ' AND (a.status = ? OR (a.status IS NULL AND u.ativo = 1))';
+        } elseif ($st === 'cancelado') {
+            $where .= ' AND (a.status = ? OR (a.status IS NULL AND u.ativo = 0))';
+        } else {
+            $where .= ' AND a.status = ?';
+        }
+        $params[] = $st;
     }
     if (!empty($_GET['plano_id'])) {
         $where   .= ' AND a.plano_id = ?';
         $params[] = $_GET['plano_id'];
     }
     if (!empty($_GET['categoria'])) {
-        $where   .= ' AND a.categoria = ?';
-        $params[] = $_GET['categoria'];
+        $cat = $_GET['categoria'];
+        if ($cat === 'empresa') {
+            $where .= " AND (a.categoria = 'empresa' OR (a.categoria IS NULL AND u.tipo IN ('empresa', 'associado_empresa')))";
+        } elseif ($cat === 'colaborador') {
+            $where .= " AND (a.categoria = 'colaborador' OR (a.categoria IS NULL AND u.tipo = 'contribuinte'))";
+        } elseif ($cat === 'dependente') {
+            $where .= " AND a.categoria = 'dependente'";
+        }
     }
     if (isset($_GET['vinculo_id']) && $_GET['vinculo_id'] !== '') {
         $where   .= ' AND a.vinculo_id = ?';
@@ -630,20 +695,42 @@ if ($method === 'GET' && $uri === '/associados') {
     $limit = min(100, (int)($_GET['limit'] ?? 20));
     $off   = ($page - 1) * $limit;
 
-    $stmtT = pdo()->prepare("SELECT COUNT(*) FROM associados a WHERE $where");
+    $stmtT = pdo()->prepare(
+        "SELECT COUNT(*)
+         FROM conecta2.conecta_users u
+         LEFT JOIN associados a ON a.id = u.crm_associado_id
+         WHERE $where"
+    );
     $stmtT->execute($params);
     $total = (int)$stmtT->fetchColumn();
 
     $stmt = pdo()->prepare(
-        "SELECT a.id, a.tipo_pessoa, a.categoria, a.vinculo_id, a.razao_social, a.nome_fantasia,
-                a.cpf, a.cnpj, a.email, a.telefone, a.whatsapp,
-                a.cidade, a.uf, a.status, a.data_associacao, a.data_vencimento,
-                a.conecta_user_id, a.criado_em,
-                p.nome AS plano_nome, p.valor AS plano_valor
-         FROM associados a
+        "SELECT u.id,
+                CASE
+                    WHEN u.cpf_cnpj REGEXP '^[0-9]{11}$' THEN 'pf'
+                    WHEN u.cpf_cnpj REGEXP '^[0-9]{14}$' THEN 'pj'
+                    ELSE 'pj'
+                END AS tipo_pessoa,
+                COALESCE(a.categoria, CASE u.tipo WHEN 'empresa' THEN 'empresa' WHEN 'associado_empresa' THEN 'empresa' ELSE 'colaborador' END) AS categoria,
+                a.vinculo_id,
+                COALESCE(a.razao_social, u.nome, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.razao_social'))) AS razao_social,
+                COALESCE(a.nome_fantasia, u.nome, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia'))) AS nome_fantasia,
+                CASE WHEN u.cpf_cnpj REGEXP '^[0-9]{11}$' THEN u.cpf_cnpj ELSE a.cpf END AS cpf,
+                CASE WHEN u.cpf_cnpj REGEXP '^[0-9]{14}$' THEN u.cpf_cnpj ELSE a.cnpj END AS cnpj,
+                COALESCE(a.email, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.email'))) AS email,
+                a.telefone, a.whatsapp, a.cidade, a.uf,
+                COALESCE(a.status, CASE WHEN u.ativo = 1 THEN 'ativo' ELSE 'cancelado' END) AS status,
+                a.data_associacao,
+                COALESCE(a.data_vencimento, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.data_vencimento'))) AS data_vencimento,
+                u.id AS conecta_user_id,
+                COALESCE(a.criado_em, u.created_at) AS criado_em,
+                p.nome AS plano_nome,
+                COALESCE(p.valor, CAST(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.plano_valor')) AS DECIMAL(10,2))) AS plano_valor
+         FROM conecta2.conecta_users u
+         LEFT JOIN associados a ON a.id = u.crm_associado_id
          LEFT JOIN planos p ON p.id = a.plano_id
          WHERE $where
-         ORDER BY a.nome_fantasia, a.razao_social
+         ORDER BY COALESCE(a.nome_fantasia, u.nome, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia')))
          LIMIT $limit OFFSET $off"
     );
     $stmt->execute($params);
@@ -657,12 +744,11 @@ if ($method === 'GET' && $uri === '/associados') {
     ]);
 }
 
-// GET /associados/{id}
+// GET /associados/{id} — busca em conecta2.conecta_users com LEFT JOIN
 if ($method === 'GET' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     $p   = auth_required();
     $tid = $p['tenant_id'] ?? tenant_id();
 
-    // associado_empresa e colaborador: apenas seu próprio registro
     if (in_array($p['role'] ?? '', ['associado_empresa', 'colaborador'])) {
         $ownId = $p['associado_id'] ?? $p['sub'];
         if ((int)$m[1] !== (int)$ownId) {
@@ -671,12 +757,37 @@ if ($method === 'GET' && preg_match('#^/associados/(\d+)$#', $uri, $m)) {
     }
 
     $stmt = pdo()->prepare(
-        'SELECT a.*, p.nome AS plano_nome, p.valor AS plano_valor
-         FROM associados a
+        "SELECT u.id,
+                CASE
+                    WHEN u.cpf_cnpj REGEXP '^[0-9]{11}$' THEN 'pf'
+                    WHEN u.cpf_cnpj REGEXP '^[0-9]{14}$' THEN 'pj'
+                    ELSE 'pj'
+                END AS tipo_pessoa,
+                COALESCE(a.categoria, CASE u.tipo WHEN 'empresa' THEN 'empresa' WHEN 'associado_empresa' THEN 'empresa' ELSE 'colaborador' END) AS categoria,
+                a.vinculo_id,
+                COALESCE(a.razao_social, u.nome, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.razao_social'))) AS razao_social,
+                COALESCE(a.nome_fantasia, u.nome, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia'))) AS nome_fantasia,
+                u.nome AS nome_responsavel,
+                CASE WHEN u.cpf_cnpj REGEXP '^[0-9]{11}$' THEN u.cpf_cnpj ELSE a.cpf END AS cpf,
+                CASE WHEN u.cpf_cnpj REGEXP '^[0-9]{14}$' THEN u.cpf_cnpj ELSE a.cnpj END AS cnpj,
+                COALESCE(a.email, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.email'))) AS email,
+                a.telefone, a.whatsapp,
+                a.cep, a.logradouro, a.numero, a.complemento, a.bairro,
+                a.cidade, a.uf,
+                COALESCE(a.status, CASE WHEN u.ativo = 1 THEN 'ativo' ELSE 'cancelado' END) AS status,
+                a.data_associacao,
+                COALESCE(a.data_vencimento, JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.data_vencimento'))) AS data_vencimento,
+                u.id AS conecta_user_id,
+                COALESCE(a.criado_em, u.created_at) AS criado_em,
+                a.higestor_id, a.campos_extras, a.atualizado_em,
+                p.nome AS plano_nome,
+                COALESCE(p.valor, CAST(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.plano_valor')) AS DECIMAL(10,2))) AS plano_valor
+         FROM conecta2.conecta_users u
+         LEFT JOIN associados a ON a.id = u.crm_associado_id
          LEFT JOIN planos p ON p.id = a.plano_id
-         WHERE a.id = ? AND a.tenant_id = ?'
+         WHERE u.id = ?"
     );
-    $stmt->execute([$m[1], $tid]);
+    $stmt->execute([$m[1]]);
     $row = $stmt->fetch();
     if (!$row) json_out(['error' => 'Associado não encontrado'], 404);
     json_out($row);
@@ -855,22 +966,33 @@ if ($method === 'GET' && $uri === '/planos') {
     }
 
     if ($authenticated) {
-        // Authenticated: show all active plans
         $tid = $p['tenant_id'] ?? tenant_id();
         $stmt = pdo()->prepare('SELECT * FROM planos WHERE tenant_id = ? AND ativo = 1 ORDER BY ordem ASC, valor ASC');
         $stmt->execute([$tid]);
         $rows = $stmt->fetchAll();
         foreach ($rows as &$row) {
+            // Itens do plano
             $stmtI = pdo()->prepare('SELECT pi.*, pa.nome AS parceiro_nome FROM plano_itens pi LEFT JOIN parceiros pa ON pa.id = pi.parceiro_id WHERE pi.plano_id = ? AND pi.tenant_id = ? ORDER BY pi.ordem');
             $stmtI->execute([$row['id'], $tid]);
             $row['itens'] = $stmtI->fetchAll();
+            // Produtos Conecta vinculados
+            $stmtP = pdo()->prepare('SELECT pp.id, pp.produto_conecta_id FROM plano_produtos pp WHERE pp.plano_id = ? AND pp.tenant_id = ?');
+            $stmtP->execute([$row['id'], $tid]);
+            $row['produtos'] = $stmtP->fetchAll();
+            // Taxa vinculada (para combos)
+            if ($row['taxa_vinculada_id']) {
+                $stmtT = pdo()->prepare('SELECT id, nome, valor, periodicidade FROM planos WHERE id = ? AND tenant_id = ?');
+                $stmtT->execute([$row['taxa_vinculada_id'], $tid]);
+                $row['taxa_vinculada'] = $stmtT->fetch() ?: null;
+            } else {
+                $row['taxa_vinculada'] = null;
+            }
         }
         unset($row);
     } else {
-        // Public: only plans with tem_link_publico=1, safe columns only
         $tid = tenant_id();
         $stmt = pdo()->prepare(
-            'SELECT id, nome, tipo, descricao, valor, periodicidade, slug_link, tem_conecta
+            'SELECT id, nome, tipo, segmento, descricao, valor, valor_adesao, periodicidade, slug_link, tem_conecta
              FROM planos
              WHERE tenant_id = ? AND ativo = 1 AND tem_link_publico = 1
              ORDER BY ordem ASC, valor ASC'
@@ -882,28 +1004,31 @@ if ($method === 'GET' && $uri === '/planos') {
     json_out(["data" => $rows, "total" => count($rows)]);
 }
 
-// POST /planos
+// POST /planos (superadmin only)
 if ($method === 'POST' && $uri === '/planos') {
     $p = auth_required();
-    require_role($p, ['superadmin', 'gestor']);
+    require_role($p, ['superadmin']);
     required_fields(['nome', 'tipo', 'valor', 'periodicidade']);
     $b   = body();
     $tid = $p['tenant_id'] ?? tenant_id();
 
-    $tipos  = ['mei','me','epp','isento','combo','personalizado'];
+    $tipos  = ['taxa','combo'];
+    $segmentos = ['mei','me','epp','isento','personalizado'];
     $period = ['mensal','trimestral','semestral','anual'];
-    if (!in_array($b['tipo'], $tipos))   json_out(['error' => 'Tipo inválido: ' . implode(', ', $tipos)], 422);
+    if (!in_array($b['tipo'], $tipos))   json_out(['error' => 'Tipo inválido: taxa, combo'], 422);
     if (!in_array($b['periodicidade'], $period)) json_out(['error' => 'Periodicidade inválida'], 422);
+    if ($b['tipo'] === 'taxa' && !empty($b['segmento']) && !in_array($b['segmento'], $segmentos))
+        json_out(['error' => 'Segmento inválido: ' . implode(', ', $segmentos)], 422);
 
     $slug = preg_replace('/[^a-z0-9]+/', '-', strtolower($b['nome'])) . '-' . substr(md5(uniqid()), 0, 6);
 
     pdo()->prepare(
-        'INSERT INTO planos (tenant_id, nome, tipo, descricao, valor, periodicidade,
+        'INSERT INTO planos (tenant_id, nome, tipo, segmento, descricao, valor, periodicidade,
           tem_conecta, desconto_avista, tem_link_publico, slug_link,
-          split_ativo, split_percentual, valor_adesao, valor_recorrencia, ativo, criado_em)
-         VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?,?,1,NOW())'
+          split_ativo, split_percentual, valor_adesao, valor_recorrencia, taxa_vinculada_id, ativo, criado_em)
+         VALUES (?,?,?,?,?,?,?,?,?,1,?,?,?,?,?,?,1,NOW())'
     )->execute([
-        $tid, $b['nome'], $b['tipo'], $b['descricao'] ?? null,
+        $tid, $b['nome'], $b['tipo'], $b['segmento'] ?? null, $b['descricao'] ?? null,
         $b['valor'], $b['periodicidade'],
         (int)($b['tem_conecta'] ?? 0),
         $b['desconto_avista'] ?? 0,
@@ -912,14 +1037,26 @@ if ($method === 'POST' && $uri === '/planos') {
         $b['split_percentual'] ?? null,
         $b['valor_adesao'] ?? null,
         $b['valor_recorrencia'] ?? null,
+        $b['taxa_vinculada_id'] ?? null,
     ]);
-    json_out(['message' => 'Plano criado', 'id' => (int)pdo()->lastInsertId(), 'slug' => $slug], 201);
+
+    $planoId = (int)pdo()->lastInsertId();
+
+    // Vincular produtos Conecta se enviados
+    if (!empty($b['produtos']) && is_array($b['produtos'])) {
+        $stmtProd = pdo()->prepare('INSERT IGNORE INTO plano_produtos (plano_id, produto_conecta_id, tenant_id) VALUES (?,?,?)');
+        foreach ($b['produtos'] as $prodId) {
+            $stmtProd->execute([$planoId, (int)$prodId, $tid]);
+        }
+    }
+
+    json_out(['message' => 'Plano criado', 'id' => $planoId, 'slug' => $slug], 201);
 }
 
-// PUT /planos/{id} — atualiza plano
+// PUT /planos/{id} — atualiza plano (superadmin only)
 if ($method === 'PUT' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
     $p = auth_required();
-    require_role($p, ['superadmin', 'gestor']);
+    require_role($p, ['superadmin']);
     $tid = $p['tenant_id'] ?? tenant_id();
     $b   = body();
 
@@ -927,19 +1064,21 @@ if ($method === 'PUT' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
     $stmt->execute([$m[1], $tid]);
     if (!$stmt->fetch()) json_out(['error' => 'Plano não encontrado'], 404);
 
-    $allowed = ['nome','tipo','descricao','valor','periodicidade','tem_conecta','desconto_avista',
-                'split_ativo','split_percentual','tem_link_publico','valor_adesao','valor_recorrencia','descricao_adesao'];
+    $allowed = ['nome','tipo','segmento','descricao','valor','periodicidade','tem_conecta','desconto_avista',
+                'split_ativo','split_percentual','tem_link_publico','valor_adesao','valor_recorrencia','descricao_adesao','taxa_vinculada_id'];
     $set = []; $vals = [];
     foreach ($allowed as $f) {
         if (array_key_exists($f, $b)) { $set[] = "$f = ?"; $vals[] = $b[$f]; }
     }
-    if (!$set) json_out(['error' => 'Nenhum campo para atualizar'], 422);
+    if (!$set && !isset($b['itens']) && !isset($b['produtos'])) json_out(['error' => 'Nenhum campo para atualizar'], 422);
 
-    $vals[] = $m[1]; $vals[] = $tid;
-    pdo()->prepare('UPDATE planos SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?')
-         ->execute($vals);
+    if ($set) {
+        $vals[] = $m[1]; $vals[] = $tid;
+        pdo()->prepare('UPDATE planos SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?')
+             ->execute($vals);
+    }
 
-    // Processar itens[] se enviados — recria atomicamente
+    // Processar itens[] se enviados
     if (isset($b['itens']) && is_array($b['itens'])) {
         pdo()->prepare('DELETE FROM plano_itens WHERE plano_id = ? AND tenant_id = ?')
              ->execute([$m[1], $tid]);
@@ -961,6 +1100,16 @@ if ($method === 'PUT' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
         }
     }
 
+    // Processar produtos[] se enviados — substitui vinculações
+    if (isset($b['produtos']) && is_array($b['produtos'])) {
+        pdo()->prepare('DELETE FROM plano_produtos WHERE plano_id = ? AND tenant_id = ?')
+             ->execute([$m[1], $tid]);
+        $stmtProd = pdo()->prepare('INSERT IGNORE INTO plano_produtos (plano_id, produto_conecta_id, tenant_id) VALUES (?,?,?)');
+        foreach ($b['produtos'] as $prodId) {
+            $stmtProd->execute([$m[1], (int)$prodId, $tid]);
+        }
+    }
+
     json_out(['ok' => true, 'message' => 'Plano atualizado', 'id' => (int)$m[1]]);
 }
 
@@ -979,10 +1128,10 @@ if ($method === 'PATCH' && $uri === '/planos/reordenar') {
     json_out(['message' => 'Ordem atualizada', 'total' => count($itens)]);
 }
 
-// DELETE /planos/{id} — desativa plano (soft delete)
+// DELETE /planos/{id} — desativa plano (soft delete, superadmin only)
 if ($method === 'DELETE' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
     $p = auth_required();
-    require_role($p, ['superadmin', 'gestor']);
+    require_role($p, ['superadmin']);
     $tid = $p['tenant_id'] ?? tenant_id();
 
     $stmt = pdo()->prepare('SELECT id FROM planos WHERE id = ? AND tenant_id = ?');
@@ -992,6 +1141,63 @@ if ($method === 'DELETE' && preg_match('#^/planos/(\d+)$#', $uri, $m)) {
     pdo()->prepare('UPDATE planos SET ativo = 0 WHERE id = ? AND tenant_id = ?')
          ->execute([$m[1], $tid]);
     json_out(['success' => true, 'message' => 'Plano desativado']);
+}
+
+// ── PLANO PRODUTOS (vinculação plano <-> produto Conecta) ───────────────
+
+// GET /planos/{id}/produtos
+if ($method === 'GET' && preg_match('#^/planos/(\d+)/produtos$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $stmt = pdo()->prepare('SELECT pp.id, pp.produto_conecta_id, pp.criado_em FROM plano_produtos pp WHERE pp.plano_id = ? AND pp.tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    json_out(['data' => $stmt->fetchAll(), 'total' => $stmt->rowCount()]);
+}
+
+// POST /planos/{id}/produtos — vincular produto Conecta
+if ($method === 'POST' && preg_match('#^/planos/(\d+)/produtos$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin']);
+    required_fields(['produto_conecta_id']);
+    $b = body();
+    $tid = $p['tenant_id'] ?? tenant_id();
+    $stmt = pdo()->prepare('SELECT id FROM planos WHERE id = ? AND tenant_id = ?');
+    $stmt->execute([$m[1], $tid]);
+    if (!$stmt->fetch()) json_out(['error' => 'Plano não encontrado'], 404);
+    pdo()->prepare('INSERT IGNORE INTO plano_produtos (plano_id, produto_conecta_id, tenant_id) VALUES (?,?,?)')
+         ->execute([$m[1], (int)$b['produto_conecta_id'], $tid]);
+    json_out(['message' => 'Produto vinculado', 'plano_id' => (int)$m[1], 'produto_conecta_id' => (int)$b['produto_conecta_id']], 201);
+}
+
+// DELETE /planos/{id}/produtos/{produtoId} — desvincular produto
+if ($method === 'DELETE' && preg_match('#^/planos/(\d+)/produtos/(\d+)$#', $uri, $m)) {
+    $p = auth_required();
+    require_role($p, ['superadmin']);
+    $tid = $p['tenant_id'] ?? tenant_id();
+    pdo()->prepare('DELETE FROM plano_produtos WHERE plano_id = ? AND produto_conecta_id = ? AND tenant_id = ?')
+         ->execute([$m[1], $m[2], $tid]);
+    json_out(['success' => true, 'message' => 'Produto desvinculado']);
+}
+
+// GET /produtos-conecta — busca produtos do Conecta 2.0 para multi-select
+if ($method === 'GET' && $uri === '/produtos-conecta') {
+    $p = auth_required();
+    require_role($p, ['superadmin']);
+    $cacheFile = '/tmp/conecta_produtos_cache.json';
+    $cacheTtl = 300;
+    if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTtl) {
+        json_out(json_decode(file_get_contents($cacheFile), true));
+    }
+    $ctx = stream_context_create(['http' => ['timeout' => 10]]);
+    $resp = @file_get_contents('https://conecta.acicdf.org.br/produtos.php?action=listar', false, $ctx);
+    if ($resp === false) json_out(['error' => 'Erro ao buscar produtos do Conecta'], 502);
+    $raw = json_decode($resp, true);
+    if (!$raw) json_out(['error' => 'Resposta inválida do Conecta'], 502);
+    $produtos = $raw['data']['produtos'] ?? $raw['data'] ?? $raw ?? [];
+    $result = ['data' => $produtos, 'total' => count($produtos)];
+    file_put_contents($cacheFile, json_encode($result));
+    json_out($result);
 }
 
 // ── PLANO ITENS ─────────────────────────────────────────────────────────────
