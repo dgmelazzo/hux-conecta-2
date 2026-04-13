@@ -1319,6 +1319,16 @@ function _restaurarSecao() {
 // SCREEN TRANSITIONS
 // ============================================================
 
+
+function showGestorMenu() {
+  // Gestor v apenas: Comunicados, Produtos, Parceiros, Mtricas
+  const allowed = ['nav-comunicados','nav-produtos','nav-parceiros','nav-metricas'];
+  const all_nav = document.querySelectorAll('[id^="nav-"]');
+  all_nav.forEach(el => {
+    if (!allowed.includes(el.id)) el.style.display = 'none';
+    else el.style.display = '';
+  });
+}
 function hideAuthLoading() {
   document.documentElement.classList.remove('has-token');
 }
@@ -1330,6 +1340,7 @@ function showLogin() {
 
 function showPortal() {
   hideAuthLoading();
+  if(window._userRole === 'gestor') showGestorMenu();
   _adminChecked = false;
   // Garante que elementos admin começam ocultos a cada login
   ['nav-admin','nav-metricas'].forEach(id => {
