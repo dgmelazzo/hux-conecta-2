@@ -378,7 +378,206 @@ textarea.fc{height:80px;padding:10px 12px;resize:vertical}
 
   </div>
 
-<div id="pg2-cfg" style="display:none;width:100%;overflow-y:auto"><div style="display:flex;border-bottom:2px solid #e8eaf0;margin-bottom:24px;padding:0 24px;padding-top:8px"><button id="cfg-tab-perm" onclick="cfgTab('perm')" style="padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;color:#1B2B6B;border-bottom:3px solid #1B2B6B;margin-bottom:-2px">Acesso e Permissões</button><button id="cfg-tab-gw" onclick="cfgTab('gw')" style="padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:600;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px">Gateway</button></div><div id="cfg-perm" style="display:block;padding:0 24px 24px"><div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;overflow:hidden;margin-bottom:16px"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="background:#1B2B6B;color:#fff"><th style="padding:12px 16px;text-align:left">Ação / Módulo</th><th style="padding:12px 16px;text-align:center">Superadmin</th><th style="padding:12px 16px;text-align:center">Gestor</th><th style="padding:12px 16px;text-align:center">Empresa</th><th style="padding:12px 16px;text-align:center">Colaborador</th><th style="padding:12px 16px;text-align:center">Sistema</th></tr></thead><tbody id="cfg-tb"></tbody></table></div><p style="font-size:12px;color:#aaa;margin:0">CRM = painel administrativo &nbsp;|&nbsp; Conecta = portal do associado</p></div><div id="cfg-gw" style="display:none;padding:0 24px 24px"><div id="cfg-gw-inner" style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:24px"></div></div></div>
+<div id="pg2-cfg" style="display:none;width:100%;height:100%;overflow:hidden">
+  <div style="display:flex;height:100%">
+
+    <!-- MENU LATERAL CONFIGURACOES -->
+    <div id="cfg-sidebar" style="width:220px;min-width:220px;background:#f8f9fc;border-right:1px solid #e8eaf0;overflow-y:auto;padding:8px 0">
+
+      <!-- Secao: Acesso -->
+      <div style="padding:16px 16px 6px;font-size:10px;font-weight:700;letter-spacing:.08em;color:#94a3b8;text-transform:uppercase">Acesso</div>
+      <button onclick="cfgNav('permissoes')" id="cfgnav-permissoes" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 16px;border:none;background:none;cursor:pointer;text-align:left;font-size:13px;font-weight:500;color:#334155;border-radius:0;transition:all .15s">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Acesso e Permissões
+      </button>
+      <button onclick="cfgNav('usuarios')" id="cfgnav-usuarios" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 16px;border:none;background:none;cursor:pointer;text-align:left;font-size:13px;font-weight:500;color:#334155;border-radius:0;transition:all .15s">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Usuários
+      </button>
+
+      <!-- Secao: Financeiro -->
+      <div style="padding:16px 16px 6px;font-size:10px;font-weight:700;letter-spacing:.08em;color:#94a3b8;text-transform:uppercase;margin-top:4px">Financeiro</div>
+      <button onclick="cfgNav('gateway')" id="cfgnav-gateway" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 16px;border:none;background:none;cursor:pointer;text-align:left;font-size:13px;font-weight:500;color:#334155;border-radius:0;transition:all .15s">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Gateway de Pagamento
+      </button>
+      <button onclick="cfgNav('planos')" id="cfgnav-planos" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 16px;border:none;background:none;cursor:pointer;text-align:left;font-size:13px;font-weight:500;color:#334155;border-radius:0;transition:all .15s">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Planos e Taxas
+      </button>
+      <button onclick="cfgNav('regua')" id="cfgnav-regua" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 16px;border:none;background:none;cursor:pointer;text-align:left;font-size:13px;font-weight:500;color:#334155;border-radius:0;transition:all .15s">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Régua de Cobrança
+      </button>
+
+      <!-- Secao: Sistema -->
+      <div style="padding:16px 16px 6px;font-size:10px;font-weight:700;letter-spacing:.08em;color:#94a3b8;text-transform:uppercase;margin-top:4px">Sistema</div>
+      <button onclick="cfgNav('tenant')" id="cfgnav-tenant" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 16px;border:none;background:none;cursor:pointer;text-align:left;font-size:13px;font-weight:500;color:#334155;border-radius:0;transition:all .15s">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configurações Gerais
+      </button>
+      <button onclick="cfgNav('integ')" id="cfgnav-integ" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 16px;border:none;background:none;cursor:pointer;text-align:left;font-size:13px;font-weight:500;color:#334155;border-radius:0;transition:all .15s">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Integrações
+      </button>
+    </div>
+
+    <!-- PAINEL DE CONTEUDO -->
+    <div id="cfg-content" style="flex:1;overflow-y:auto;padding:28px 32px">
+
+      <!-- Permissoes -->
+      <div id="cfgp-permissoes" style="display:block">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <div style="width:36px;height:36px;background:#ede9fe;border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#1e293b">Acesso e Permissões</h3>
+            <p style="margin:0;font-size:12px;color:#94a3b8">Matriz de acesso por perfil  CRM e Conecta 2.0</p>
+          </div>
+        </div>
+        <div style="height:1px;background:#e8eaf0;margin:16px 0"></div>
+        <div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;overflow:hidden">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr style="background:#1B2B6B;color:#fff">
+              <th style="padding:12px 16px;text-align:left;font-weight:600">Ação / Módulo</th>
+              <th style="padding:12px 16px;text-align:center;font-weight:600">Superadmin</th>
+              <th style="padding:12px 16px;text-align:center;font-weight:600">Gestor</th>
+              <th style="padding:12px 16px;text-align:center;font-weight:600">Empresa</th>
+              <th style="padding:12px 16px;text-align:center;font-weight:600">Colaborador</th>
+              <th style="padding:12px 16px;text-align:center;font-weight:600">Sistema</th>
+            </tr></thead>
+            <tbody id="cfg-tb"></tbody>
+          </table>
+        </div>
+        <p style="font-size:11px;color:#94a3b8;margin-top:12px">CRM = painel administrativo &nbsp;•&nbsp; Conecta = portal do associado</p>
+      </div>
+
+      <!-- Usuarios -->
+      <div id="cfgp-usuarios" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <div style="width:36px;height:36px;background:#dbeafe;border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#1e293b">Usuários</h3>
+            <p style="margin:0;font-size:12px;color:#94a3b8">Gerencie usuários e perfis de acesso</p>
+          </div>
+        </div>
+        <div style="height:1px;background:#e8eaf0;margin:16px 0"></div>
+        <div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:24px;text-align:center;color:#94a3b8">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" style="margin-bottom:12px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <p style="margin:0;font-size:14px">Gerencie usuários diretamente na aba <strong>Usuários</strong> do menu principal.</p>
+          <button onclick="go('u')" style="margin-top:12px;padding:8px 18px;background:#1B2B6B;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Ir para Usuários</button>
+        </div>
+      </div>
+
+      <!-- Gateway -->
+      <div id="cfgp-gateway" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <div style="width:36px;height:36px;background:#d1fae5;border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#1e293b">Gateway de Pagamento</h3>
+            <p style="margin:0;font-size:12px;color:#94a3b8">Configure o gateway para cobranças dos associados</p>
+          </div>
+        </div>
+        <div style="height:1px;background:#e8eaf0;margin:16px 0"></div>
+        <div id="cfgp-gateway-inner"></div>
+      </div>
+
+      <!-- Planos -->
+      <div id="cfgp-planos" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <div style="width:36px;height:36px;background:#fef3c7;border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#1e293b">Planos e Taxas</h3>
+            <p style="margin:0;font-size:12px;color:#94a3b8">Configure planos e taxas associativas</p>
+          </div>
+        </div>
+        <div style="height:1px;background:#e8eaf0;margin:16px 0"></div>
+        <div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:24px;text-align:center;color:#94a3b8">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" style="margin-bottom:12px"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <p style="margin:0;font-size:14px">Gerencie planos diretamente na aba <strong>Planos e Taxas</strong> do menu principal.</p>
+          <button onclick="go('pla')" style="margin-top:12px;padding:8px 18px;background:#1B2B6B;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Ir para Planos e Taxas</button>
+        </div>
+      </div>
+
+      <!-- Regua -->
+      <div id="cfgp-regua" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <div style="width:36px;height:36px;background:#fce7f3;border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#1e293b">Régua de Cobrança</h3>
+            <p style="margin:0;font-size:12px;color:#94a3b8">Automatize lembretes e cobranças por e-mail/WhatsApp</p>
+          </div>
+        </div>
+        <div style="height:1px;background:#e8eaf0;margin:16px 0"></div>
+        <div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:32px;text-align:center">
+          <span style="font-size:32px">&#128666;</span>
+          <p style="margin:12px 0 4px;font-size:14px;font-weight:600;color:#334155">Em breve</p>
+          <p style="margin:0;font-size:13px;color:#94a3b8">Régua de cobrança automática  prevista para Fase 2</p>
+        </div>
+      </div>
+
+      <!-- Tenant -->
+      <div id="cfgp-tenant" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <div style="width:36px;height:36px;background:#f1f5f9;border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#1e293b">Configurações Gerais</h3>
+            <p style="margin:0;font-size:12px;color:#94a3b8">Dados da associação e preferências do sistema</p>
+          </div>
+        </div>
+        <div style="height:1px;background:#e8eaf0;margin:16px 0"></div>
+        <div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:32px;text-align:center">
+          <span style="font-size:32px">&#9881;</span>
+          <p style="margin:12px 0 4px;font-size:14px;font-weight:600;color:#334155">Em breve</p>
+          <p style="margin:0;font-size:13px;color:#94a3b8">Configurações gerais do tenant  prevista para Fase 3</p>
+        </div>
+      </div>
+
+      <!-- Integracoes -->
+      <div id="cfgp-integ" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <div style="width:36px;height:36px;background:#ede9fe;border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:#1e293b">Integrações</h3>
+            <p style="margin:0;font-size:12px;color:#94a3b8">WhatsApp, NFSe, API pública e mais</p>
+          </div>
+        </div>
+        <div style="height:1px;background:#e8eaf0;margin:16px 0"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:20px;text-align:center">
+            <span style="font-size:28px">&#128241;</span>
+            <p style="margin:8px 0 4px;font-size:13px;font-weight:600;color:#334155">WhatsApp</p>
+            <span style="font-size:10px;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;font-weight:600">Fase 2</span>
+          </div>
+          <div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:20px;text-align:center">
+            <span style="font-size:28px">&#128196;</span>
+            <p style="margin:8px 0 4px;font-size:13px;font-weight:600;color:#334155">NFSe</p>
+            <span style="font-size:10px;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;font-weight:600">Fase 3</span>
+          </div>
+          <div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:20px;text-align:center">
+            <span style="font-size:28px">&#128279;</span>
+            <p style="margin:8px 0 4px;font-size:13px;font-weight:600;color:#334155">API Pública</p>
+            <span style="font-size:10px;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:99px;font-weight:600">Fase 3</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 </main>
 
 <!-- Modal Detalhe Inscrição -->
@@ -1513,6 +1712,71 @@ async function gwSalvar(){var key=document.getElementById('gw-key').value.trim()
 
 
 // Configuracoes - sub-tabs e Matriz
+function cfgNav(page){
+  // Esconder todos os paineis
+  ['permissoes','usuarios','gateway','planos','regua','tenant','integ'].forEach(function(p){
+    var el=document.getElementById('cfgp-'+p);
+    if(el)el.style.display='none';
+  });
+  // Mostrar o painel selecionado
+  var target=document.getElementById('cfgp-'+page);
+  if(target)target.style.display='block';
+  // Atualizar estilo dos botoes do menu
+  document.querySelectorAll('[id^="cfgnav-"]').forEach(function(b){
+    b.style.background='none';
+    b.style.color='#334155';
+    b.style.fontWeight='500';
+    b.style.borderLeft='3px solid transparent';
+  });
+  var active=document.getElementById('cfgnav-'+page);
+  if(active){
+    active.style.background='#eff0ff';
+    active.style.color='#1B2B6B';
+    active.style.fontWeight='600';
+    active.style.borderLeft='3px solid #1B2B6B';
+  }
+  // Gateway: injetar conteudo do pgw existente
+  if(page==='gateway'){
+    var inn=document.getElementById('cfgp-gateway-inner');
+    var gwo=document.getElementById('pgw');
+    if(inn&&gwo&&inn.children.length===0)inn.innerHTML=gwo.innerHTML;
+  }
+  // Matriz de permissoes
+  if(page==='permissoes'){
+    var tb=document.getElementById('cfg-tb');
+    if(!tb||tb.children.length>0)return;
+    var H='<b style="color:#555;font-size:11px;letter-spacing:.05em">';
+    var rows=[
+      [H+'CRM</b>','','','','',''],
+      ['Dashboard CRM',1,1,0,0,'CRM'],
+      ['Associados — ver/editar',1,1,0,0,'CRM'],
+      ['Cobranças — ver/emitir',1,1,0,0,'CRM'],
+      ['Comunicados — enviar',1,1,0,0,'CRM'],
+      ['Planos e Taxas — configurar',1,0,0,0,'CRM'],
+      ['Gateway — configurar',1,0,0,0,'CRM'],
+      ['Usuários — gerenciar',1,0,0,0,'CRM'],
+      ['Configurações do sistema',1,0,0,0,'CRM'],
+      [H+'CONECTA 2.0</b>','','','','',''],
+      ['Dashboard do associado',1,1,1,1,'Conecta'],
+      ['Catálogo de benefícios',1,1,1,1,'Conecta'],
+      ['Minha Carteirinha',1,1,1,1,'Conecta'],
+      ['Comunicados — receber',1,1,1,1,'Conecta'],
+      ['Minhas Taxas / Cobranças',1,1,1,0,'Conecta'],
+      ['Minha Empresa',1,1,1,0,'Conecta'],
+      ['Comunicados — enviar (portal)',1,1,0,0,'Conecta']
+    ];
+    var ok='<span style="color:#22c55e;font-size:17px">&#10003;</span>';
+    var no='<span style="color:#ef4444;font-size:17px">&#10007;</span>';
+    tb.innerHTML=rows.map(function(r,i){
+      if(typeof r[1]==='string')return '<tr><td colspan="6" style="padding:8px 16px;background:#f0f2f8">'+r[0]+'</td></tr>';
+      var bg=i%2===0?'#f8f9fc':'#fff';
+      var sys=r[5];var bc=sys==='CRM'?'background:#e0e7ff;color:#3730a3':'background:#dcfce7;color:#166534';
+      var badge='<span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;'+bc+'">'+sys+'</span>';
+      return '<tr style="background:'+bg+';border-bottom:1px solid #f0f0f5"><td style="padding:10px 16px;font-weight:500">'+r[0]+'</td>'+r.slice(1,5).map(function(v){return '<td style="text-align:center;padding:10px 16px">'+(v?ok:no)+'</td>';}).join('')+'<td style="text-align:center;padding:8px 12px">'+badge+'</td></tr>';
+    }).join('');
+  }
+}
+
 function cfgTab(tab){
   document.getElementById('cfg-perm').style.display=tab==='perm'?'block':'none';
   document.getElementById('cfg-gw').style.display=tab==='gw'?'block':'none';
@@ -1529,7 +1793,7 @@ function showCfg(){
   var nb=document.getElementById('ni-cfg');if(nb)nb.classList.add('on');
   var pt=document.getElementById('pt');if(pt)pt.textContent='Configurações';
   var ps=document.getElementById('ps');if(ps)ps.textContent='Acesso, permissões e gateway.';
-  cfgTab('perm');
+  cfgNav('permissoes');
   var tb=document.getElementById('cfg-tb');
   if(!tb||tb.children.length>0)return;
   var H='<b style="color:#555;font-size:11px">';
