@@ -1168,7 +1168,7 @@
     // === LOAD PLANS ===
     async function loadPlans() {
         try {
-            var res = await fetch('https://api.acicdf.org.br/planos');
+            var res = await fetch('https://api-crm.acicdf.org.br/api/planos');
             planos = (await res.json()).data.data;
             renderPlans();
         } catch(e) {
