@@ -1169,7 +1169,7 @@
     async function loadPlans() {
         try {
             var res = await fetch('https://api-crm.acicdf.org.br/planos');
-            planos = await res.json();
+            planos = (await res.json()).data.data;
             renderPlans();
         } catch(e) {
             document.getElementById('plans-grid').innerHTML =
