@@ -215,6 +215,7 @@ function aplicarPermissoes(sessao) {
     'nav-parceiros':       p.gerenciar_produtos === true,
     'nav-metricas':        p.ver_metricas === true,
     'nav-admin':           p.gerenciar_produtos === true || p.ver_metricas === true,
+    'nav-configuracoes':   p.cadastrar_superadmin === true,
   };
 
   Object.entries(regras).forEach(([id, visivel]) => {
@@ -1352,7 +1353,7 @@ function showPortal() {
   if(window._userRole === 'colaborador') showColaboradorMenu();
   _adminChecked = false;
   // Garante que elementos admin começam ocultos a cada login
-  ['nav-admin','nav-metricas'].forEach(id => {
+  ['nav-admin','nav-metricas','nav-configuracoes'].forEach(id => {
     document.getElementById(id)?.classList.add('hidden');
   });
   const btnLink = document.getElementById('btn-novo-link');
@@ -2166,6 +2167,7 @@ const SECTION_TITLES = {
   dashboard:  'Dashboard',
   empresa:    '',
   beneficios: 'Benefícios',
+  configuracoes: "Configura��es",
 };
 
 function showSection(id) {
@@ -2183,7 +2185,7 @@ function showSection(id) {
   if (window.innerWidth <= 900) closeSidebar();
   if (id === 'catalogo') { loadCatalogoProdutos(); carregarCategoriasFiltro(); }
   if (id === 'comunicados') iniciarComunicados();
-  const adminSections = ['admin-produtos','admin-metricas','admin-parceiros','admin-comunicados'];
+  const adminSections = ['admin-produtos','admin-metricas','admin-parceiros','admin-comunicados','configuracoes'];
   if (adminSections.includes(id)) {
     const navAdmin = document.getElementById('nav-admin');
     if (!navAdmin || navAdmin.classList.contains('hidden')) {
@@ -2197,9 +2199,50 @@ function showSection(id) {
     if (id === 'admin-metricas') carregarMetricas();
     if (id === 'admin-comunicados') iniciarComunicados();
     if (id === 'admin-parceiros') carregarParceiros();
+    if (id === 'configuracoes') renderizarMatrizPermissoes();
   }
 }
 
+// ============================================================
+// CONFIGURAÇÕES — MATRIZ DE PERFIS E PERMISSÕES
+// ============================================================
+function renderizarMatrizPermissoes() {
+  const tbody = document.getElementById('permissoes-tbody');
+  if (!tbody) return;
+
+  const modulos = [
+    { nome: 'Dashboard',                superadmin: true,  gestor: true,  empresa: true,  colaborador: true },
+    { nome: 'Catálogo',                 superadmin: true,  gestor: true,  empresa: true,  colaborador: true },
+    { nome: 'Carteirinha',              superadmin: true,  gestor: true,  empresa: true,  colaborador: true },
+    { nome: 'Comunicados (receber)',     superadmin: true,  gestor: true,  empresa: true,  colaborador: true },
+    { nome: 'Comunicados (enviar)',      superadmin: true,  gestor: true,  empresa: false, colaborador: false },
+    { nome: 'Gerenciar Produtos',        superadmin: true,  gestor: true,  empresa: false, colaborador: false },
+    { nome: 'Taxas / Cobranças',         superadmin: true,  gestor: true,  empresa: true,  colaborador: false },
+    { nome: 'Empresa',                  superadmin: true,  gestor: true,  empresa: true,  colaborador: false },
+    { nome: 'Gateway',                  superadmin: true,  gestor: false, empresa: false, colaborador: false },
+    { nome: 'Planos',                   superadmin: true,  gestor: false, empresa: false, colaborador: false },
+    { nome: 'Parceiros',               superadmin: true,  gestor: false, empresa: false, colaborador: false },
+    { nome: 'Usuários',                superadmin: true,  gestor: false, empresa: false, colaborador: false },
+    { nome: 'Métricas',                superadmin: true,  gestor: false, empresa: false, colaborador: false },
+    { nome: 'Admins',                   superadmin: true,  gestor: false, empresa: false, colaborador: false },
+    { nome: 'Configurações',           superadmin: true,  gestor: false, empresa: false, colaborador: false },
+  ];
+
+  const check = '<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#e6f4ea;color:#1e7e34;font-size:14px;font-weight:700">✓</span>';
+  const cross = '<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#fce8e6;color:#c5221f;font-size:14px;font-weight:700">✕</span>';
+
+  tbody.innerHTML = modulos.map((m, i) => {
+    const bg = i % 2 === 0 ? 'var(--surface)' : 'var(--surface2, var(--surface))';
+    const cell = 'text-align:center;padding:12px 16px;border-bottom:1px solid var(--border)';
+    return `<tr style="background:${bg};transition:background .15s" onmouseenter="this.style.background='var(--hover,rgba(27,43,107,.04))'" onmouseleave="this.style.background='${bg}'">
+      <td style="padding:12px 16px;font-weight:600;color:var(--text);border-bottom:1px solid var(--border)">${m.nome}</td>
+      <td style="${cell}">${m.superadmin ? check : cross}</td>
+      <td style="${cell}">${m.gestor ? check : cross}</td>
+      <td style="${cell}">${m.empresa ? check : cross}</td>
+      <td style="${cell}">${m.colaborador ? check : cross}</td>
+    </tr>`;
+  }).join('');
+}
 function toggleSidebar() {
   const sidebar  = document.getElementById('sidebar');
   const overlay  = document.getElementById('sidebar-overlay');
