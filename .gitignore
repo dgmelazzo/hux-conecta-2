@@ -1,5 +1,21 @@
-.env
-vendor/
-node_modules/
-web/dist/
+# Backups gerados pelo aiox e edies manuais
+*.bak
+*.bak.*
+*.bak-*
+
+# Lixo de ambiente Windows
+C:/
+
+# Uploads de usurios
+uploads/
+
+# Arquivos de teste e deploy temporrio
+test-deploy-check.txt
+test-*.txt
+
+# Logs
 *.log
+
+# Env
+.env
+.env.*
