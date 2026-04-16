@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/auth-helper.php';
 require_once 'config.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -35,28 +36,15 @@ function uniqueSlug($nome,$id=null) {
 }
 
 function requireAdmin() {
-    $db=getDB();
-    $in=input();
-    $tok=str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??$in['token']??''));
-    if(!$tok) err(401,'Token ausente.');
-    $st=$db->prepare('SELECT u.cpf_cnpj FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
-    $st->execute([$tok]); $row=$st->fetch(PDO::FETCH_ASSOC);
-    if(!$row) err(401,'Sessão inválida ou expirada.');
-    if(preg_replace('/\D/','',$row['cpf_cnpj'])!==preg_replace('/\D/','',ADMIN_DOC)) err(403,'Acesso restrito ao administrador.');
-    return $row['cpf_cnpj'];
+    $user = requireCrmAdmin();
+    return $user['documento'] ?? ADMIN_DOC;
 }
 
 function requireAuth() {
-    $db=getDB();
-    $in=input();
-    $tok=str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??$in['token']??''));
-    if(!$tok) return null;
-    $st=$db->prepare('SELECT u.id,u.cpf_cnpj,u.crm_dados FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
-    $st->execute([$tok]); $row=$st->fetch(PDO::FETCH_ASSOC);
-    if(!$row) return null;
-    $crm=json_decode($row['crm_dados']??'{}',true)?:[];
-    $row['plano_nome']=$crm['plano_nome']??'';
-    return $row;
+    $user = requireCrmAuth();
+    if (!$user) return null;
+    $user['plano_nome'] = $user['plano'] ?? '';
+    return $user;
 }
 
 function hgGet($path) {
@@ -364,15 +352,8 @@ switch($action){
     // Retorna apenas { is_admin: true/false } sem expor dados
     case 'admin_check':
         $in  = input();
-        $tok = str_replace('Bearer ','',trim($in['token'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? ''));
-        if (!$tok) { ok(['is_admin' => false]); }
-        $db  = getDB();
-        $st  = $db->prepare('SELECT u.cpf_cnpj FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
-        $st->execute([$tok]);
-        $row = $st->fetch(PDO::FETCH_ASSOC);
-        if (!$row) { ok(['is_admin' => false]); }
-        $isAdmin = (preg_replace('/\D/','',$row['cpf_cnpj']) === preg_replace('/\D/','',ADMIN_DOC));
-        ok(['is_admin' => $isAdmin]);
+        $user = validateCrmToken();
+        ok(['is_admin' => $user && $user['is_admin'], 'nome' => $user['nome'] ?? '', 'is_superadmin' => $user && ($user['is_superadmin'] ?? false)]);
         break;
 
     // ── COMBOS: vínculo plano CRM → produtos ─────────────────

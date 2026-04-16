@@ -8,7 +8,9 @@
  */
 
 // URL do auth.php no seu servidor (sem barra no final)
-const AUTH_URL = 'https://conecta.acicdf.org.br/auth.php'; // ← ajuste se necessário
+const _isHml = window.location.hostname.includes('hml.');
+const _baseUrl = _isHml ? 'https://hml.conecta.acicdf.org.br' : 'https://conecta.acicdf.org.br';
+const AUTH_URL = _baseUrl + '/auth.php'; // ← ajuste se necessário
 
 const SESSION_KEY = 'acic_conecta_token';
 
@@ -442,7 +444,7 @@ const CATALOGO_BENEFICIOS = [
  * Integra ao portal existente (app.js + api.js)
  */
 
-const PRODUTOS_URL = 'https://conecta.acicdf.org.br/produtos.php';
+const PRODUTOS_URL = _baseUrl + '/produtos.php';
 
 // ============================================================
 // STATE
@@ -1185,6 +1187,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // SSO via cookie (setado pelo CRM ao logar superadmin)
+  const ssoCookie = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('conecta_sso='));
+  if (ssoCookie && !getToken()) {
+    const ssoToken = ssoCookie.split('=')[1];
+    if (ssoToken) {
+      try {
+        const ssoData = await apiValidateSso(ssoToken);
+        aplicarPermissoes(getSession());
+        showPortal();
+        return;
+      } catch(e) {
+        // Cookie invalido, limpar e seguir para login normal
+        document.cookie = 'conecta_sso=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.acicdf.org.br';
+      }
+    }
+  }
+
   // Normal: verifica token existente
   const token = getToken();
   if (token) {
@@ -1305,6 +1324,11 @@ function mostrarTelaConvite(conviteToken) {
 function _restaurarSecao() {
   // Priorizar hash da URL (navegacao vinda de sub-paginas)
   const hash = window.location.hash.replace("#", "");
+  const _adminSecs2 = ["admin-produtos","admin-metricas","admin-parceiros","admin-comunicados","admin-categorias"];
+  if (hash && _adminSecs2.includes(hash)) {
+    const _s = getSession();
+    if (_s?.is_admin) mostrarNavAdmin(_s?.is_superadmin);
+  }
   if (hash && document.getElementById("section-" + hash)) {
     showSection(hash);
     window.location.hash = "";
@@ -1333,13 +1357,26 @@ function _restaurarSecao() {
 
 
 
-function showColaboradorMenu() {
-  // Colaborador v apenas: Catlogo, Minha Carteirinha
-  const allowed = ['nav-catalogo','nav-carteirinha'];
-  document.querySelectorAll('[id^="nav-"]').forEach(el => {
-    el.style.display = allowed.includes(el.id) ? '' : 'none';
+function showPerfilRestrito(role) {
+  // Colaborador: Dashboard, Catalogo, Carteirinha
+  // Dependente: Dashboard, Catalogo (SEM carteirinha)
+  const allowed = role === 'dependente'
+    ? ['nav-catalogo']
+    : ['nav-catalogo','nav-carteirinha'];
+  // Ocultar sidebar items nao permitidos (exceto Dashboard que e botao separado)
+  document.querySelectorAll('.sidebar-nav [id^="nav-"]').forEach(el => {
+    if (el.id && !allowed.includes(el.id)) el.style.display = 'none';
+    else el.style.display = '';
+  });
+  // Ocultar cobrancas e empresa para colaborador/dependente
+  document.querySelectorAll('.sidebar-nav button, .sidebar-nav a').forEach(el => {
+    const onclick = el.getAttribute('onclick') || '';
+    if (onclick.includes("'cobrancas'") || onclick.includes("'empresa'")) {
+      if (role === 'colaborador' || role === 'dependente') el.style.display = 'none';
+    }
   });
 }
+function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
   // Gestor v apenas: Comunicados, Produtos, Parceiros, Mtricas
   const allowed = ['nav-comunicados','nav-produtos','nav-parceiros','nav-metricas'];
@@ -1360,8 +1397,11 @@ function showLogin() {
 
 function showPortal() {
   hideAuthLoading();
-  if(window._userRole === 'gestor') showGestorMenu();
-  if(window._userRole === 'colaborador') showColaboradorMenu();
+  // Definir role a partir da sessao
+  const _sessRole = getSession();
+  window._userRole = _sessRole?.role || _sessRole?.tipo || '';
+  if (_userRole === 'gestor') showGestorMenu();
+  if (_userRole === 'colaborador' || _userRole === 'dependente') showPerfilRestrito(_userRole);
   _adminChecked = false;
   // Admin items: mostrar imediatamente se session tem is_admin
   const _sess = getSession();
@@ -1382,6 +1422,7 @@ function showPortal() {
   document.getElementById('step-convite')?.classList.add('hidden');
 
   document.getElementById('login-screen').classList.remove('active');
+  _restaurarSecao();
   document.getElementById('portal-screen').classList.add('active');
 
   // Aplicar permissões por perfil
@@ -1391,10 +1432,7 @@ function showPortal() {
   iniciarNotificacoes();
   renderVersao();
   // Restaura seção para usuários não-admin (sem aguardar checkAdmin)
-  setTimeout(() => {
-    const sess = getSession();
-    if (!sess?.is_admin) _restaurarSecao();
-  }, 100);
+  // _restaurarSecao movido para cima (sem flash)
 }
 
 // ============================================================
@@ -1816,7 +1854,15 @@ function renderAssociado(d) {
     : (d.nomeFantasia !== '—' ? d.nomeFantasia : d.razaoSocial);
   document.getElementById('dash-greeting').textContent =
     `Olá, ${nomeExibir.split(' ')[0]}! 👋`;
+  // Personalizar stats por perfil
+  const _role = getSession()?.role || getSession()?.tipo || '';
+  if (_role === 'colaborador') {
+    document.getElementById('stat-category').textContent = 'Colaborador';
+  } else if (_role === 'dependente') {
+    document.getElementById('stat-category').textContent = 'Dependente';
+  }
   document.getElementById('stat-status').textContent   = statusLabel(d.status);
+  renderDashboardPerfil(d);
   document.getElementById('stat-since').textContent    = d.razaoSocial === 'Administrador' ? 'ACIC-DF' : formatDateOrPending(d.dataAssociacao);
   document.getElementById('stat-category').textContent = tipoLabel;
 
@@ -1844,8 +1890,9 @@ function renderAssociado(d) {
   // Para admin: CPF do config (nao CNPJ da sessao CRM)
   const isAdminUser = getSession()?.is_admin === true;
   document.getElementById('emp-avatar-big').textContent = initial;
-  document.getElementById('emp-razao').textContent      = isAdminUser ? 'Administrador ACIC-DF' : d.razaoSocial;
-  document.getElementById('emp-fantasia').textContent   = isAdminUser ? 'Painel de Administração' : (d.nomeFantasia !== '—' ? d.nomeFantasia : '');
+  const _isColab = _role === 'colaborador' || _role === 'dependente';
+  document.getElementById('emp-razao').textContent      = isAdminUser ? 'Administrador ACIC-DF' : (_isColab ? (d.razaoSocial || 'Empresa vinculada') : d.razaoSocial);
+  document.getElementById('emp-fantasia').textContent   = isAdminUser ? 'Painel de Administração' : (_isColab ? 'Você está vinculado como ' + (_role === 'colaborador' ? 'Colaborador' : 'Dependente') : (d.nomeFantasia !== '—' ? d.nomeFantasia : ''));
 
   const badge       = document.getElementById('emp-status-badge');
   badge.textContent = isAdminUser ? 'Administrador' : (d.statusTexto || statusLabel(d.status));
@@ -2183,6 +2230,8 @@ const SECTION_TITLES = {
   'admin-comunicados':    'Comunicados',
   'admin-parceiros':      'Parceiros',
   'admin-categorias':     'Categorias',
+  'carteirinha':          'Minha Carteirinha',
+  'cobrancas':            'Minhas Cobran\u00e7as',
   dashboard:  'Dashboard',
   empresa:    '',
   beneficios: 'Benefícios',
@@ -2214,6 +2263,8 @@ function showSection(id) {
       document.getElementById('topbar-title').textContent = 'Dashboard';
       return;
     }
+    if (id === 'carteirinha') loadCarteirinha();
+    if (id === 'cobrancas') loadCobrancas();
     if (id === 'admin-produtos') { loadAdminProdutos(); const w=document.getElementById('sub-admin-wrap'); if(w) w.style.display='none'; }
     if (id === 'admin-metricas') carregarMetricas();
     if (id === 'admin-comunicados') iniciarComunicados();
@@ -2236,7 +2287,7 @@ function renderizarMatrizPermissoes() {
   const modulos = [
     { nome: 'Dashboard',                superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Catálogo',            superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
-    { nome: 'Carteirinha',              superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
+    { nome: 'Carteirinha',              superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: false },
     { nome: 'Comunicados (receber)',     superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Comunicados (enviar)',      superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
     { nome: 'Gerenciar Produtos',        superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
@@ -2626,7 +2677,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── UPLOAD DE IMAGEM ─────────────────────────────────────────
-const UPLOAD_URL = 'https://conecta.acicdf.org.br/upload.php';
+const UPLOAD_URL = _baseUrl + '/upload.php';
 
 async function handleImageUpload(input) {
   const file = input.files[0];
@@ -2759,7 +2810,7 @@ function atualizarPreviewCapa(url) {
 // ════════════════════════════════════════════════════════════
 // SUPERADMIN — Usuários & Métricas
 // ════════════════════════════════════════════════════════════
-const ADMIN_URL = 'https://conecta.acicdf.org.br/admin.php';
+const ADMIN_URL = _baseUrl + '/admin.php';
 
 async function adminApi(action, params = {}, method = 'POST') {
   const token = getToken();
@@ -2789,6 +2840,275 @@ function revelarMenusAdmin() {
 
 
 // ============================================================
+
+
+
+// ============================================================
+// DASHBOARD PERSONALIZADO POR PERFIL
+// ============================================================
+function renderDashboardPerfil(d) {
+  const session = getSession() || {};
+  const role = session.role || session.tipo || 'associado_empresa';
+  const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
+  const nome = d.nomeFantasia !== '\u2014' ? d.nomeFantasia : (d.razaoSocial || session.nome || 'Associado');
+
+  // Hero card personalizado
+  const heroEl = document.getElementById('dash-hero-perfil');
+  if (!heroEl) return;
+
+  if (isAdmin) {
+    heroEl.innerHTML = '';
+    return; // Admin usa o dashboard padrao
+  }
+
+  let html = '';
+
+  if (role === 'associado_empresa') {
+    // === EMPRESA ===
+    const statusColor = d.status === 'ativo' ? '#22c55e' : (d.status === 'inadimplente' ? '#ef4444' : '#f59e0b');
+    const statusTxt = d.status === 'ativo' ? 'Ativo' : (d.status === 'inadimplente' ? 'Inadimplente' : d.status || 'Ativo');
+
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:4px">Bem-vindo, ' + nome + '</div>' +
+      '<div style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;margin-top:8px">' +
+        '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + ';margin-right:6px"></span>' + statusTxt +
+      '</div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px">' +
+      '<div style="background:var(--surface);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Plano</div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + (d.plano || session.plano || 'Associado') + '</div>' +
+      '</div>' +
+      '<div style="background:var(--surface);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Pr\u00f3ximo Vencimento</div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + (d.dataVencimento || '\u2014') + '</div>' +
+      '</div>' +
+      '<div style="background:var(--surface);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Associado Desde</div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + (d.dataAssociacao || '\u2014') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+      '<button onclick="showSection(\'carteirinha\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83c\udff7\ufe0f</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Minha Carteirinha</div>' +
+      '</button>' +
+      '<button onclick="showSection(\'cobrancas\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udcb3</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Minhas Cobran\u00e7as</div>' +
+      '</button>' +
+      '<button onclick="showSection(\'catalogo\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udce6</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Cat\u00e1logo</div>' +
+      '</button>' +
+    '</div>';
+
+  } else if (role === 'colaborador') {
+    // === COLABORADOR ===
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Colaborador</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Ol\u00e1, ' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.8">Vinculado a ' + (d.razaoSocial || 'sua empresa') + '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+      '<button onclick="showSection(\'carteirinha\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83c\udff7\ufe0f</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Minha Carteirinha</div>' +
+      '</button>' +
+      '<button onclick="showSection(\'catalogo\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udce6</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Cat\u00e1logo de Benef\u00edcios</div>' +
+      '</button>' +
+    '</div>';
+
+  } else if (role === 'dependente') {
+    // === DEPENDENTE ===
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Dependente</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Ol\u00e1, ' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.8">Vinculado a ' + (d.razaoSocial || 'sua empresa') + '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+      '<button onclick="showSection(\'catalogo\')" style="flex:1;min-width:200px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udce6</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Cat\u00e1logo de Benef\u00edcios</div>' +
+      '</button>' +
+    '</div>';
+  }
+
+  heroEl.innerHTML = html;
+}
+
+// ============================================================
+// CARTEIRINHA — SPA (sem page reload)
+// ============================================================
+async function loadCarteirinha() {
+  const container = document.getElementById('carteirinha-content');
+  if (!container) return;
+
+  const session = getSession() || {};
+  const nome = session.nome || 'Associado';
+  const doc = session.documento || session.cpf_cnpj || session.cpf || '';
+  const isAdmin = session.is_admin || false;
+  const status = isAdmin ? 'ativo' : (session.status || 'ativo');
+  const plano = isAdmin ? 'Administrador' : (session.plano || session.plano_nome || 'Associado');
+  const validade = isAdmin ? null : (session.data_vencimento || null);
+  const desde = isAdmin ? 'ACIC-DF' : (session.data_associacao || '');
+
+  const isAtivo = status === 'ativo';
+  const badgeSt = isAtivo ? 'background:#dcfce7;color:#166534' : 'background:#fee2e2;color:#991b1b';
+  const badgeTxt = isAtivo ? 'ASSOCIADO ATIVO' : status.toUpperCase();
+
+  const qrData = JSON.stringify({ doc, nome, plano, validade, src:'acic-conecta' });
+
+  let qrSrc = '';
+  try {
+    if (typeof QRCode !== 'undefined') {
+      const qd = document.createElement('div');
+      new QRCode(qd, { text: qrData, width: 200, height: 200, colorDark: '#1B2B6B', colorLight: '#ffffff' });
+      await new Promise(r => setTimeout(r, 150));
+      const cv = qd.querySelector('canvas');
+      if (cv) qrSrc = cv.toDataURL('image/png');
+      else { const im = qd.querySelector('img'); if (im) qrSrc = im.src; }
+    }
+  } catch(e) {}
+
+  container.innerHTML =
+    '<div id="carteirinha-card" style="background:linear-gradient(135deg,#1B2B6B 0%,#1a3a7a 50%,#2d4a9a 100%);border-radius:20px;padding:28px 24px 24px;color:#fff;max-width:440px;margin:0 auto 24px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,43,74,.3)">' +
+      '<div style="position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:rgba(232,112,26,.15);border-radius:50%"></div>' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;position:relative;z-index:1">' +
+        '<img src="/conecta/uploads/logo-dark-320.png?v=2" alt="ACIC" style="height:32px">' +
+        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:.8">Carteira Digital do Associado</div>' +
+      '</div>' +
+      '<div style="font-size:22px;font-weight:800;margin-bottom:4px;position:relative;z-index:1">' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.75;margin-bottom:16px;position:relative;z-index:1">' + doc + '</div>' +
+      '<div style="display:inline-block;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;' + badgeSt + ';position:relative;z-index:1">' + badgeTxt + '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;position:relative;z-index:1">' +
+        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Plano</div><div style="font-size:14px;font-weight:600">' + plano + '</div></div>' +
+        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Associado Desde</div><div style="font-size:14px;font-weight:600">' + (desde || '\u2014') + '</div></div>' +
+        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Validade</div><div style="font-size:14px;font-weight:600">' + (validade || 'Administrador') + '</div></div>' +
+        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Status</div><div style="font-size:14px;font-weight:600">' + badgeTxt + '</div></div>' +
+      '</div>' +
+      '<div style="text-align:center;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);position:relative;z-index:1">' +
+        '<div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;opacity:.7;margin-bottom:10px;font-weight:600">QR Code de Valida\u00e7\u00e3o</div>' +
+        (qrSrc ? '<img src="' + qrSrc + '" width="200" height="200" style="display:block;margin:0 auto;border-radius:8px;background:#fff;padding:8px">' : '<div id="qr-spa"></div>') +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+      '<button onclick="downloadCarteirinha()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:#E8701A;color:#fff">Baixar</button>' +
+      '<button onclick="shareCarteirinha()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text)">Compartilhar</button>' +
+    '</div>';
+
+  if (!qrSrc && typeof QRCode !== 'undefined') {
+    const el = document.getElementById('qr-spa');
+    if (el) new QRCode(el, { text: qrData, width: 200, height: 200, colorDark: '#1B2B6B', colorLight: '#ffffff' });
+  }
+}
+
+function downloadCarteirinha() {
+  const el = document.getElementById('carteirinha-card');
+  if (!el || typeof html2canvas === 'undefined') return;
+  html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null }).then(c => {
+    const a = document.createElement('a');
+    a.download = 'carteirinha-acic.png';
+    a.href = c.toDataURL('image/png');
+    a.click();
+  });
+}
+
+function shareCarteirinha() {
+  const el = document.getElementById('carteirinha-card');
+  if (!el) return;
+  if (navigator.share && typeof html2canvas !== 'undefined') {
+    html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null }).then(c => {
+      c.toBlob(blob => {
+        const file = new File([blob], 'carteirinha-acic.png', { type: 'image/png' });
+        navigator.share({ title: 'Carteirinha ACIC-DF', files: [file] }).catch(() => {});
+      });
+    });
+  } else downloadCarteirinha();
+}
+
+// ============================================================
+// COBRANCAS — SPA (sem page reload)
+// ============================================================
+async function loadCobrancas() {
+  const container = document.getElementById('cobrancas-content');
+  if (!container) return;
+
+  const token = getToken();
+  if (!token) {
+    container.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--text3)"><h3 style="color:var(--text)">Sess\u00e3o expirada</h3><p>Fa\u00e7a login novamente.</p></div>';
+    return;
+  }
+
+  container.innerHTML = '<div style="text-align:center;padding:40px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto"></div></div>';
+
+  try {
+    const res = await fetch(AUTH_URL + '?action=cobrancas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message || 'Erro');
+    _renderCobrancasSPA(json.data.cobrancas || []);
+  } catch(e) {
+    container.innerHTML =
+      '<div style="text-align:center;padding:48px 24px;color:var(--text3)">' +
+      '<h3 style="color:var(--text)">Erro ao carregar</h3><p>' + (e.message || 'Erro') + '</p>' +
+      '<button onclick="loadCobrancas()" style="margin-top:12px;padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer">Tentar novamente</button></div>';
+  }
+}
+
+function _renderCobrancasSPA(list) {
+  const container = document.getElementById('cobrancas-content');
+  const money = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const fmtD = d => { if(!d)return'\u2014'; const p=d.split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d; };
+  const cls = c => {
+    if(c.status==='pago'||c.status==='paid')return'paid';
+    if(!c.data_vencimento)return'pending';
+    const t=new Date();t.setHours(0,0,0,0);
+    return new Date(c.data_vencimento+'T00:00:00')<t?'overdue':'pending';
+  };
+  const badge = c => c==='paid'?'Pago':c==='overdue'?'Vencido':'Pendente';
+  const colors = {paid:'#22c55e',pending:'#E8701A',overdue:'#ef4444'};
+
+  if (!list.length) {
+    container.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--text3)"><h3 style="color:var(--text)">Nenhuma cobran\u00e7a</h3><p>Suas cobran\u00e7as aparecer\u00e3o aqui.</p></div>';
+    return;
+  }
+
+  const pagas = list.filter(c => cls(c)==='paid').length;
+  const venc = list.filter(c => cls(c)==='overdue').length;
+  const total = list.reduce((s,c) => s+Number(c.valor||0), 0);
+
+  let html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d3f8a 100%);border-radius:16px;padding:24px 22px;color:#fff;margin-bottom:22px">' +
+    '<div style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;opacity:.85;margin-bottom:4px">Resumo Financeiro</div>' +
+    '<div style="font-size:28px;font-weight:800">' + money(total) + '</div>' +
+    '<div style="font-size:12px;opacity:.7;margin-top:2px">Total em cobran\u00e7as</div>' +
+    '<div style="display:flex;gap:18px;margin-top:16px"><div style="text-align:center"><div style="font-size:20px;font-weight:700">' + pagas + '</div><div style="font-size:11px;opacity:.7">Pagas</div></div>' +
+    '<div style="text-align:center"><div style="font-size:20px;font-weight:700">' + venc + '</div><div style="font-size:11px;opacity:.7">Vencidas</div></div></div></div>';
+
+  list.forEach(c => {
+    const st = cls(c);
+    const canPay = (st==='pending'||st==='overdue') && c.gateway_url;
+    const desc = c.descricao || c.plano_nome || 'Cobran\u00e7a ACIC-DF';
+    html += '<div style="background:var(--surface);border-radius:14px;padding:18px 20px;margin-bottom:12px;border-left:4px solid '+colors[st]+'">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">' +
+        '<div style="flex:1"><div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:4px">' + desc + '</div>' +
+        '<div style="font-size:12px;color:var(--text3)">Venc: ' + fmtD(c.data_vencimento) + ' <span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:6px;' +
+          (st==='paid'?'background:#dcfce7;color:#166534':st==='overdue'?'background:#fee2e2;color:#991b1b':'background:#fef3c7;color:#92400e') + '">' + badge(st) + '</span></div></div>' +
+        '<div style="font-size:18px;font-weight:700;color:var(--text)">' + money(c.valor) + '</div>' +
+      '</div>' +
+      (canPay ? '<div style="margin-top:12px"><a href="' + c.gateway_url + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;color:#fff;background:' + (st==='overdue'?'#ef4444':'#E8701A') + '">Pagar</a></div>' : '') +
+    '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
 // EMOJI PICKER — Nativo (sem dependencias)
 // ============================================================
 const EMOJI_DATA = [
@@ -3347,7 +3667,7 @@ function renderSemAcesso(lista) {
 // ============================================================
 // SISTEMA DE NOTIFICAÇÕES
 // ============================================================
-const NOTIF_URL = 'https://conecta.acicdf.org.br/notificacoes.php';
+const NOTIF_URL = _baseUrl + '/notificacoes.php';
 let _notifAberto    = false;
 let _notifInterval  = null;
 let _notifData      = [];
