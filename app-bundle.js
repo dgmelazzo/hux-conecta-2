@@ -1357,13 +1357,26 @@ function _restaurarSecao() {
 
 
 
-function showColaboradorMenu() {
-  // Colaborador v apenas: Catlogo, Minha Carteirinha
-  const allowed = ['nav-catalogo','nav-carteirinha'];
-  document.querySelectorAll('[id^="nav-"]').forEach(el => {
-    el.style.display = allowed.includes(el.id) ? '' : 'none';
+function showPerfilRestrito(role) {
+  // Colaborador: Dashboard, Catalogo, Carteirinha
+  // Dependente: Dashboard, Catalogo (SEM carteirinha)
+  const allowed = role === 'dependente'
+    ? ['nav-catalogo']
+    : ['nav-catalogo','nav-carteirinha'];
+  // Ocultar sidebar items nao permitidos (exceto Dashboard que e botao separado)
+  document.querySelectorAll('.sidebar-nav [id^="nav-"]').forEach(el => {
+    if (el.id && !allowed.includes(el.id)) el.style.display = 'none';
+    else el.style.display = '';
+  });
+  // Ocultar cobrancas e empresa para colaborador/dependente
+  document.querySelectorAll('.sidebar-nav button, .sidebar-nav a').forEach(el => {
+    const onclick = el.getAttribute('onclick') || '';
+    if (onclick.includes("'cobrancas'") || onclick.includes("'empresa'")) {
+      if (role === 'colaborador' || role === 'dependente') el.style.display = 'none';
+    }
   });
 }
+function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
   // Gestor v apenas: Comunicados, Produtos, Parceiros, Mtricas
   const allowed = ['nav-comunicados','nav-produtos','nav-parceiros','nav-metricas'];
@@ -1384,8 +1397,11 @@ function showLogin() {
 
 function showPortal() {
   hideAuthLoading();
-  if(window._userRole === 'gestor') showGestorMenu();
-  if(window._userRole === 'colaborador') showColaboradorMenu();
+  // Definir role a partir da sessao
+  const _sessRole = getSession();
+  window._userRole = _sessRole?.role || _sessRole?.tipo || '';
+  if (_userRole === 'gestor') showGestorMenu();
+  if (_userRole === 'colaborador' || _userRole === 'dependente') showPerfilRestrito(_userRole);
   _adminChecked = false;
   // Admin items: mostrar imediatamente se session tem is_admin
   const _sess = getSession();
@@ -1838,6 +1854,13 @@ function renderAssociado(d) {
     : (d.nomeFantasia !== '—' ? d.nomeFantasia : d.razaoSocial);
   document.getElementById('dash-greeting').textContent =
     `Olá, ${nomeExibir.split(' ')[0]}! 👋`;
+  // Personalizar stats por perfil
+  const _role = getSession()?.role || getSession()?.tipo || '';
+  if (_role === 'colaborador') {
+    document.getElementById('stat-category').textContent = 'Colaborador';
+  } else if (_role === 'dependente') {
+    document.getElementById('stat-category').textContent = 'Dependente';
+  }
   document.getElementById('stat-status').textContent   = statusLabel(d.status);
   document.getElementById('stat-since').textContent    = d.razaoSocial === 'Administrador' ? 'ACIC-DF' : formatDateOrPending(d.dataAssociacao);
   document.getElementById('stat-category').textContent = tipoLabel;
@@ -2262,7 +2285,7 @@ function renderizarMatrizPermissoes() {
   const modulos = [
     { nome: 'Dashboard',                superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Catálogo',            superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
-    { nome: 'Carteirinha',              superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
+    { nome: 'Carteirinha',              superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: false },
     { nome: 'Comunicados (receber)',     superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Comunicados (enviar)',      superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
     { nome: 'Gerenciar Produtos',        superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
