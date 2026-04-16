@@ -442,7 +442,7 @@ const CATALOGO_BENEFICIOS = [
  * Integra ao portal existente (app.js + api.js)
  */
 
-const PRODUTOS_URL = 'https://conecta.acicdf.org.br/produtos.php';
+const PRODUTOS_URL = 'https://hml.conecta.acicdf.org.br/produtos.php';
 
 // ============================================================
 // STATE
@@ -2606,7 +2606,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── UPLOAD DE IMAGEM ─────────────────────────────────────────
-const UPLOAD_URL = 'https://conecta.acicdf.org.br/upload.php';
+const UPLOAD_URL = 'https://hml.conecta.acicdf.org.br/upload.php';
 
 async function handleImageUpload(input) {
   const file = input.files[0];
@@ -3159,7 +3159,7 @@ function renderSemAcesso(lista) {
 // ============================================================
 // SISTEMA DE NOTIFICAÇÕES
 // ============================================================
-const NOTIF_URL = 'https://conecta.acicdf.org.br/notificacoes.php';
+const NOTIF_URL = 'https://hml.conecta.acicdf.org.br/notificacoes.php';
 let _notifAberto    = false;
 let _notifInterval  = null;
 let _notifData      = [];
