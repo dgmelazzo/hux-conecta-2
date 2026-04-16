@@ -2946,6 +2946,7 @@ function renderDashboardPerfil(d) {
 async function loadCarteirinha() {
   const container = document.getElementById('carteirinha-content');
   if (!container) return;
+  if (container.dataset.loaded) return;
 
   const session = getSession() || {};
   const nome = session.nome || 'Associado';
@@ -3000,6 +3001,7 @@ async function loadCarteirinha() {
       '<button onclick="shareCarteirinha()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text)">Compartilhar</button>' +
     '</div>';
 
+  container.dataset.loaded = '1';
   if (!qrSrc && typeof QRCode !== 'undefined') {
     const el = document.getElementById('qr-spa');
     if (el) new QRCode(el, { text: qrData, width: 200, height: 200, colorDark: '#1B2B6B', colorLight: '#ffffff' });
