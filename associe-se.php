@@ -1375,9 +1375,9 @@
 
         var payload = {
             plano_id: selectedPlan.id,
-            cnpj: document.getElementById('cnpj').value.replace(/\D/g,''),
+            cpf_cnpj: document.getElementById('cnpj').value.replace(/\D/g,''),
+            nome_fantasia: document.getElementById('fantasia').value,
             razao_social: document.getElementById('razao_social').value,
-            fantasia: document.getElementById('fantasia').value,
             cnae: document.getElementById('cnae').value,
             telefone_empresa: document.getElementById('telefone_empresa').value.replace(/\D/g,''),
             email_empresa: document.getElementById('email_empresa').value.trim(),
@@ -1392,6 +1392,7 @@
             nome: document.getElementById('nome').value.trim(),
             cpf: document.getElementById('cpf').value.replace(/\D/g,''),
             email: document.getElementById('email').value.trim(),
+            telefone: document.getElementById('whatsapp').value.replace(/\D/g,''),
             whatsapp: document.getElementById('whatsapp').value.replace(/\D/g,''),
             senha: document.getElementById('senha').value,
             metodo_pagamento: paymentMethod
