@@ -117,6 +117,11 @@ html[data-theme="light"],html[data-theme="light"] body{background:#EEF1F8;color:
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
       Parceiros
     </a>
+    <a class="nav-item hidden" id="nav-categorias" href="/conecta/#admin-categorias" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Categorias
+    </a>
+
   </nav>
   <div class="sidebar-footer">
     <div style="padding:0 8px 8px;font-size:10px;color:var(--text3);text-align:center;letter-spacing:.5px">
@@ -247,7 +252,7 @@ document.getElementById('sb-status').textContent = (_phpIsAdmin || session.is_ad
 
 // Show admin nav items if admin
 if (_phpIsAdmin || session.is_admin) {
-  ['nav-comunicados','nav-admin','nav-metricas','nav-parceiros'].forEach(function(id) {
+  ['nav-comunicados','nav-admin','nav-metricas','nav-parceiros','nav-categorias'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.classList.remove('hidden');
   });

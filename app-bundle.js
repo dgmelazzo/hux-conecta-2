@@ -2775,6 +2775,162 @@ function revelarMenusAdmin() {
 
 
 
+
+
+// ============================================================
+// EMOJI PICKER — Nativo (sem dependencias)
+// ============================================================
+const EMOJI_DATA = [
+  // Negocios & Financeiro
+  {e:'\u{1F4BC}',n:'maleta negocio'},     {e:'\u{1F4B0}',n:'dinheiro saco'},      {e:'\u{1F4B3}',n:'cartao credito'},
+  {e:'\u{1F4C8}',n:'grafico crescimento'}, {e:'\u{1F4C9}',n:'grafico queda'},      {e:'\u{1F4CA}',n:'grafico barras'},
+  {e:'\u{1F4B2}',n:'cifrao dolar'},        {e:'\u{1F3E6}',n:'banco predio'},       {e:'\u{1F3E2}',n:'escritorio predio'},
+  {e:'\u{1F4B5}',n:'nota dinheiro dolar'}, {e:'\u{1F4B8}',n:'dinheiro voando'},    {e:'\u{1F9FE}',n:'recibo nota'},
+  // Saude
+  {e:'\u{1FA7A}',n:'estetoscopio medico'}, {e:'\u{1F3E5}',n:'hospital predio'},    {e:'\u{1F48A}',n:'pilula remedio farmacia'},
+  {e:'\u{1F9AC}',n:'pulmao saude'},        {e:'\u{1F9B7}',n:'dente odonto'},       {e:'\u{1F489}',n:'seringa vacina'},
+  {e:'\u{2764}\u{FE0F}',n:'coracao vida'}, {e:'\u{1F9D1}\u{200D}\u{2695}\u{FE0F}',n:'medico profissional'},
+  {e:'\u{1FA79}',n:'curativo band aid'},   {e:'\u{2695}\u{FE0F}',n:'caduceu medicina'},
+  // Tecnologia
+  {e:'\u{1F4BB}',n:'notebook computador laptop'}, {e:'\u{1F5A5}\u{FE0F}',n:'desktop computador tela'},
+  {e:'\u{1F4F1}',n:'celular smartphone'},  {e:'\u{2699}\u{FE0F}',n:'engrenagem config'},
+  {e:'\u{1F527}',n:'chave ferramenta'},    {e:'\u{1F529}',n:'parafuso ferramenta'},
+  {e:'\u{1F50C}',n:'tomada eletrica'},     {e:'\u{1F4E1}',n:'antena satelite'},
+  {e:'\u{1F310}',n:'globo internet web'},  {e:'\u{1F916}',n:'robo automacao ia'},
+  {e:'\u{1F512}',n:'cadeado seguranca'},   {e:'\u{1F513}',n:'cadeado aberto'},
+  // Juridico & Seguro
+  {e:'\u{2696}\u{FE0F}',n:'balanca justica juridico'}, {e:'\u{1F4DC}',n:'pergaminho documento certificado'},
+  {e:'\u{1F6E1}\u{FE0F}',n:'escudo protecao seguro'},  {e:'\u{1F4DD}',n:'memo nota anotacao'},
+  {e:'\u{1F4CB}',n:'prancheta lista'},     {e:'\u{1F4D1}',n:'marcador pagina'},
+  {e:'\u{1F4C4}',n:'documento pagina'},    {e:'\u{1F4C3}',n:'documento curva'},
+  // Educacao
+  {e:'\u{1F393}',n:'chapeu formatura educacao'}, {e:'\u{1F4DA}',n:'livros estudo'},
+  {e:'\u{1F4D6}',n:'livro aberto leitura'},     {e:'\u{270F}\u{FE0F}',n:'lapis escrever'},
+  {e:'\u{1F3EB}',n:'escola predio'},        {e:'\u{1F9D1}\u{200D}\u{1F3EB}',n:'professor'},
+  // Viagem & Transporte
+  {e:'\u{2708}\u{FE0F}',n:'aviao viagem'},  {e:'\u{1F30D}',n:'globo terra mundo'},
+  {e:'\u{1F697}',n:'carro automovel'},       {e:'\u{1F3D6}\u{FE0F}',n:'praia ferias'},
+  {e:'\u{1F6C2}',n:'alfandega passaporte'},  {e:'\u{1F9F3}',n:'mala bagagem viagem'},
+  // Comunicacao
+  {e:'\u{1F4E7}',n:'email carta envelope'},  {e:'\u{1F4DE}',n:'telefone ligacao'},
+  {e:'\u{1F4AC}',n:'balao conversa chat'},   {e:'\u{1F4E2}',n:'megafone anuncio'},
+  {e:'\u{1F4E3}',n:'corneta comunicado'},    {e:'\u{1F514}',n:'sino notificacao'},
+  // Pessoas & Trabalho
+  {e:'\u{1F465}',n:'pessoas grupo equipe'},  {e:'\u{1F464}',n:'pessoa usuario'},
+  {e:'\u{1F91D}',n:'aperto mao parceria'},   {e:'\u{1F3AF}',n:'alvo meta objetivo'},
+  {e:'\u{1F4AA}',n:'forca musculo'},         {e:'\u{1F3C6}',n:'trofeu premio'},
+  // Alimentacao
+  {e:'\u{1F37D}\u{FE0F}',n:'prato talheres restaurante'}, {e:'\u{2615}',n:'cafe xicara'},
+  {e:'\u{1F6D2}',n:'carrinho compras'},      {e:'\u{1F6D2}',n:'mercado compras'},
+  // Casa & Construcao
+  {e:'\u{1F3E0}',n:'casa moradia'},          {e:'\u{1F3D7}\u{FE0F}',n:'construcao obra'},
+  {e:'\u{1F6AA}',n:'porta entrada'},         {e:'\u{1F3E1}',n:'casa jardim'},
+  // Abstrato & Simbolos
+  {e:'\u{2B50}',n:'estrela destaque favorito'}, {e:'\u{1F525}',n:'fogo popular trending'},
+  {e:'\u{2705}',n:'check ok confirmar'},     {e:'\u{274C}',n:'x cancelar erro'},
+  {e:'\u{26A0}\u{FE0F}',n:'alerta atencao'}, {e:'\u{2139}\u{FE0F}',n:'info informacao'},
+  {e:'\u{1F4A1}',n:'lampada ideia'},         {e:'\u{1F680}',n:'foguete lancamento'},
+  {e:'\u{1F4CC}',n:'pin fixar mapa'},        {e:'\u{1F4CD}',n:'pin local'},
+  {e:'\u{1F4CE}',n:'clips anexo'},           {e:'\u{1F4C5}',n:'calendario data'},
+  {e:'\u{1F4C6}',n:'calendario dia'},        {e:'\u{23F0}',n:'relogio alarme'},
+  {e:'\u{1F50D}',n:'lupa busca pesquisa'},   {e:'\u{1F50E}',n:'lupa direita busca'},
+  {e:'\u{1F4F0}',n:'jornal noticia imprensa'},{e:'\u{1F5C3}\u{FE0F}',n:'arquivo pasta caixa'},
+  {e:'\u{1F4C1}',n:'pasta arquivo folder'},  {e:'\u{1F4C2}',n:'pasta aberta'},
+  {e:'\u{1F3F7}\u{FE0F}',n:'etiqueta tag label'},{e:'\u{1F4E6}',n:'caixa pacote entrega'},
+  {e:'\u{1F504}',n:'setas ciclo renovar'},   {e:'\u{1F503}',n:'setas recarregar'},
+  // Natureza
+  {e:'\u{1F33F}',n:'folha natureza eco'},    {e:'\u{1F333}',n:'arvore natureza'},
+  {e:'\u{2600}\u{FE0F}',n:'sol energia solar'},{e:'\u{1F30E}',n:'terra americas globo'},
+  // Mais icones uteis
+  {e:'\u{1F4F7}',n:'camera foto'},           {e:'\u{1F3A8}',n:'paleta arte design'},
+  {e:'\u{1F3AC}',n:'claquete video cinema'}, {e:'\u{1F3B5}',n:'nota musica'},
+  {e:'\u{1F6BF}',n:'chuveiro banho'},        {e:'\u{1F48E}',n:'diamante premium'},
+  {e:'\u{1F451}',n:'coroa rei premium vip'}, {e:'\u{1F381}',n:'presente regalo'},
+  {e:'\u{1F389}',n:'festa confete celebrar'},{e:'\u{1F38A}',n:'confete bola festa'},
+  {e:'\u{1F4AB}',n:'tontura estrelas wow'},  {e:'\u{1F31F}',n:'estrela brilhante'},
+  {e:'\u{1F4AF}',n:'cem pontos perfeito'},   {e:'\u{1F44D}',n:'joinha like positivo'},
+];
+
+let _emojiPickerTarget = null;
+let _emojiPickerOpen = false;
+
+function openEmojiPicker(inputId) {
+  _emojiPickerTarget = document.getElementById(inputId);
+  let picker = document.getElementById('emoji-picker-panel');
+  if (!picker) {
+    picker = document.createElement('div');
+    picker.id = 'emoji-picker-panel';
+    picker.innerHTML =
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
+        '<input type="text" id="emoji-search" placeholder="Buscar... (ex: saude, dinheiro)" ' +
+          'style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px;outline:none" ' +
+          'oninput="filterEmojis(this.value)">' +
+        '<button onclick="closeEmojiPicker()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);padding:4px">&times;</button>' +
+      '</div>' +
+      '<div id="emoji-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:260px;overflow-y:auto;padding:4px"></div>';
+    Object.assign(picker.style, {
+      position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
+      zIndex:'9999', background:'var(--surface)', border:'1px solid var(--border)',
+      borderRadius:'14px', padding:'16px', width:'340px',
+      boxShadow:'0 12px 40px rgba(0,0,0,.25)'
+    });
+    document.body.appendChild(picker);
+  }
+  picker.style.display = 'block';
+  _emojiPickerOpen = true;
+  document.getElementById('emoji-search').value = '';
+  renderEmojiGrid(EMOJI_DATA);
+  setTimeout(function(){ document.getElementById('emoji-search').focus(); }, 50);
+}
+
+function closeEmojiPicker() {
+  const p = document.getElementById('emoji-picker-panel');
+  if (p) p.style.display = 'none';
+  _emojiPickerOpen = false;
+}
+
+function renderEmojiGrid(list) {
+  const grid = document.getElementById('emoji-grid');
+  if (!grid) return;
+  if (!list.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:13px">Nenhum emoji encontrado</div>';
+    return;
+  }
+  grid.innerHTML = list.map(function(item) {
+    return '<button onclick="selectEmoji(\'' + item.e + '\')" title="' + item.n + '" ' +
+      'style="font-size:22px;padding:6px;border:none;background:none;cursor:pointer;border-radius:8px;transition:background .15s;line-height:1" ' +
+      'onmouseenter="this.style.background=\'var(--accent-soft)\'" onmouseleave="this.style.background=\'none\'">' +
+      item.e + '</button>';
+  }).join('');
+}
+
+function filterEmojis(q) {
+  if (!q) { renderEmojiGrid(EMOJI_DATA); return; }
+  q = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const filtered = EMOJI_DATA.filter(function(item) {
+    var name = item.n.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return name.indexOf(q) !== -1;
+  });
+  renderEmojiGrid(filtered);
+}
+
+function selectEmoji(emoji) {
+  if (_emojiPickerTarget) {
+    _emojiPickerTarget.value = emoji;
+    _emojiPickerTarget.dispatchEvent(new Event('input'));
+  }
+  closeEmojiPicker();
+}
+
+// Fechar picker ao clicar fora
+document.addEventListener('click', function(e) {
+  if (!_emojiPickerOpen) return;
+  const panel = document.getElementById('emoji-picker-panel');
+  if (panel && !panel.contains(e.target) && !e.target.closest('[onclick*="openEmojiPicker"]')) {
+    closeEmojiPicker();
+  }
+});
+
 // ============================================================
 // CATEGORIAS — CRUD (superadmin)
 // ============================================================

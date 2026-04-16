@@ -538,8 +538,8 @@
         </div>
         <div class="field" style="margin-bottom:14px">
           <label>Icone (emoji)</label>
-          <input type="text" id="cat-icone" placeholder="Ex: &#x1F4BB;" maxlength="4" style="font-size:20px;width:60px;text-align:center">
-          <small style="color:var(--text3);margin-left:8px">Opcional. Aparece no catalogo.</small>
+          <div style="display:flex;align-items:center;gap:8px"><input type="text" id="cat-icone" placeholder="..." maxlength="4" style="font-size:22px;width:52px;text-align:center;padding:6px" readonly><button type="button" onclick="openEmojiPicker('cat-icone')" class="btn-secondary" style="padding:7px 14px;font-size:12px">Escolher icone</button></div>
+          
         </div>
         <div class="field" style="margin-bottom:18px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
