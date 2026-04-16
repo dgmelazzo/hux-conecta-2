@@ -47,7 +47,7 @@ function requireSuperAdmin() {
     $tipoMatch = in_array($row['tipo'] ?? $row['sess_tipo'] ?? '', ['admin','superadmin','gestor']);
     if (!$docMatch && !$tipoMatch)
         err(403,'Acesso restrito ao superadmin.');
-    return $tok;
+    return $row['cpf_cnpj'];
 }
 
 // ── CRM BRIDGE ──────────────────────────────────────────────
@@ -107,10 +107,10 @@ switch ($action) {
                      JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia')),
                      ''
                    ) AS nome,
-                   COUNT(DISTINCT s.id) AS total_sessoes
+                   0 AS total_sessoes
             FROM conecta_users u
             
-            GROUP BY u.id, u.cpf_cnpj, u.tipo, u.higestor_id,
+            GROUP BY u.id, u.tipo, u.higestor_id,
                      u.primeiro_acesso, u.ativo, u.created_at, u.crm_dados
             ORDER BY u.created_at DESC
         ");
@@ -136,7 +136,7 @@ switch ($action) {
         if (!$id) err(400,'ID obrigatório.');
         $db   = getDB();
         $stmt = $db->prepare("
-            SELECT u.*, COUNT(DISTINCT s.id) AS total_sessoes
+            SELECT u.*, 0 AS total_sessoes
             FROM conecta_users u
             
             WHERE u.id = ?
@@ -253,7 +253,7 @@ switch ($action) {
             SELECT u.cpf_cnpj, u.tipo, u.higestor_id, u.created_at
             FROM conecta_users u
             
-            WHERE s.id IS NULL OR u.primeiro_acesso = 1
+            WHERE u.primeiro_acesso = 1
             GROUP BY u.id
             ORDER BY u.created_at DESC
             LIMIT 20
