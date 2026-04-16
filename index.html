@@ -242,14 +242,14 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         Catálogo
       </button>
-      <a class="nav-item" id="nav-cobrancas" onclick="window.location='/conecta/portal-cobrancas.php?token='+encodeURIComponent((sessionStorage.getItem('acic_conecta_token')||localStorage.getItem('acic_conecta_token'))||'');return false" href="#" style="text-decoration:none;display:flex;align-items:center;gap:10px;cursor:pointer">
+      <button class="nav-item" onclick="showSection('cobrancas')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         Minhas Cobranças
-      </a>
-      <a class="nav-item" onclick="window.location='/conecta/portal-carteirinha.php?token='+encodeURIComponent((sessionStorage.getItem('acic_conecta_token')||localStorage.getItem('acic_conecta_token'))||'');return false" href="#" style="text-decoration:none;display:flex;align-items:center;gap:10px;cursor:pointer">
+      </button>
+            <button class="nav-item" onclick="showSection('carteirinha')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="18" y2="15"/></svg>
         Minha Carteirinha
-      </a>
+      </button>
       <!-- Visível só para admin — JS controla -->
       <button class="nav-item hidden" id="nav-comunicados" onclick="showSection('admin-comunicados')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -453,6 +453,26 @@
     </section>
 
     <!-- ── ADMIN: GERENCIAR PRODUTOS ── -->
+
+    <!-- Carteirinha (SPA) -->
+    <section id="section-carteirinha" class="portal-section">
+      <div style="padding:0;max-width:540px;margin:0 auto">
+        <div id="carteirinha-content">
+          <div style="height:320px;background:var(--surface2);border-radius:20px;animation:pulse 1.5s infinite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cobrancas (SPA) -->
+    <section id="section-cobrancas" class="portal-section">
+      <div style="max-width:900px;margin:0 auto">
+        <div id="cobrancas-content">
+          <div style="height:80px;background:var(--surface2);border-radius:14px;margin-bottom:12px;animation:pulse 1.5s infinite"></div>
+          <div style="height:80px;background:var(--surface2);border-radius:14px;margin-bottom:12px;animation:pulse 1.5s infinite"></div>
+        </div>
+      </div>
+    </section>
+
     <section id="section-admin-produtos" class="portal-section">
       <div class="section-header">
         <div><h2>Gerenciar Produtos</h2><p class="section-sub">Cadastre e gerencie os produtos do catálogo.</p></div>
@@ -1204,6 +1224,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="app-bundle.js"></script>
 </body>
 </html>

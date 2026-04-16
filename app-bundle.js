@@ -2205,6 +2205,8 @@ const SECTION_TITLES = {
   'admin-comunicados':    'Comunicados',
   'admin-parceiros':      'Parceiros',
   'admin-categorias':     'Categorias',
+  'carteirinha':          'Minha Carteirinha',
+  'cobrancas':            'Minhas Cobran\u00e7as',
   dashboard:  'Dashboard',
   empresa:    '',
   beneficios: 'Benefícios',
@@ -2236,6 +2238,8 @@ function showSection(id) {
       document.getElementById('topbar-title').textContent = 'Dashboard';
       return;
     }
+    if (id === 'carteirinha') loadCarteirinha();
+    if (id === 'cobrancas') loadCobrancas();
     if (id === 'admin-produtos') { loadAdminProdutos(); const w=document.getElementById('sub-admin-wrap'); if(w) w.style.display='none'; }
     if (id === 'admin-metricas') carregarMetricas();
     if (id === 'admin-comunicados') iniciarComunicados();
