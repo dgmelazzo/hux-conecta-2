@@ -16,6 +16,7 @@
       var t = localStorage.getItem('acic_theme') ||
         (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
       document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.style.background = t === 'light' ? '#EEF1F8' : '#080E1A';
     })();
   </script>
   <script>
@@ -34,6 +35,7 @@
     html[data-theme="dark"] #auth-loading { background: #080E1A; }
     html[data-theme="light"] #auth-loading { background: #EEF1F8; }
     html.has-token #auth-loading { display: flex; }
+    html { background: var(--bg, #080E1A); }
     #auth-loading .spinner { width: 36px; height: 36px; border: 3px solid rgba(128,128,128,.2); border-top-color: #E8701A; border-radius: 50%; animation: auth-spin .7s linear infinite; }
     @keyframes auth-spin { to { transform: rotate(360deg); } }
   </style>
