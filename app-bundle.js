@@ -1406,6 +1406,7 @@ function showPortal() {
   document.getElementById('step-convite')?.classList.add('hidden');
 
   document.getElementById('login-screen').classList.remove('active');
+  _restaurarSecao();
   document.getElementById('portal-screen').classList.add('active');
 
   // Aplicar permissões por perfil
@@ -1415,10 +1416,7 @@ function showPortal() {
   iniciarNotificacoes();
   renderVersao();
   // Restaura seção para usuários não-admin (sem aguardar checkAdmin)
-  setTimeout(() => {
-    const sess = getSession();
-    _restaurarSecao();
-  }, 100);
+  // _restaurarSecao movido para cima (sem flash)
 }
 
 // ============================================================
