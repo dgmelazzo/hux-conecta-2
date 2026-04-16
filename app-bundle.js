@@ -1417,7 +1417,7 @@ function showPortal() {
   // Restaura seção para usuários não-admin (sem aguardar checkAdmin)
   setTimeout(() => {
     const sess = getSession();
-    if (!sess?.is_admin) _restaurarSecao();
+    _restaurarSecao();
   }, 100);
 }
 
