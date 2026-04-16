@@ -19,3 +19,9 @@ test-*.txt
 # Env
 .env
 .env.*
+
+# Credenciais (nunca commitar)
+config.php
+
+# Symlink (gerado pelo deploy)
+portal-cobrancas.php

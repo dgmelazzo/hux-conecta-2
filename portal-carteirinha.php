@@ -1,39 +1,10 @@
 <?php
-// ── Admin detection (GRU-3) ──────────────────────────────────────
-// Valida token via CRM API e detecta admin pelo CPF
+// Admin detection via sessionStorage (client-side).
+// A API api.acicdf.org.br nao eh acessivel deste servidor,
+// entao a deteccao PHP foi removida. O JS usa session.is_admin do localStorage.
 $is_admin = false;
-$admin_nome = '';
-$admin_cpf = '01057808121'; // CPF do admin ACIC-DF
-
-$token = isset($_GET['token']) ? trim($_GET['token']) : '';
-if ($token !== '') {
-    $ch = curl_init('https://api.acicdf.org.br/api/auth/validate');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => json_encode(['token' => $token]),
-        CURLOPT_HTTPHEADER     => [
-            'Content-Type: application/json',
-            'Accept: application/json',
-        ],
-        CURLOPT_TIMEOUT        => 5,
-        CURLOPT_SSL_VERIFYPEER => true,
-    ]);
-    $resp     = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode === 200 && $resp) {
-        $data = json_decode($resp, true);
-        if ($data) {
-            $cpf = preg_replace('/\D/', '', $data['cpf_cnpj'] ?? $data['cpf'] ?? '');
-            if ($cpf === $admin_cpf) {
-                $is_admin  = true;
-                $admin_nome = $data['nome'] ?? 'Administrador ACIC';
-            }
-        }
-    }
-}
+$admin_nome = "";
+$token = isset($_GET["token"]) ? trim($_GET["token"]) : "";
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -41,14 +12,18 @@ if ($token !== '') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Minha Carteirinha — Conecta ACIC</title>
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/conecta/style.css">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="/uploads/favicon-32x32.png"/>
+<link rel="icon" type="image/png" href="/conecta/uploads/favicon-32x32.png"/>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-(function(){var t=localStorage.getItem('acic_theme')||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t)})()
+(function(){var t=localStorage.getItem('acic_theme')||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);document.documentElement.style.background=t==='light'?'#EEF1F8':'#080E1A'})()
 </script>
+<style>
+html[data-theme="dark"],html[data-theme="dark"] body{background:#080E1A;color:#EDF2FF}
+html[data-theme="light"],html[data-theme="light"] body{background:#EEF1F8;color:#0F2137}
+</style>
 <style>
 :root{--blue:#1B2B6B;--orange:#E8701A}
 /* ── Carteirinha ── */
@@ -88,52 +63,44 @@ if ($token !== '') {
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <img id="sidebar-logo" src="/uploads/logo-light-320.png?v=2" alt="ACIC Conecta" class="sidebar-logo-img"/>
+    <img id="sidebar-logo" src="/conecta/uploads/logo-light-320.png?v=2" alt="ACIC Conecta" class="sidebar-logo-img"/>
   </div>
   <nav class="sidebar-nav">
-    <a class="nav-item" href="/" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+    <a class="nav-item" href="/conecta/" style="text-decoration:none;display:flex;align-items:center;gap:10px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       Dashboard
     </a>
-    <a class="nav-item" href="/#empresa" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+    <a class="nav-item" href="/conecta/#empresa" style="text-decoration:none;display:flex;align-items:center;gap:10px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       Minha Empresa
     </a>
-    <a class="nav-item" href="/#catalogo" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+    <a class="nav-item" href="/conecta/#catalogo" style="text-decoration:none;display:flex;align-items:center;gap:10px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
       Catálogo
     </a>
     <a class="nav-item" href="#" style="text-decoration:none;display:flex;align-items:center;gap:10px" id="link-taxas">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-      Minhas Taxas
+      Minhas Cobranças
     </a>
     <a class="nav-item active" style="text-decoration:none;display:flex;align-items:center;gap:10px;cursor:default">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/><line x1="14" y1="15" x2="18" y2="15"/></svg>
       Minha Carteirinha
     </a>
-    <a class="nav-item hidden" id="nav-comunicados" href="/#admin-comunicados" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+    <a class="nav-item hidden" id="nav-comunicados" href="/conecta/#admin-comunicados" style="text-decoration:none;display:flex;align-items:center;gap:10px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       Comunicados
     </a>
-    <a class="nav-item hidden" id="nav-admin" href="/#admin-produtos" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+    <a class="nav-item hidden" id="nav-admin" href="/conecta/#admin-produtos" style="text-decoration:none;display:flex;align-items:center;gap:10px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       Gerenciar Produtos
     </a>
-    <a class="nav-item hidden" id="nav-usuarios" href="/#admin-usuarios" style="text-decoration:none;display:flex;align-items:center;gap:10px">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Usuários
-    </a>
-    <a class="nav-item hidden" id="nav-metricas" href="/#admin-metricas" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+    <a class="nav-item hidden" id="nav-metricas" href="/conecta/#admin-metricas" style="text-decoration:none;display:flex;align-items:center;gap:10px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Métricas
     </a>
-    <a class="nav-item hidden" id="nav-parceiros" href="/#admin-parceiros" style="text-decoration:none;display:flex;align-items:center;gap:10px">
+    <a class="nav-item hidden" id="nav-parceiros" href="/conecta/#admin-parceiros" style="text-decoration:none;display:flex;align-items:center;gap:10px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
       Parceiros
-    </a>
-    <a class="nav-item hidden" id="nav-admins" href="/#admin-admins" style="text-decoration:none;display:flex;align-items:center;gap:10px">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      Admins
     </a>
   </nav>
   <div class="sidebar-footer">
@@ -209,8 +176,8 @@ function applyTheme(theme, save) {
   document.body.style.color      = theme === 'light' ? '#0F2137' : '#EDF2FF';
   if (save) localStorage.setItem('acic_theme', theme);
 
-  var logoLight = '/uploads/logo-light-320.png?v=2';
-  var logoDark  = '/uploads/logo-dark-320.png?v=2';
+  var logoLight = '/conecta/uploads/logo-light-320.png?v=2';
+  var logoDark  = '/conecta/uploads/logo-dark-320.png?v=2';
   var sidebarLogo = document.getElementById('sidebar-logo');
   if (sidebarLogo) sidebarLogo.src = theme === 'light' ? logoLight : logoDark;
 
@@ -260,7 +227,7 @@ function updateSidebarUser(nm, isAdmin) {
   document.getElementById('sb-status').textContent = isAdmin ? 'Administrador' : 'Associado Ativo';
   // Show admin nav items if admin
   if (isAdmin) {
-    ['nav-comunicados','nav-admin','nav-usuarios','nav-metricas','nav-parceiros','nav-admins'].forEach(function(id) {
+    ['nav-comunicados','nav-admin','nav-metricas','nav-parceiros'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.classList.remove('hidden');
     });
@@ -270,7 +237,7 @@ function updateSidebarUser(nm, isAdmin) {
 // GRU-2 fix: pass token in sidebar links
 if (token) {
   var taxasLink = document.getElementById('link-taxas');
-  if (taxasLink) taxasLink.href = '/portal-taxas.php?token=' + encodeURIComponent(token);
+  if (taxasLink) taxasLink.href = '/conecta/portal-taxas.php?token=' + encodeURIComponent(token);
 }
 
 // ── Load carteirinha ──
@@ -279,7 +246,7 @@ if (token) {
   if (!token || !session.nome) {
     var c = localStorage.getItem(CACHE_KEY);
     if (c) { renderFromCache(JSON.parse(c)); return; }
-    document.getElementById('page-content').innerHTML = '<div class="empty-state">Sessão expirada. <a href="/">Faça login novamente</a></div>';
+    document.getElementById('page-content').innerHTML = '<div class="empty-state">Sessão expirada. <a href="/conecta/">Faça login novamente</a></div>';
     return;
   }
 
@@ -337,7 +304,7 @@ function render(d) {
 
   var html = '<div id="carteirinha-card" class="carteirinha">' +
     '<div class="cart-header">' +
-    '<img src="/uploads/logo-dark-320.png?v=2" alt="ACIC" style="height:32px">' +
+    '<img src="/conecta/uploads/logo-dark-320.png?v=2" alt="ACIC" style="height:32px">' +
     '<div class="cart-header-text">Carteira Digital do Associado</div>' +
     '</div>' +
     '<div class="cart-nome">' + (d.nome || 'Associado') + '</div>' +
