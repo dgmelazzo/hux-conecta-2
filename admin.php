@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/auth-helper.php';
 /**
  * ACIC CONECTA 2.0 — API Superadmin
  * ====================================
@@ -38,15 +39,8 @@ function input()    { static $c=null; if($c!==null)return $c; $c=json_decode(fil
 // ── AUTH SUPERADMIN ─────────────────────────────────────────
 function requireSuperAdmin() {
     $db  = getDB();
-    $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??''));
-    if (!$tok) {
-        $in  = input();
-        $tok = $in['token'] ?? '';
-    }
-    if (!$tok) err(401,'Token ausente.');
-    $st = $db->prepare('SELECT u.cpf_cnpj, u.tipo, s.tipo AS sess_tipo FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
-    $st->execute([$tok]);
-    $row = $st->fetch(PDO::FETCH_ASSOC);
+    $user = requireCrmAdmin();
+    $row = ['cpf_cnpj' => $user['documento'] ?? ADMIN_DOC, 'tipo' => $user['role'] ?? 'superadmin', 'sess_tipo' => $user['role'] ?? 'superadmin'];
     if (!$row) err(401,'Sessão inválida ou expirada.');
     // Admin por CPF (fluxo legado) ou por tipo de sessão SSO (superadmin/gestor)
     $docMatch = preg_replace('/\D/','',$row['cpf_cnpj']) === preg_replace('/\D/','',ADMIN_DOC);
@@ -126,9 +120,7 @@ switch ($action) {
         $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??''));
         if (!$tok) { $in = input(); $tok = $in['token'] ?? ''; }
         if (!$tok) { ok(['is_admin'=>false]); }
-        $st = getDB()->prepare('SELECT u.cpf_cnpj FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
-        $st->execute([$tok]);
-        $row = $st->fetch(PDO::FETCH_ASSOC);
+        $row = validateCrmToken($tok) ? ['cpf_cnpj' => validateCrmToken($tok)['documento']] : null; if(false)(PDO::FETCH_ASSOC);
         if (!$row) { ok(['is_admin'=>false]); }
         ok(['is_admin' => preg_replace('/\D/','',$row['cpf_cnpj']) === preg_replace('/\D/','',ADMIN_DOC)]);
         break;

@@ -36,15 +36,8 @@ function uniqueSlug($nome,$id=null) {
 }
 
 function requireAdmin() {
-    $db=getDB();
-    $in=input();
-    $tok=str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??$in['token']??''));
-    if(!$tok) err(401,'Token ausente.');
-    $st=$db->prepare('SELECT u.cpf_cnpj FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
-    $st->execute([$tok]); $row=$st->fetch(PDO::FETCH_ASSOC);
-    if(!$row) err(401,'Sessão inválida ou expirada.');
-    if(preg_replace('/\D/','',$row['cpf_cnpj'])!==preg_replace('/\D/','',ADMIN_DOC)) err(403,'Acesso restrito ao administrador.');
-    return $row['cpf_cnpj'];
+    $user = requireCrmAdmin();
+    return $user['documento'] ?? ADMIN_DOC;
 }
 
 function requireAuth() {

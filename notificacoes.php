@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/auth-helper.php';
+require_once __DIR__ . '/config.php';
+?>
 /**
  * ACIC CONECTA 2.0 — Notificações
  * ====================================
@@ -76,17 +79,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS conecta_notif_destinatarios (
 // ── AUTH ─────────────────────────────────────────────────────
 function getAuthUser() {
     $db  = getDB();
-    $tok = str_replace('Bearer ', '', trim($_SERVER['HTTP_AUTHORIZATION'] ?? ''));
-    if (!$tok) { $in = input(); $tok = $in['token'] ?? ''; }
-    if (!$tok) err(401, 'Token ausente.');
-    $st = $db->prepare(
-        'SELECT u.id, u.cpf_cnpj, u.tipo, u.higestor_id
-         FROM conecta_sessions s
-         JOIN conecta_users u ON u.id = s.user_id
-         WHERE s.token = ? AND s.expires_at > NOW() AND u.ativo = 1'
-    );
-    $st->execute([$tok]);
-    $user = $st->fetch(PDO::FETCH_ASSOC);
+    $user = requireCrmAuth();
     if (!$user) err(401, 'Sessão inválida ou expirada.');
     return $user;
 }
