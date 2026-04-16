@@ -1202,6 +1202,7 @@
                 '<div class="plan-price">R$ ' + formatMoney(p.valor_mensal || p.valor) +
                 '<small>/mês</small></div>' +
                 (p.descricao ? '<div class="plan-desc">' + escapeHTML(p.descricao) + '</div>' : '') +
+                (function(){var h='';if(p.itens&&p.itens.length){h='<ul style="list-style:none;padding:0;margin:12px 0 0;text-align:left">';p.itens.forEach(function(it){h+='<li style="font-size:12px;color:#666;padding:3px 0;display:flex;align-items:center;gap:6px"><span style="color:#22c55e;font-weight:bold">✓</span> '+(it.conecta_produto_nome||it.nome)+(it.tipo_cobranca==="incluso"?' <span style="background:#dcfce7;color:#166534;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600">incluso</span>':"")+"</li>";});h+="</ul>";}return h;})() +
                 '<button type="button" class="plan-select-btn">Escolher este plano</button>';
 
             card.addEventListener('click', function() { selectPlan(p, card); });
