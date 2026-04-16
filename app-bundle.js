@@ -226,7 +226,7 @@ function aplicarPermissoes(sessao) {
   // Badge de perfil
   const badge = document.getElementById('perfil-badge');
   if (badge) {
-    const labels = { superadmin:'Super Admin', gestor:'Gestor', atendente:'Atendente', associado_empresa:'Associado', colaborador:'Colaborador', dependente:'Dependente' };
+    const labels = { superadmin:'Super Admin', gestor:'Gestor', associado_empresa:'Associado', colaborador:'Colaborador', dependente:'Dependente' };
     badge.textContent = labels[tipo] || tipo;
   }
 
@@ -1445,7 +1445,7 @@ async function handleCheckEmail(e) {
     if (pill) pill.textContent = email;
 
     const context = document.getElementById('email-context');
-    const labels = { superadmin:'Super Admin', gestor:'Gestor', atendente:'Atendente', associado_empresa:'Associado', colaborador:'Colaborador', dependente:'Dependente' };
+    const labels = { superadmin:'Super Admin', gestor:'Gestor', associado_empresa:'Associado', colaborador:'Colaborador', dependente:'Dependente' };
     if (context) {
       const tipo = result.tipo || 'associado_empresa';
       const nome = result.nome || '';
@@ -2226,22 +2226,21 @@ function renderizarMatrizPermissoes() {
   const tbody = document.getElementById('permissoes-tbody');
   if (!tbody) return;
 
+  // Matriz alinhada: CRM e fonte da verdade, Conecta e portal do associado
+  // Perfis: Superadmin, Gestor, Empresa (associado), Colaborador, Dependente
+  // Nota: Atendente removido. Gateway/Planos/Usuarios/Admins/Config sao do CRM.
   const modulos = [
-    { nome: 'Dashboard',                superadmin: true,  gestor: true,  empresa: true,  colaborador: true },
-    { nome: 'Catálogo',                 superadmin: true,  gestor: true,  empresa: true,  colaborador: true },
-    { nome: 'Carteirinha',              superadmin: true,  gestor: true,  empresa: true,  colaborador: true },
-    { nome: 'Comunicados (receber)',     superadmin: true,  gestor: true,  empresa: true,  colaborador: true },
-    { nome: 'Comunicados (enviar)',      superadmin: true,  gestor: true,  empresa: false, colaborador: false },
-    { nome: 'Gerenciar Produtos',        superadmin: true,  gestor: true,  empresa: false, colaborador: false },
-    { nome: 'Taxas / Cobranças',         superadmin: true,  gestor: true,  empresa: true,  colaborador: false },
-    { nome: 'Empresa',                  superadmin: true,  gestor: true,  empresa: true,  colaborador: false },
-    { nome: 'Gateway',                  superadmin: true,  gestor: false, empresa: false, colaborador: false },
-    { nome: 'Planos',                   superadmin: true,  gestor: false, empresa: false, colaborador: false },
-    { nome: 'Parceiros',               superadmin: true,  gestor: false, empresa: false, colaborador: false },
-    { nome: 'Usuários',                superadmin: true,  gestor: false, empresa: false, colaborador: false },
-    { nome: 'Métricas',                superadmin: true,  gestor: false, empresa: false, colaborador: false },
-    { nome: 'Admins',                   superadmin: true,  gestor: false, empresa: false, colaborador: false },
-    { nome: 'Configurações',           superadmin: true,  gestor: false, empresa: false, colaborador: false },
+    { nome: 'Dashboard',                superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
+    { nome: 'Catálogo',            superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
+    { nome: 'Carteirinha',              superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
+    { nome: 'Comunicados (receber)',     superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
+    { nome: 'Comunicados (enviar)',      superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
+    { nome: 'Gerenciar Produtos',        superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
+    { nome: 'Categorias',               superadmin: true,  gestor: false, empresa: false, colaborador: false, dependente: false },
+    { nome: 'Cobranças',           superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
+    { nome: 'Minha Empresa',            superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
+    { nome: 'Métricas',            superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
+    { nome: 'Parceiros',                superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
   ];
 
   const check = '<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#e6f4ea;color:#1e7e34;font-size:14px;font-weight:700">✓</span>';
@@ -2256,6 +2255,7 @@ function renderizarMatrizPermissoes() {
       <td style="${cell}">${m.gestor ? check : cross}</td>
       <td style="${cell}">${m.empresa ? check : cross}</td>
       <td style="${cell}">${m.colaborador ? check : cross}</td>
+      <td style="${cell}">${m.dependente ? check : cross}</td>
     </tr>`;
   }).join('');
 }
