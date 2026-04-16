@@ -1417,6 +1417,7 @@
 
             var result = await res.json();
             var data = result.data || result;
+            clearDraft();
             showConfirmation(data);
             goToStep(5);
         } catch(err) {
@@ -1495,7 +1496,71 @@
         return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+
+    // === SAVE/RESTORE DRAFT (localStorage) ===
+    var DRAFT_KEY = 'acic_associe_draft';
+
+    function saveDraft() {
+        var fields = ['cnpj','razao_social','fantasia','cnae','telefone_empresa','email_empresa',
+                      'segmento','cep','logradouro','numero','complemento','bairro','cidade','uf',
+                      'nome','cpf','email','whatsapp'];
+        var draft = {};
+        fields.forEach(function(f) {
+            var el = document.getElementById(f);
+            if (el && el.value) draft[f] = el.value;
+        });
+        if (selectedPlan) draft._plano_id = selectedPlan.id;
+        draft._step = currentStep;
+        draft._saved = Date.now();
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+
+    function restoreDraft() {
+        var raw = localStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+        try {
+            var draft = JSON.parse(raw);
+            // Expirar draft apos 24h
+            if (Date.now() - (draft._saved || 0) > 86400000) {
+                localStorage.removeItem(DRAFT_KEY);
+                return;
+            }
+            var fields = ['razao_social','fantasia','cnae','telefone_empresa','email_empresa',
+                          'segmento','cep','logradouro','numero','complemento','bairro','cidade','uf',
+                          'nome','cpf','email','whatsapp'];
+            var hasData = fields.some(function(f) { return !!draft[f]; });
+            if (!hasData) return;
+
+            if (!confirm('Encontramos um rascunho salvo. Deseja restaurar?')) {
+                localStorage.removeItem(DRAFT_KEY);
+                return;
+            }
+            fields.forEach(function(f) {
+                var el = document.getElementById(f);
+                if (el && draft[f]) el.value = draft[f];
+            });
+            if (draft.cnpj) document.getElementById('cnpj').value = draft.cnpj;
+            // Restaurar plano selecionado apos carregar planos
+            if (draft._plano_id) {
+                setTimeout(function() {
+                    var card = document.querySelector('.plan-card[data-id="' + draft._plano_id + '"]');
+                    if (card) card.click();
+                }, 1500);
+            }
+        } catch(e) {}
+    }
+
+    function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
+
+    // Auto-save ao mudar de step
+    var _origGoToStep = window.goToStep;
+    window.goToStep = function(step) {
+        if (step > 1) saveDraft();
+        _origGoToStep(step);
+    };
+
     // Init
+    restoreDraft();
     loadPlans();
 
 })();

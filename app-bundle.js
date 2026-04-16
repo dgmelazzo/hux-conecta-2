@@ -746,9 +746,13 @@ async function carregarCategoriasFiltro() {
     const wrap = document.getElementById('produtos-filtro-cats');
     if (!wrap) return;
     wrap.innerHTML = `
-      <button class="filter-tag active" onclick="filtrarPorCategoria('', this)">Todos</button>
+      <button class="filter-tag active" onclick="filtrarPorCategoria('', this)" style="display:inline-flex;align-items:center;gap:6px">
+        <span style="font-size:14px">\u{1F4CB}</span> Todos
+      </button>
       ${categoriasData.filter(c => c.total_produtos > 0).map(c =>
-        `<button class="filter-tag" onclick="filtrarPorCategoria('${c.slug}', this)">${c.nome} <small>(${c.total_produtos})</small></button>`
+        `<button class="filter-tag" onclick="filtrarPorCategoria('${c.slug}', this)" style="display:inline-flex;align-items:center;gap:6px">
+          <span style="font-size:14px">${c.icone || '\u{1F4C1}'}</span> ${c.nome} <small style="opacity:.6">(${c.total_produtos})</small>
+        </button>`
       ).join('')}
     `;
   } catch (_) {}
