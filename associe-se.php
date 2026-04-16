@@ -720,7 +720,7 @@
 <!-- NAV -->
 <nav class="nav">
     <a href="/" class="nav-logo"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:32px"></a>
-    <a href="https://hml.conecta.acicdf.org.br" class="nav-login">Já é associado? Entrar</a>
+    <a href="https://conecta.acicdf.org.br" class="nav-login">Já é associado? Entrar</a>
 </nav>
 
 <!-- MAIN -->
@@ -1174,7 +1174,7 @@
     // === LOAD PLANS ===
     async function loadPlans() {
         try {
-            var res = await fetch('https://hml.crm.acicdf.org.br/api/planos');
+            var res = await fetch('https://api-crm.acicdf.org.br/planos');
             planos = (await res.json()).data.data;
             renderPlans();
         } catch(e) {
@@ -1409,7 +1409,7 @@
         };
 
         try {
-            var res = await fetch('https://hml.crm.acicdf.org.br/api/inscricoes', {
+            var res = await fetch('https://api-crm.acicdf.org.br/inscricoes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -1466,7 +1466,7 @@
                 '</ol>' +
             '</div>' +
             (result.gateway_url ? '<a href="' + escapeAttr(result.gateway_url) + '" target="_blank" class="btn-portal" style="margin-bottom:10px;background:var(--blue,#1B2B6B)">Abrir pagamento no Asaas &#8594;</a>' : '') +
-            '<a href="https://hml.conecta.acicdf.org.br" class="btn-portal">Acessar o portal &#8594;</a>';
+            '<a href="https://conecta.acicdf.org.br" class="btn-portal">Acessar o portal &#8594;</a>';
     }
 
     // === HELPERS ===
