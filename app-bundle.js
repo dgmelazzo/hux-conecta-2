@@ -1324,6 +1324,11 @@ function mostrarTelaConvite(conviteToken) {
 function _restaurarSecao() {
   // Priorizar hash da URL (navegacao vinda de sub-paginas)
   const hash = window.location.hash.replace("#", "");
+  const _adminSecs2 = ["admin-produtos","admin-metricas","admin-parceiros","admin-comunicados","admin-categorias"];
+  if (hash && _adminSecs2.includes(hash)) {
+    const _s = getSession();
+    if (_s?.is_admin) mostrarNavAdmin(_s?.is_superadmin);
+  }
   if (hash && document.getElementById("section-" + hash)) {
     showSection(hash);
     window.location.hash = "";
