@@ -1299,6 +1299,13 @@ function mostrarTelaConvite(conviteToken) {
 // PERSISTÊNCIA DE NAVEGAÇÃO — restaura seção após refresh
 // ============================================================
 function _restaurarSecao() {
+  // Priorizar hash da URL (navegacao vinda de sub-paginas)
+  const hash = window.location.hash.replace("#", "");
+  if (hash && document.getElementById("section-" + hash)) {
+    showSection(hash);
+    window.location.hash = "";
+    return;
+  }
   const ultima = sessionStorage.getItem('acic_last_section');
   if (!ultima || ultima === 'dashboard') return;
 
@@ -2164,10 +2171,12 @@ const SECTION_TITLES = {
   'admin-produtos':       'Gerenciar Produtos',
   'admin-metricas':       'Métricas',
   'admin-comunicados':    'Comunicados',
+  'admin-parceiros':      'Parceiros',
+  'admin-categorias':     'Categorias',
   dashboard:  'Dashboard',
   empresa:    '',
   beneficios: 'Benefícios',
-  configuracoes: "Configura��es",
+  configuracoes: 'Configurações',
 };
 
 function showSection(id) {
@@ -2185,7 +2194,7 @@ function showSection(id) {
   if (window.innerWidth <= 900) closeSidebar();
   if (id === 'catalogo') { loadCatalogoProdutos(); carregarCategoriasFiltro(); }
   if (id === 'comunicados') iniciarComunicados();
-  const adminSections = ['admin-produtos','admin-metricas','admin-parceiros','admin-comunicados','configuracoes'];
+  const adminSections = ['admin-produtos','admin-metricas','admin-parceiros','admin-comunicados','admin-categorias','configuracoes'];
   if (adminSections.includes(id)) {
     const navAdmin = document.getElementById('nav-admin');
     if (!navAdmin || navAdmin.classList.contains('hidden')) {
