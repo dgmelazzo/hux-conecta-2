@@ -8,7 +8,7 @@
  */
 
 // URL do auth.php no seu servidor (sem barra no final)
-const AUTH_URL = 'https://conecta.acicdf.org.br/auth.php'; // ← ajuste se necessário
+const AUTH_URL = 'https://hml.conecta.acicdf.org.br/auth.php'; // ← ajuste se necessário
 
 const SESSION_KEY = 'acic_conecta_token';
 
@@ -2167,7 +2167,7 @@ const SECTION_TITLES = {
   dashboard:  'Dashboard',
   empresa:    '',
   beneficios: 'Benefícios',
-  configuracoes: "Configura��es",
+  configuracoes: "Configura��es",
 };
 
 function showSection(id) {
@@ -2199,6 +2199,7 @@ function showSection(id) {
     if (id === 'admin-metricas') carregarMetricas();
     if (id === 'admin-comunicados') iniciarComunicados();
     if (id === 'admin-parceiros') carregarParceiros();
+    if (id === 'admin-categorias') loadAdminCategorias();
     if (id === 'configuracoes') renderizarMatrizPermissoes();
   }
 }
@@ -2326,7 +2327,7 @@ let _adminChecked = false;
 function mostrarNavAdmin(isSuperadmin) {
   const navAdmin = document.getElementById('nav-admin');
   if (navAdmin) navAdmin.classList.remove('hidden');
-  ['nav-metricas','nav-comunicados','nav-parceiros'].forEach(id => {
+  ['nav-metricas','nav-comunicados','nav-parceiros','nav-categorias'].forEach(id => {
     document.getElementById(id)?.classList.remove('hidden');
   });
   document.getElementById('btn-novo-link')?.style && (document.getElementById('btn-novo-link').style.display = '');
@@ -2340,7 +2341,7 @@ function mostrarNavAdmin(isSuperadmin) {
 }
 
 function ocultarElementosAdmin() {
-  ['nav-admin','nav-metricas','nav-comunicados','nav-parceiros'].forEach(id => {
+  ['nav-admin','nav-metricas','nav-comunicados','nav-parceiros','nav-categorias'].forEach(id => {
     document.getElementById(id)?.classList.add('hidden');
   });
   const btn = document.getElementById('btn-novo-link');
@@ -2738,7 +2739,7 @@ function atualizarPreviewCapa(url) {
 // ════════════════════════════════════════════════════════════
 // SUPERADMIN — Usuários & Métricas
 // ════════════════════════════════════════════════════════════
-const ADMIN_URL = 'https://conecta.acicdf.org.br/admin.php';
+const ADMIN_URL = 'https://hml.conecta.acicdf.org.br/admin.php';
 
 async function adminApi(action, params = {}, method = 'POST') {
   const token = getToken();
@@ -2761,6 +2762,128 @@ function revelarMenusAdmin() {
   ['nav-metricas'].forEach(id => {
     document.getElementById(id)?.classList.remove('hidden');
   });
+}
+
+
+
+// ============================================================
+// CATEGORIAS — CRUD (superadmin)
+// ============================================================
+let _categoriasAdminData = [];
+
+async function loadAdminCategorias() {
+  try {
+    _categoriasAdminData = await prodApi('categorias_admin', {}, 'GET');
+    renderCategoriasAdmin();
+  } catch(e) {
+    const el = document.getElementById('categorias-content');
+    if (el) el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Erro ao carregar categorias.</div>';
+  }
+}
+
+function renderCategoriasAdmin() {
+  const container = document.getElementById('categorias-content');
+  if (!container) return;
+
+  if (!_categoriasAdminData.length) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Nenhuma categoria cadastrada.</div>';
+    return;
+  }
+
+  let html = '<div style="display:grid;gap:8px">';
+  _categoriasAdminData.forEach(function(c) {
+    const ativo = c.ativo == 1;
+    const badge = ativo
+      ? '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">Ativa</span>'
+      : '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">Inativa</span>';
+    const nome = (c.nome || '').replace(/</g, '&lt;');
+    const slug = (c.slug || '').replace(/</g, '&lt;');
+    const icone = c.icone || '\u{1F4C1}';
+    const total = c.total_produtos || 0;
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;transition:var(--trans)">' +
+      '<div style="display:flex;align-items:center;gap:12px">' +
+        '<span style="font-size:20px">' + icone + '</span>' +
+        '<div>' +
+          '<div style="font-weight:600;font-size:14px;color:var(--text)">' + nome + '</div>' +
+          '<div style="font-size:11px;color:var(--text3)">' + total + ' produtos &middot; ' + slug + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        badge +
+        '<button onclick="editarCategoria(' + c.id + ')" class="btn-table-action">Editar</button>' +
+        (ativo
+          ? '<button onclick="arquivarCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--text3)">Arquivar</button>'
+          : '<button onclick="reativarCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--accent)">Reativar</button>') +
+      '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function abrirFormCategoria(cat) {
+  const isEdit = !!cat;
+  const modal = document.getElementById('categoria-modal');
+  if (!modal) return;
+  document.getElementById('cat-id').value = isEdit ? cat.id : '';
+  document.getElementById('cat-nome').value = isEdit ? cat.nome : '';
+  document.getElementById('cat-icone').value = isEdit ? (cat.icone || '') : '';
+  document.getElementById('cat-ativo').checked = isEdit ? cat.ativo == 1 : true;
+  document.getElementById('categoria-modal-title').textContent = isEdit ? 'Editar Categoria' : 'Nova Categoria';
+  modal.classList.remove('hidden');
+}
+
+function fecharFormCategoria() {
+  document.getElementById('categoria-modal')?.classList.add('hidden');
+}
+
+async function salvarCategoria(e) {
+  if (e) e.preventDefault();
+  const id = document.getElementById('cat-id').value;
+  const nome = document.getElementById('cat-nome').value.trim();
+  const icone = document.getElementById('cat-icone').value.trim();
+  const ativo = document.getElementById('cat-ativo').checked ? 1 : 0;
+  if (!nome) { mostrarToast('\u26a0\ufe0f Aten\u00e7\u00e3o', 'Nome \u00e9 obrigat\u00f3rio.', 'aviso'); return; }
+  try {
+    if (id) {
+      await prodApi('categoria_editar', { id: parseInt(id), nome, icone, ativo });
+      mostrarToast('\u2705 Sucesso', 'Categoria atualizada.', 'sucesso');
+    } else {
+      await prodApi('categoria_criar', { nome, icone });
+      mostrarToast('\u2705 Sucesso', 'Categoria criada.', 'sucesso');
+    }
+    fecharFormCategoria();
+    categoriasData = [];
+    loadAdminCategorias();
+  } catch(err) {
+    mostrarToast('Erro', err.message || 'Falha ao salvar.', 'alerta');
+  }
+}
+
+function editarCategoria(id) {
+  const cat = _categoriasAdminData.find(c => c.id == id);
+  if (cat) abrirFormCategoria(cat);
+}
+
+async function arquivarCategoria(id) {
+  const cat = _categoriasAdminData.find(c => c.id == id);
+  const nome = cat ? cat.nome : '';
+  if (!confirm('Arquivar a categoria "' + nome + '"? Produtos n\u00e3o ser\u00e3o afetados.')) return;
+  try {
+    await prodApi('categoria_excluir', { id });
+    mostrarToast('\u2705', 'Categoria arquivada.', 'sucesso');
+    categoriasData = [];
+    loadAdminCategorias();
+  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
+}
+
+async function reativarCategoria(id) {
+  try {
+    await prodApi('categoria_editar', { id, ativo: 1 });
+    mostrarToast('\u2705', 'Categoria reativada.', 'sucesso');
+    categoriasData = [];
+    loadAdminCategorias();
+  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
 }
 
 // ── showSection: registra admin sections ─────────────────

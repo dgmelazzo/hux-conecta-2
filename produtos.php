@@ -450,5 +450,58 @@ switch($action){
         ok(['combo'=>$combo,'itens'=>$si->fetchAll(PDO::FETCH_ASSOC)]);
         break;
 
+
+    // -- CRUD Categorias (superadmin) ---
+    case "categoria_criar":
+        requireAdmin();
+        $nome = trim($in["nome"] ?? "");
+        if (!$nome) err(400, "Nome da categoria eh obrigatorio.");
+        $slug = slugify($nome);
+        $parentId = !empty($in["parent_id"]) ? (int)$in["parent_id"] : null;
+        $icone = trim($in["icone"] ?? "");
+        $maxOrdem = (int)getDB()->query("SELECT COALESCE(MAX(ordem),0) FROM conecta_categorias")->fetchColumn();
+        $st = getDB()->prepare("INSERT INTO conecta_categorias (nome, icone, slug, parent_id, ordem, ativo) VALUES (?, ?, ?, ?, ?, 1)");
+        $st->execute([$nome, $icone ?: null, $slug, $parentId, $maxOrdem + 1]);
+        ok(["id" => (int)getDB()->lastInsertId(), "nome" => $nome, "slug" => $slug]);
+        break;
+
+    case "categoria_editar":
+        requireAdmin();
+        $id = (int)($in["id"] ?? 0);
+        if (!$id) err(400, "ID obrigatorio.");
+        $fields = []; $vals = [];
+        if (isset($in["nome"]))      { $fields[] = "nome=?";      $vals[] = trim($in["nome"]); $fields[] = "slug=?"; $vals[] = slugify(trim($in["nome"])); }
+        if (isset($in["parent_id"])) { $fields[] = "parent_id=?"; $vals[] = $in["parent_id"] ? (int)$in["parent_id"] : null; }
+        if (isset($in["icone"]))     { $fields[] = "icone=?";     $vals[] = trim($in["icone"]); }
+        if (isset($in["ativo"]))     { $fields[] = "ativo=?";     $vals[] = (int)$in["ativo"]; }
+        if (empty($fields)) err(400, "Nenhum campo para atualizar.");
+        $vals[] = $id;
+        getDB()->prepare("UPDATE conecta_categorias SET " . implode(",", $fields) . " WHERE id=?")->execute($vals);
+        ok(["updated" => true]);
+        break;
+
+    case "categoria_excluir":
+        requireAdmin();
+        $id = (int)($in["id"] ?? 0);
+        if (!$id) err(400, "ID obrigatorio.");
+        getDB()->prepare("UPDATE conecta_categorias SET ativo=0 WHERE id=?")->execute([$id]);
+        ok(["archived" => true]);
+        break;
+
+    case "categoria_reordenar":
+        requireAdmin();
+        $ids = $in["ids"] ?? [];
+        if (!is_array($ids) || empty($ids)) err(400, "Lista de IDs obrigatoria.");
+        $st = getDB()->prepare("UPDATE conecta_categorias SET ordem=? WHERE id=?");
+        foreach ($ids as $i => $catId) { $st->execute([$i + 1, (int)$catId]); }
+        ok(["reordered" => true]);
+        break;
+
+    case "categorias_admin":
+        requireAdmin();
+        $st = getDB()->query("SELECT c.*, COUNT(p.id) AS total_produtos FROM conecta_categorias c LEFT JOIN conecta_produtos p ON p.categoria_id=c.id AND p.status=\"ativo\" GROUP BY c.id ORDER BY c.ordem, c.nome");
+        ok($st->fetchAll(PDO::FETCH_ASSOC));
+        break;
+
     default: err(400,'Ação inválida.');
 }
