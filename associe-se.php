@@ -1406,7 +1406,8 @@
             });
 
             var result = await res.json();
-            showConfirmation(result);
+            var data = result.data || result;
+            showConfirmation(data);
             goToStep(5);
         } catch(err) {
             alert('Erro ao processar inscrição. Tente novamente.');
@@ -1429,7 +1430,11 @@
                         : 'QR Code será exibido aqui')) +
                 '</div>' +
                 (result.pix_copia_cola
-                    ? '<div class="pix-code">' + escapeHTML(result.pix_copia_cola) + '</div>'
+                    ? '<div class="pix-code" style="background:var(--surface2,#f5f5f5);border:1px solid var(--border,#ddd);border-radius:8px;padding:12px;font-size:11px;word-break:break-all;margin-top:12px;position:relative">' +
+                      '<div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text2,#555)">PIX Copia e Cola:</div>' +
+                      escapeHTML(result.pix_copia_cola) +
+                      '<button onclick="navigator.clipboard.writeText('' + result.pix_copia_cola.replace(/'/g, "\'") + '');this.textContent='Copiado!';setTimeout(function(){this.textContent='Copiar'},2000)" style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--orange,#E8701A);background:var(--orange,#E8701A);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Copiar</button>' +
+                      '</div>'
                     : '');
         } else if (paymentMethod === 'boleto' && result.boleto_url) {
             paymentHtml = '<a class="boleto-link" href="' + escapeAttr(result.boleto_url) + '" target="_blank">Abrir boleto</a>';
@@ -1449,6 +1454,7 @@
                     '<li>Aproveite todos os benefícios da associação!</li>' +
                 '</ol>' +
             '</div>' +
+            (result.gateway_url ? '<a href="' + escapeAttr(result.gateway_url) + '" target="_blank" class="btn-portal" style="margin-bottom:10px;background:var(--blue,#1B2B6B)">Abrir pagamento no Asaas &#8594;</a>' : '') +
             '<a href="https://hml.conecta.acicdf.org.br" class="btn-portal">Acessar o portal &#8594;</a>';
     }
 
