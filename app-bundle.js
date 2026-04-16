@@ -1862,6 +1862,7 @@ function renderAssociado(d) {
     document.getElementById('stat-category').textContent = 'Dependente';
   }
   document.getElementById('stat-status').textContent   = statusLabel(d.status);
+  renderDashboardPerfil(d);
   document.getElementById('stat-since').textContent    = d.razaoSocial === 'Administrador' ? 'ACIC-DF' : formatDateOrPending(d.dataAssociacao);
   document.getElementById('stat-category').textContent = tipoLabel;
 
@@ -2838,6 +2839,105 @@ function revelarMenusAdmin() {
 
 
 // ============================================================
+
+
+
+// ============================================================
+// DASHBOARD PERSONALIZADO POR PERFIL
+// ============================================================
+function renderDashboardPerfil(d) {
+  const session = getSession() || {};
+  const role = session.role || session.tipo || 'associado_empresa';
+  const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
+  const nome = d.nomeFantasia !== '\u2014' ? d.nomeFantasia : (d.razaoSocial || session.nome || 'Associado');
+
+  // Hero card personalizado
+  const heroEl = document.getElementById('dash-hero-perfil');
+  if (!heroEl) return;
+
+  if (isAdmin) {
+    heroEl.innerHTML = '';
+    return; // Admin usa o dashboard padrao
+  }
+
+  let html = '';
+
+  if (role === 'associado_empresa') {
+    // === EMPRESA ===
+    const statusColor = d.status === 'ativo' ? '#22c55e' : (d.status === 'inadimplente' ? '#ef4444' : '#f59e0b');
+    const statusTxt = d.status === 'ativo' ? 'Ativo' : (d.status === 'inadimplente' ? 'Inadimplente' : d.status || 'Ativo');
+
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:4px">Bem-vindo, ' + nome + '</div>' +
+      '<div style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;margin-top:8px">' +
+        '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + ';margin-right:6px"></span>' + statusTxt +
+      '</div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px">' +
+      '<div style="background:var(--surface);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Plano</div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + (d.plano || session.plano || 'Associado') + '</div>' +
+      '</div>' +
+      '<div style="background:var(--surface);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Pr\u00f3ximo Vencimento</div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + (d.dataVencimento || '\u2014') + '</div>' +
+      '</div>' +
+      '<div style="background:var(--surface);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Associado Desde</div>' +
+        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + (d.dataAssociacao || '\u2014') + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+      '<button onclick="showSection(\'carteirinha\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83c\udff7\ufe0f</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Minha Carteirinha</div>' +
+      '</button>' +
+      '<button onclick="showSection(\'cobrancas\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udcb3</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Minhas Cobran\u00e7as</div>' +
+      '</button>' +
+      '<button onclick="showSection(\'catalogo\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udce6</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Cat\u00e1logo</div>' +
+      '</button>' +
+    '</div>';
+
+  } else if (role === 'colaborador') {
+    // === COLABORADOR ===
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Colaborador</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Ol\u00e1, ' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.8">Vinculado a ' + (d.razaoSocial || 'sua empresa') + '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+      '<button onclick="showSection(\'carteirinha\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83c\udff7\ufe0f</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Minha Carteirinha</div>' +
+      '</button>' +
+      '<button onclick="showSection(\'catalogo\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udce6</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Cat\u00e1logo de Benef\u00edcios</div>' +
+      '</button>' +
+    '</div>';
+
+  } else if (role === 'dependente') {
+    // === DEPENDENTE ===
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Dependente</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Ol\u00e1, ' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.8">Vinculado a ' + (d.razaoSocial || 'sua empresa') + '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+      '<button onclick="showSection(\'catalogo\')" style="flex:1;min-width:200px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
+        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udce6</div>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text)">Cat\u00e1logo de Benef\u00edcios</div>' +
+      '</button>' +
+    '</div>';
+  }
+
+  heroEl.innerHTML = html;
+}
 
 // ============================================================
 // CARTEIRINHA — SPA (sem page reload)
