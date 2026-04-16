@@ -719,7 +719,7 @@
 
 <!-- NAV -->
 <nav class="nav">
-    <a href="/" class="nav-logo">ACIC <span>Conecta</span></a>
+    <a href="/" class="nav-logo"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:32px"></a>
     <a href="https://hml.conecta.acicdf.org.br" class="nav-login">Já é associado? Entrar</a>
 </nav>
 
@@ -938,6 +938,12 @@
 
             <div class="step-nav">
                 <button type="button" class="btn-back" onclick="goToStep(2)">&#8592; Voltar</button>
+                <div style="margin-bottom:16px">
+                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--text2,#555);line-height:1.5">
+                        <input type="checkbox" id="aceite-lgpd" required style="margin-top:3px;min-width:16px;height:16px;accent-color:var(--orange)">
+                        <span>Li e concordo com os <a href="#" style="color:var(--orange);text-decoration:underline">Termos de Uso</a> e a <a href="#" style="color:var(--orange);text-decoration:underline">Politica de Privacidade (LGPD)</a>. Autorizo o tratamento dos meus dados para fins de associacao.</span>
+                    </label>
+                </div>
                 <button type="button" class="btn-next" onclick="validateAndGoStep4()">Continuar &#8594;</button>
             </div>
         </div>
@@ -1268,6 +1274,10 @@
 
     // === STEP 3 → 4 VALIDATION (Responsável → Pagamento) ===
     window.validateAndGoStep4 = function() {
+        if (!document.getElementById('aceite-lgpd').checked) {
+            alert('Voce precisa aceitar os Termos de Uso e a Politica de Privacidade para continuar.');
+            return;
+        }
         clearErrors();
         var valid = true;
 
