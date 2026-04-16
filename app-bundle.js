@@ -1890,8 +1890,9 @@ function renderAssociado(d) {
   // Para admin: CPF do config (nao CNPJ da sessao CRM)
   const isAdminUser = getSession()?.is_admin === true;
   document.getElementById('emp-avatar-big').textContent = initial;
-  document.getElementById('emp-razao').textContent      = isAdminUser ? 'Administrador ACIC-DF' : d.razaoSocial;
-  document.getElementById('emp-fantasia').textContent   = isAdminUser ? 'Painel de Administração' : (d.nomeFantasia !== '—' ? d.nomeFantasia : '');
+  const _isColab = _role === 'colaborador' || _role === 'dependente';
+  document.getElementById('emp-razao').textContent      = isAdminUser ? 'Administrador ACIC-DF' : (_isColab ? (d.razaoSocial || 'Empresa vinculada') : d.razaoSocial);
+  document.getElementById('emp-fantasia').textContent   = isAdminUser ? 'Painel de Administração' : (_isColab ? 'Você está vinculado como ' + (_role === 'colaborador' ? 'Colaborador' : 'Dependente') : (d.nomeFantasia !== '—' ? d.nomeFantasia : ''));
 
   const badge       = document.getElementById('emp-status-badge');
   badge.textContent = isAdminUser ? 'Administrador' : (d.statusTexto || statusLabel(d.status));
