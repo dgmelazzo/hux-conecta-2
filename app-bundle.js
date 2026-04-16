@@ -1187,6 +1187,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // SSO via cookie (setado pelo CRM ao logar superadmin)
+  const ssoCookie = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('conecta_sso='));
+  if (ssoCookie && !getToken()) {
+    const ssoToken = ssoCookie.split('=')[1];
+    if (ssoToken) {
+      try {
+        const ssoData = await apiValidateSso(ssoToken);
+        aplicarPermissoes(getSession());
+        showPortal();
+        return;
+      } catch(e) {
+        // Cookie invalido, limpar e seguir para login normal
+        document.cookie = 'conecta_sso=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.acicdf.org.br';
+      }
+    }
+  }
+
   // Normal: verifica token existente
   const token = getToken();
   if (token) {
