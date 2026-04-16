@@ -25,3 +25,4 @@ config.php
 
 # Symlink (gerado pelo deploy)
 portal-cobrancas.php
+links_addon.php
