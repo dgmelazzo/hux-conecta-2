@@ -8,7 +8,9 @@
  */
 
 // URL do auth.php no seu servidor (sem barra no final)
-const AUTH_URL = 'https://hml.conecta.acicdf.org.br/auth.php'; // ← ajuste se necessário
+const _isHml = window.location.hostname.includes('hml.');
+const _baseUrl = _isHml ? 'https://hml.conecta.acicdf.org.br' : 'https://conecta.acicdf.org.br';
+const AUTH_URL = _baseUrl + '/auth.php'; // ← ajuste se necessário
 
 const SESSION_KEY = 'acic_conecta_token';
 
@@ -442,7 +444,7 @@ const CATALOGO_BENEFICIOS = [
  * Integra ao portal existente (app.js + api.js)
  */
 
-const PRODUTOS_URL = 'https://hml.conecta.acicdf.org.br/produtos.php';
+const PRODUTOS_URL = _baseUrl + '/produtos.php';
 
 // ============================================================
 // STATE
@@ -2626,7 +2628,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── UPLOAD DE IMAGEM ─────────────────────────────────────────
-const UPLOAD_URL = 'https://hml.conecta.acicdf.org.br/upload.php';
+const UPLOAD_URL = _baseUrl + '/upload.php';
 
 async function handleImageUpload(input) {
   const file = input.files[0];
@@ -2759,7 +2761,7 @@ function atualizarPreviewCapa(url) {
 // ════════════════════════════════════════════════════════════
 // SUPERADMIN — Usuários & Métricas
 // ════════════════════════════════════════════════════════════
-const ADMIN_URL = 'https://hml.conecta.acicdf.org.br/admin.php';
+const ADMIN_URL = _baseUrl + '/admin.php';
 
 async function adminApi(action, params = {}, method = 'POST') {
   const token = getToken();
@@ -3347,7 +3349,7 @@ function renderSemAcesso(lista) {
 // ============================================================
 // SISTEMA DE NOTIFICAÇÕES
 // ============================================================
-const NOTIF_URL = 'https://hml.conecta.acicdf.org.br/notificacoes.php';
+const NOTIF_URL = _baseUrl + '/notificacoes.php';
 let _notifAberto    = false;
 let _notifInterval  = null;
 let _notifData      = [];
