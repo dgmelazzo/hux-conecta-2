@@ -352,15 +352,8 @@ switch($action){
     // Retorna apenas { is_admin: true/false } sem expor dados
     case 'admin_check':
         $in  = input();
-        $tok = str_replace('Bearer ','',trim($in['token'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? ''));
-        if (!$tok) { ok(['is_admin' => false]); }
-        $db  = getDB();
-        $st  = $db->prepare('SELECT u.cpf_cnpj FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
-        $st->execute([$tok]);
-        $row = $st->fetch(PDO::FETCH_ASSOC);
-        if (!$row) { ok(['is_admin' => false]); }
-        $isAdmin = (preg_replace('/\D/','',$row['cpf_cnpj']) === preg_replace('/\D/','',ADMIN_DOC));
-        ok(['is_admin' => $isAdmin]);
+        $user = validateCrmToken();
+        ok(['is_admin' => $user && $user['is_admin'], 'nome' => $user['nome'] ?? '', 'is_superadmin' => $user && ($user['is_superadmin'] ?? false)]);
         break;
 
     // ── COMBOS: vínculo plano CRM → produtos ─────────────────

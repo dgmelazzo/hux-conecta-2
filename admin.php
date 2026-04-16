@@ -62,53 +62,21 @@ function crmGet($path) {
 
 // ── AUTH: qualquer associado logado ─────────────────────────
 function requireAuth() {
-    $db  = getDB();
-    $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??''));
-    if (!$tok) { $in = input(); $tok = $in['token'] ?? ''; }
-    if (!$tok) err(401,'Token ausente.');
-    $st = $db->prepare('SELECT u.id FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
-    $st->execute([$tok]);
-    if (!$st->fetch()) err(401,'Sessão inválida ou expirada.');
+    $user = requireCrmAuth();
+    if (!$user) err(401, 'Token ausente ou invalido.');
+    return $user;
 }
-
-// ── SETUP TABELAS ────────────────────────────────────────────
-getDB()->exec("CREATE TABLE IF NOT EXISTS conecta_acessos (
-    id         INT AUTO_INCREMENT PRIMARY KEY,
-    user_id    INT NOT NULL,
-    cpf_cnpj   VARCHAR(20),
-    ip         VARCHAR(45),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_user (user_id),
-    INDEX idx_data (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-
-getDB()->exec("CREATE TABLE IF NOT EXISTS conecta_links (
-    id         INT AUTO_INCREMENT PRIMARY KEY,
-    titulo     VARCHAR(200) NOT NULL,
-    url        VARCHAR(500) NOT NULL,
-    icone      VARCHAR(10)  DEFAULT '🔗',
-    ordem      INT          DEFAULT 0,
-    cliques    INT          DEFAULT 0,
-    ativo      TINYINT(1)   DEFAULT 1,
-    created_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_ordem (ordem)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-
-// ── ROTAS ────────────────────────────────────────────────────
-$action = $_GET['action'] ?? (input()['action'] ?? '');
-
-// Rotas públicas (qualquer associado autenticado) — NÃO exigem superadmin
+// Acoes publicas (sem requireSuperAdmin)
+$action = $_GET['action'] ?? '';
 switch ($action) {
     case 'links_listar':
-        requireAuth();
-        $links = getDB()->query(
-            "SELECT id, titulo, url, icone, ordem, cliques FROM conecta_links WHERE ativo=1 ORDER BY ordem ASC, id ASC"
-        )->fetchAll(PDO::FETCH_ASSOC);
+        $user = requireCrmAuth();
+        if (!$user) err(401, 'Token invalido.');
+        $links = getDB()->query("SELECT * FROM conecta_links WHERE ativo=1 ORDER BY ordem")->fetchAll(PDO::FETCH_ASSOC);
         ok($links);
         break;
 
     case 'links_clique':
-        requireAuth();
         $in = input();
         if (!empty($in['id'])) {
             getDB()->prepare("UPDATE conecta_links SET cliques = cliques + 1 WHERE id=?")->execute([(int)$in['id']]);
@@ -117,12 +85,8 @@ switch ($action) {
         break;
 
     case 'admin_check':
-        $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??''));
-        if (!$tok) { $in = input(); $tok = $in['token'] ?? ''; }
-        if (!$tok) { ok(['is_admin'=>false]); }
-        $row = validateCrmToken($tok) ? ['cpf_cnpj' => validateCrmToken($tok)['documento']] : null; if(false)(PDO::FETCH_ASSOC);
-        if (!$row) { ok(['is_admin'=>false]); }
-        ok(['is_admin' => preg_replace('/\D/','',$row['cpf_cnpj']) === preg_replace('/\D/','',ADMIN_DOC)]);
+        $user = validateCrmToken();
+        ok(['is_admin' => $user && $user['is_admin'], 'is_superadmin' => $user && ($user['is_superadmin'] ?? false), 'nome' => $user['nome'] ?? '']);
         break;
 }
 
@@ -143,10 +107,9 @@ switch ($action) {
                      JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia')),
                      ''
                    ) AS nome,
-                   MAX(s.created_at) AS ultimo_acesso,
                    COUNT(DISTINCT s.id) AS total_sessoes
             FROM conecta_users u
-            LEFT JOIN conecta_sessions s ON s.user_id = u.id
+            
             GROUP BY u.id, u.cpf_cnpj, u.tipo, u.higestor_id,
                      u.primeiro_acesso, u.ativo, u.created_at, u.crm_dados
             ORDER BY u.created_at DESC
@@ -173,9 +136,9 @@ switch ($action) {
         if (!$id) err(400,'ID obrigatório.');
         $db   = getDB();
         $stmt = $db->prepare("
-            SELECT u.*, MAX(s.created_at) AS ultimo_acesso, COUNT(DISTINCT s.id) AS total_sessoes
+            SELECT u.*, COUNT(DISTINCT s.id) AS total_sessoes
             FROM conecta_users u
-            LEFT JOIN conecta_sessions s ON s.user_id = u.id
+            
             WHERE u.id = ?
             GROUP BY u.id
         ");
@@ -217,7 +180,7 @@ switch ($action) {
 
         // Encerra sessões se bloqueando
         if (!$novoStatus) {
-            $db->prepare('DELETE FROM conecta_sessions WHERE user_id=?')->execute([$in['id']]);
+            // conecta_sessions deprecated
         }
 
         ok(['id'=>$in['id'],'ativo'=>$novoStatus,'label'=>$novoStatus?'Ativo':'Bloqueado']);
@@ -229,7 +192,7 @@ switch ($action) {
         if (empty($in['id'])) err(400,'ID obrigatório.');
         $db = getDB();
         $db->prepare('UPDATE conecta_users SET password=NULL, primeiro_acesso=1 WHERE id=?')->execute([$in['id']]);
-        $db->prepare('DELETE FROM conecta_sessions WHERE user_id=?')->execute([$in['id']]);
+        // conecta_sessions deprecated
         ok(['reset'=>true,'message'=>'Usuário precisará redefinir a senha no próximo acesso.']);
         break;
 
@@ -289,7 +252,7 @@ switch ($action) {
         $sem_acesso = $db->query("
             SELECT u.cpf_cnpj, u.tipo, u.higestor_id, u.created_at
             FROM conecta_users u
-            LEFT JOIN conecta_sessions s ON s.user_id = u.id
+            
             WHERE s.id IS NULL OR u.primeiro_acesso = 1
             GROUP BY u.id
             ORDER BY u.created_at DESC
