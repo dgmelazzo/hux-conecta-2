@@ -242,7 +242,7 @@ switch ($action) {
         // Acessos últimos 30 dias (por dia)
         $acessos_30d = $db->query("
             SELECT DATE(created_at) AS dia, COUNT(*) AS total
-            FROM conecta_sessions
+            FROM conecta_sessions -- deprecated, dados historicos apenas
             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
             GROUP BY DATE(created_at)
             ORDER BY dia ASC
