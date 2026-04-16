@@ -1359,10 +1359,16 @@ function showPortal() {
   if(window._userRole === 'gestor') showGestorMenu();
   if(window._userRole === 'colaborador') showColaboradorMenu();
   _adminChecked = false;
-  // Garante que elementos admin começam ocultos a cada login
-  ['nav-admin','nav-metricas','nav-configuracoes'].forEach(id => {
-    document.getElementById(id)?.classList.add('hidden');
-  });
+  // Admin items: mostrar imediatamente se session tem is_admin
+  const _sess = getSession();
+  if (_sess?.is_admin) {
+    mostrarNavAdmin(_sess?.is_superadmin);
+    _adminChecked = true;
+  } else {
+    ['nav-admin','nav-metricas','nav-comunicados','nav-parceiros','nav-categorias'].forEach(id => {
+      document.getElementById(id)?.classList.add('hidden');
+    });
+  }
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
   const tag = document.getElementById('topbar-tag');
@@ -2194,7 +2200,7 @@ function showSection(id) {
   if (window.innerWidth <= 900) closeSidebar();
   if (id === 'catalogo') { loadCatalogoProdutos(); carregarCategoriasFiltro(); }
   if (id === 'comunicados') iniciarComunicados();
-  const adminSections = ['admin-produtos','admin-metricas','admin-parceiros','admin-comunicados','admin-categorias','configuracoes'];
+  const adminSections = ['admin-produtos','admin-metricas','admin-parceiros','admin-comunicados','admin-categorias'];
   if (adminSections.includes(id)) {
     const navAdmin = document.getElementById('nav-admin');
     if (!navAdmin || navAdmin.classList.contains('hidden')) {
@@ -2363,13 +2369,14 @@ function checkAdminAccess() {
   if (_adminChecked) return;
   _adminChecked = true;
 
-  ocultarElementosAdmin();
-
   const token = getToken();
-  if (!token) return;
+  if (!token) { ocultarElementosAdmin(); return; }
 
   const sess = getSession();
   if (sess?.is_admin === true) { mostrarNavAdmin(sess?.is_superadmin === true); return; }
+
+  // Apenas oculta se nao for admin (evita flash)
+  ocultarElementosAdmin();
 
   fetch(ADMIN_URL + '?action=admin_check', {
     method: 'POST',
