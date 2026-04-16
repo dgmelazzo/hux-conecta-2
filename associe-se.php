@@ -1297,7 +1297,7 @@
         if (cnpj.length !== 14) return;
 
         try {
-            var res = await fetch('https://brasilapi.com.br/api/cnpj/v1/' + cnpj);
+            var res = await fetch('/api.php?action=cnpj&doc=' + cnpj);
             if (!res.ok) throw new Error('CNPJ nao encontrado');
             var data = await res.json();
 
@@ -1345,7 +1345,7 @@
         if (cep.length !== 8) return;
 
         try {
-            var res = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
+            var res = await fetch('/api.php?action=cep&doc=' + cep + '');
             var data = await res.json();
             if (data.erro) throw new Error('CEP not found');
 
