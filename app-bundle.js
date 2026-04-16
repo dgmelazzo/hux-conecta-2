@@ -2821,7 +2821,7 @@ function renderCategoriasAdmin() {
         badge +
         '<button onclick="editarCategoria(' + c.id + ')" class="btn-table-action">Editar</button>' +
         (ativo
-          ? '<button onclick="arquivarCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--text3)">Arquivar</button>'
+          ? '<button onclick="arquivarCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--text3)">Arquivar</button>' + (total == 0 ? '<button onclick="excluirCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--danger)">Excluir</button>' : '')
           : '<button onclick="reativarCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--accent)">Reativar</button>') +
       '</div>' +
     '</div>';
@@ -2884,6 +2884,18 @@ async function arquivarCategoria(id) {
     categoriasData = [];
     loadAdminCategorias();
   } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
+}
+
+async function excluirCategoria(id) {
+  const cat = _categoriasAdminData.find(c => c.id == id);
+  const nome = cat ? cat.nome : '';
+  if (!confirm('EXCLUIR DEFINITIVAMENTE a categoria "' + nome + '"?\n\nEssa a\u00e7\u00e3o n\u00e3o pode ser desfeita.')) return;
+  try {
+    await prodApi('categoria_excluir', { id, definitivo: true });
+    mostrarToast('\u2705', 'Categoria exclu\u00edda.', 'sucesso');
+    categoriasData = [];
+    loadAdminCategorias();
+  } catch(e) { mostrarToast('Erro', e.message || 'Falha ao excluir.', 'alerta'); }
 }
 
 async function reativarCategoria(id) {

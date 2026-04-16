@@ -483,9 +483,19 @@ switch($action){
     case "categoria_excluir":
         requireAdmin();
         $id = (int)($in["id"] ?? 0);
+        $definitivo = (bool)($in["definitivo"] ?? false);
         if (!$id) err(400, "ID obrigatorio.");
-        getDB()->prepare("UPDATE conecta_categorias SET ativo=0 WHERE id=?")->execute([$id]);
-        ok(["archived" => true]);
+        if ($definitivo) {
+            $st = getDB()->prepare("SELECT COUNT(*) FROM conecta_produtos WHERE categoria_id=?");
+            $st->execute([$id]);
+            $total = (int)$st->fetchColumn();
+            if ($total > 0) err(409, "Impossivel excluir: $total produto(s) vinculado(s). Reatribua os produtos antes de excluir.");
+            getDB()->prepare("DELETE FROM conecta_categorias WHERE id=?")->execute([$id]);
+            ok(["deleted" => true]);
+        } else {
+            getDB()->prepare("UPDATE conecta_categorias SET ativo=0 WHERE id=?")->execute([$id]);
+            ok(["archived" => true]);
+        }
         break;
 
     case "categoria_reordenar":
