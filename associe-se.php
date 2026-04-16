@@ -720,7 +720,7 @@
 <!-- NAV -->
 <nav class="nav">
     <a href="/" class="nav-logo">ACIC <span>Conecta</span></a>
-    <a href="https://conecta.acicdf.org.br" class="nav-login">Já é associado? Entrar</a>
+    <a href="https://hml.conecta.acicdf.org.br" class="nav-login">Já é associado? Entrar</a>
 </nav>
 
 <!-- MAIN -->
@@ -1168,7 +1168,7 @@
     // === LOAD PLANS ===
     async function loadPlans() {
         try {
-            var res = await fetch('https://api-crm.acicdf.org.br/planos');
+            var res = await fetch('https://hml.crm.acicdf.org.br/api/planos');
             planos = (await res.json()).data.data;
             renderPlans();
         } catch(e) {
@@ -1296,36 +1296,42 @@
         if (cnpj.length !== 14) return;
 
         try {
-            var res = await fetch('https://api.cnpja.com.br/office/' + cnpj + '?simples=false');
+            var res = await fetch('https://brasilapi.com.br/api/cnpj/v1/' + cnpj);
+            if (!res.ok) throw new Error('CNPJ nao encontrado');
             var data = await res.json();
 
             document.getElementById('cnpj-data').style.display = 'block';
-            document.getElementById('razao_social').value = data.company ? data.company.name : (data.alias || '');
-            document.getElementById('fantasia').value = data.alias || '';
+            document.getElementById('razao_social').value = data.razao_social || '';
+            document.getElementById('fantasia').value = data.nome_fantasia || '';
 
             var cnaeText = '';
-            if (data.mainActivity) cnaeText = data.mainActivity.id + ' - ' + data.mainActivity.text;
-            else if (data.company && data.company.mainActivity) cnaeText = data.company.mainActivity.id + ' - ' + data.company.mainActivity.text;
+            if (data.cnae_fiscal) cnaeText = data.cnae_fiscal + ' - ' + (data.cnae_fiscal_descricao || '');
             document.getElementById('cnae').value = cnaeText;
 
-            var situacao = data.status ? data.status.text : (data.registration ? data.registration.status : '');
-            cnpjSituacao = situacao.toUpperCase();
+            var situacao = (data.descricao_situacao_cadastral || '').toUpperCase();
+            cnpjSituacao = situacao;
             var container = document.getElementById('situacao-container');
-
             if (cnpjSituacao === 'ATIVA') {
                 container.innerHTML = '<div class="situacao-badge ativa">● ATIVA</div>';
             } else {
                 container.innerHTML = '<div class="situacao-badge irregular">● ' + escapeHTML(cnpjSituacao || 'IRREGULAR') + '</div>';
             }
 
-            // Auto-detect segmento from CNPJ data
-            var porte = '';
-            if (data.company && data.company.size) porte = data.company.size.text || '';
-            if (!porte && data.company && data.company.simples && data.company.simples.mei) porte = 'MEI';
+            var porte = (data.porte || '').toUpperCase();
             var sel = document.getElementById('segmento');
-            if (/mei/i.test(porte)) sel.value = 'MEI';
-            else if (/micro/i.test(porte)) sel.value = 'ME';
-            else if (/pequeno/i.test(porte)) sel.value = 'EPP';
+            if (/MEI/.test(porte) || data.opcao_pelo_mei) sel.value = 'MEI';
+            else if (/MICRO/.test(porte)) sel.value = 'ME';
+            else if (/PEQUENO/.test(porte)) sel.value = 'EPP';
+
+            if (data.cep) {
+                document.getElementById('cep').value = String(data.cep).replace(/(\d{5})(\d{3})/, '$1-$2');
+                document.getElementById('logradouro').value = ((data.descricao_tipo_de_logradouro || '') + ' ' + (data.logradouro || '')).trim();
+                document.getElementById('numero').value = data.numero || '';
+                document.getElementById('complemento').value = data.complemento || '';
+                document.getElementById('bairro').value = data.bairro || '';
+                document.getElementById('cidade').value = data.municipio || '';
+                document.getElementById('uf').value = data.uf || '';
+            }
         } catch(e) {
             document.getElementById('cnpj-error').textContent = 'Erro ao consultar CNPJ';
             document.getElementById('cnpj-error').classList.add('show');
@@ -1391,7 +1397,7 @@
         };
 
         try {
-            var res = await fetch('https://api-crm.acicdf.org.br/inscricoes', {
+            var res = await fetch('https://hml.crm.acicdf.org.br/api/inscricoes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -1441,7 +1447,7 @@
                     '<li>Aproveite todos os benefícios da associação!</li>' +
                 '</ol>' +
             '</div>' +
-            '<a href="https://conecta.acicdf.org.br" class="btn-portal">Acessar o portal &#8594;</a>';
+            '<a href="https://hml.conecta.acicdf.org.br" class="btn-portal">Acessar o portal &#8594;</a>';
     }
 
     // === HELPERS ===
