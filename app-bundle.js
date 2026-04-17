@@ -1408,6 +1408,7 @@ function showPortal() {
   const _sessRole = getSession();
   window._userRole = _sessRole?.role || _sessRole?.tipo || '';
   if (_userRole === 'gestor') showGestorMenu();
+  if (_userRole === 'associado_empresa') showPerfilEmpresa();
   if (_userRole === 'colaborador' || _userRole === 'dependente') showPerfilRestrito(_userRole);
   _adminChecked = false;
   // Admin items: mostrar imediatamente se session tem is_admin
