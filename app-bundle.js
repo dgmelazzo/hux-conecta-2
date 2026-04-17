@@ -2902,8 +2902,8 @@ function renderDashboardPerfil(d) {
 
   // Ocultar greeting e stats genéricos e carousel para perfis nao-admin
   { // Ocultar greeting e stats para todos
-    document.querySelectorAll(.stats-grid-dash, .dash-card, .dash-top, .carousel-section).forEach(el => {
-      if (el) el.style.display = none;
+    document.querySelectorAll('.stats-grid-dash, .dash-card, .dash-top, .carousel-section').forEach(el => {
+      if (el) el.style.display = 'none';
     });
   }
 }
