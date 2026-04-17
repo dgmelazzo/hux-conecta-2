@@ -99,9 +99,20 @@ async function apiPrimeiroAcesso(cpfCnpj, senha, confirmarSenha) {
 async function apiLogin(cpfCnpj, senha) {
   const data = await authPost('login', { cpf_cnpj: cpfCnpj, password: senha });
   setToken(data.token);
+  // Buscar permissoes do CRM
+  try {
+    const permRes = await fetch(_baseUrl + '/auth.php?action=permissoes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: data.token })
+    });
+    const permJson = await permRes.json();
+    if (permJson.success) data._modulos = permJson.data.modulos || [];
+  } catch(e) {}
   setSession({
     tipo:        data.tipo || data.role || 'associado_empresa',
     role:        data.role || data.tipo || 'associado_empresa',
+    modulos:     data._modulos || [],
     crm_associado_id: data.crm_associado_id,
     cpf:         cpfCnpj,
     cpf_cnpj:    data.cpf_cnpj || data.documento || cpfCnpj,
@@ -841,9 +852,13 @@ function abrirFormProduto(p = null) {
       theme: 'snow',
       placeholder: 'Detalhes do produto/serviço...',
       modules: { toolbar: [
-        ['bold','italic','underline'],
+        [{'header':[2,3,false]}],
+        ['bold','italic','underline','strike'],
+        [{'color':[]},{'background':[]}],
         [{'list':'ordered'},{'list':'bullet'}],
-        ['link'],['clean']
+        [{'align':[]}],
+        ['link','image','blockquote','code-block'],
+        ['clean']
       ]}
     });
     window._quillEditor.on('text-change', () => {
@@ -1372,7 +1387,6 @@ function showPerfilRestrito(role) {
   });
   // Mostrar Metricas para todos
   const navMet = document.getElementById('nav-metricas');
-  if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
   // Ocultar cobrancas e empresa para colaborador/dependente
   document.querySelectorAll('.sidebar-nav button, .sidebar-nav a').forEach(el => {
     const onclick = el.getAttribute('onclick') || '';
@@ -1382,7 +1396,6 @@ function showPerfilRestrito(role) {
   });
 }
 function showPerfilEmpresa() {
-  console.log("[DEBUG] showPerfilEmpresa EXECUTOU");
   // Empresa: Dashboard, Catalogo, Minha Empresa, Minhas Cobrancas, Carteirinha, Metricas
   // Ocultar abas admin-only
   ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias'].forEach(id => {
@@ -1391,7 +1404,6 @@ function showPerfilEmpresa() {
   });
   // Mostrar Metricas (hidden por default)
   const navMet = document.getElementById('nav-metricas');
-  if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
 }
 function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
@@ -1435,12 +1447,15 @@ function showPortal() {
     // Empresa: garantir que metricas fica visivel
     if (_userRole === 'associado_empresa') {
       const navMet = document.getElementById('nav-metricas');
-      if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
     }
   }
-  // Empresa: ajustar menu
-  console.log("[DEBUG] _userRole=", window._userRole);
-  if (window._userRole === 'associado_empresa') showPerfilEmpresa();
+  // Sidebar dinamico baseado em permissoes
+  const _modulos = getSession()?.modulos || [];
+  if (_modulos.length > 0) {
+    aplicarModulosSidebar(_modulos);
+  } else if (window._userRole === 'associado_empresa') {
+    showPerfilEmpresa();
+  }
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
   const tag = document.getElementById('topbar-tag');
@@ -2034,7 +2049,11 @@ function renderFeaturedBenefits(list) {
         ${b.imagem
           ? `<img src="${b.imagem}" alt="${b.titulo}" class="carousel-img" loading="lazy">`
           : `<div class="carousel-img-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`}
-        <div class="carousel-overlay"><span class="carousel-cat-badge">${b.categoria}</span></div>
+        <div class="carousel-overlay">
+          <span class="carousel-cat-badge">${b.categoria}</span>
+          ${b.parceiro_logo ? '<div style="position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);padding:6px 12px;border-radius:8px"><img src="' + b.parceiro_logo + '" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.3)"><span style="color:#fff;font-size:11px;font-weight:600">' + (b.parceiro_fantasia || b.parceiro_nome || '') + '</span></div>' : ''}
+        </div>
+        <div style="position:absolute;top:16px;right:-30px;transform:rotate(45deg);background:#E8701A;color:#fff;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 40px;box-shadow:0 2px 8px rgba(232,112,26,.3)">DESTAQUE</div>
       </div>
       <div class="carousel-info">
         <div class="carousel-empresa">${b.empresa || 'ACIC-DF'}</div>
@@ -2893,65 +2912,52 @@ function renderDashboardPerfil(d) {
   const role = session.role || session.tipo || 'associado_empresa';
   const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
   const nome = d.nomeFantasia !== '\u2014' ? d.nomeFantasia : (d.razaoSocial || session.nome || 'Associado');
-
   const validade = d.dataVencimento || session.data_vencimento || null;
-  // Hero card personalizado
   const heroEl = document.getElementById('dash-hero-perfil');
   if (!heroEl) return;
 
-  if (isAdmin) {
-    heroEl.innerHTML = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Painel de Gest\u00e3o</div>' +
-      '<div style="font-size:24px;font-weight:800">Bem-vindo, ' + nome + '</div>' +
-    '</div>';
-  }
-
   let html = '';
 
-  if (role === 'associado_empresa') {
-    // === EMPRESA ===
+  if (isAdmin) {
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Painel de Gest\u00e3o</div>' +
+      '<div style="font-size:24px;font-weight:800">Bem-vindo, ' + nome + '</div></div>';
+  } else if (role === 'associado_empresa') {
     const statusColor = d.status === 'ativo' ? '#22c55e' : (d.status === 'inadimplente' ? '#ef4444' : '#f59e0b');
-    const statusTxt = d.status === 'ativo' ? 'Ativo' : (d.status === 'inadimplente' ? 'Inadimplente' : d.status || 'Ativo');
-
+    const statusTxt = d.status === 'ativo' ? 'Ativo' : (d.status || 'Ativo');
     html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
       '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
       '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
       '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px">' +
         '<div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.2)">' +
-          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></span>' + statusTxt +
-        '</div>' +
+          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></span>' + statusTxt + '</div>' +
         '<div style="font-size:13px;opacity:.8">' + (d.plano || session.plano || '') + '</div>' +
         (validade ? '<div style="font-size:13px;opacity:.8">Vence: ' + validade + '</div>' : '') +
-      '</div>' +
-    '</div>';
-
+      '</div></div>';
   } else if (role === 'colaborador') {
-    // === COLABORADOR ===
     html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
       '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
       '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
-      '<div style="font-size:13px;opacity:.8">Colaborador &mdash; ' + (d.razaoSocial || 'sua empresa') + '</div>' +
-    '</div>';
-
+      '<div style="font-size:13px;opacity:.8">Colaborador \u2014 ' + (d.razaoSocial || 'sua empresa') + '</div></div>';
   } else if (role === 'dependente') {
-    // === DEPENDENTE ===
     html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
       '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
       '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
-      '<div style="font-size:13px;opacity:.8">Dependente &mdash; ' + (d.razaoSocial || 'sua empresa') + '</div>' +
-    '</div>';
+      '<div style="font-size:13px;opacity:.8">Dependente \u2014 ' + (d.razaoSocial || 'sua empresa') + '</div></div>';
   }
 
   heroEl.innerHTML = html;
 
-  // Mostrar boxes para todos os perfis
+  // Mostrar boxes para admin e empresa, ocultar para colab/dep
   document.querySelectorAll('.dash-admin-only').forEach(el => {
-    if (el) el.style.display = '';
+    el.style.display = (isAdmin || role === 'associado_empresa') ? '' : 'none';
   });
-  // Ocultar greeting para todos (hero box ja tem Bem-vindo)
+  // Ocultar greeting
   const greet = document.getElementById('dash-greeting');
   if (greet && greet.closest('.section-header')) greet.closest('.section-header').style.display = 'none';
 }
+
+
 
 // ============================================================
 // CARTEIRINHA — SPA (sem page reload)
@@ -2959,7 +2965,6 @@ function renderDashboardPerfil(d) {
 async function loadCarteirinha() {
   const container = document.getElementById('carteirinha-content');
   if (!container) return;
-  if (container.dataset.loaded) return;
 
   const session = getSession() || {};
   const nome = session.nome || 'Associado';
@@ -3014,7 +3019,6 @@ async function loadCarteirinha() {
       '<button onclick="shareCarteirinha()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text)">Compartilhar</button>' +
     '</div>';
 
-  container.dataset.loaded = '1';
   if (!qrSrc && typeof QRCode !== 'undefined') {
     const el = document.getElementById('qr-spa');
     if (el) new QRCode(el, { text: qrData, width: 200, height: 200, colorDark: '#1B2B6B', colorLight: '#ffffff' });
@@ -3124,504 +3128,116 @@ function _renderCobrancasSPA(list) {
   container.innerHTML = html;
 }
 
-// EMOJI PICKER — Nativo (sem dependencias)
-// ============================================================
-const EMOJI_DATA = [
-  // Negocios & Financeiro
-  {e:'\u{1F4BC}',n:'maleta negocio'},     {e:'\u{1F4B0}',n:'dinheiro saco'},      {e:'\u{1F4B3}',n:'cartao credito'},
-  {e:'\u{1F4C8}',n:'grafico crescimento'}, {e:'\u{1F4C9}',n:'grafico queda'},      {e:'\u{1F4CA}',n:'grafico barras'},
-  {e:'\u{1F4B2}',n:'cifrao dolar'},        {e:'\u{1F3E6}',n:'banco predio'},       {e:'\u{1F3E2}',n:'escritorio predio'},
-  {e:'\u{1F4B5}',n:'nota dinheiro dolar'}, {e:'\u{1F4B8}',n:'dinheiro voando'},    {e:'\u{1F9FE}',n:'recibo nota'},
-  // Saude
-  {e:'\u{1FA7A}',n:'estetoscopio medico'}, {e:'\u{1F3E5}',n:'hospital predio'},    {e:'\u{1F48A}',n:'pilula remedio farmacia'},
-  {e:'\u{1F9AC}',n:'pulmao saude'},        {e:'\u{1F9B7}',n:'dente odonto'},       {e:'\u{1F489}',n:'seringa vacina'},
-  {e:'\u{2764}\u{FE0F}',n:'coracao vida'}, {e:'\u{1F9D1}\u{200D}\u{2695}\u{FE0F}',n:'medico profissional'},
-  {e:'\u{1FA79}',n:'curativo band aid'},   {e:'\u{2695}\u{FE0F}',n:'caduceu medicina'},
-  // Tecnologia
-  {e:'\u{1F4BB}',n:'notebook computador laptop'}, {e:'\u{1F5A5}\u{FE0F}',n:'desktop computador tela'},
-  {e:'\u{1F4F1}',n:'celular smartphone'},  {e:'\u{2699}\u{FE0F}',n:'engrenagem config'},
-  {e:'\u{1F527}',n:'chave ferramenta'},    {e:'\u{1F529}',n:'parafuso ferramenta'},
-  {e:'\u{1F50C}',n:'tomada eletrica'},     {e:'\u{1F4E1}',n:'antena satelite'},
-  {e:'\u{1F310}',n:'globo internet web'},  {e:'\u{1F916}',n:'robo automacao ia'},
-  {e:'\u{1F512}',n:'cadeado seguranca'},   {e:'\u{1F513}',n:'cadeado aberto'},
-  // Juridico & Seguro
-  {e:'\u{2696}\u{FE0F}',n:'balanca justica juridico'}, {e:'\u{1F4DC}',n:'pergaminho documento certificado'},
-  {e:'\u{1F6E1}\u{FE0F}',n:'escudo protecao seguro'},  {e:'\u{1F4DD}',n:'memo nota anotacao'},
-  {e:'\u{1F4CB}',n:'prancheta lista'},     {e:'\u{1F4D1}',n:'marcador pagina'},
-  {e:'\u{1F4C4}',n:'documento pagina'},    {e:'\u{1F4C3}',n:'documento curva'},
-  // Educacao
-  {e:'\u{1F393}',n:'chapeu formatura educacao'}, {e:'\u{1F4DA}',n:'livros estudo'},
-  {e:'\u{1F4D6}',n:'livro aberto leitura'},     {e:'\u{270F}\u{FE0F}',n:'lapis escrever'},
-  {e:'\u{1F3EB}',n:'escola predio'},        {e:'\u{1F9D1}\u{200D}\u{1F3EB}',n:'professor'},
-  // Viagem & Transporte
-  {e:'\u{2708}\u{FE0F}',n:'aviao viagem'},  {e:'\u{1F30D}',n:'globo terra mundo'},
-  {e:'\u{1F697}',n:'carro automovel'},       {e:'\u{1F3D6}\u{FE0F}',n:'praia ferias'},
-  {e:'\u{1F6C2}',n:'alfandega passaporte'},  {e:'\u{1F9F3}',n:'mala bagagem viagem'},
-  // Comunicacao
-  {e:'\u{1F4E7}',n:'email carta envelope'},  {e:'\u{1F4DE}',n:'telefone ligacao'},
-  {e:'\u{1F4AC}',n:'balao conversa chat'},   {e:'\u{1F4E2}',n:'megafone anuncio'},
-  {e:'\u{1F4E3}',n:'corneta comunicado'},    {e:'\u{1F514}',n:'sino notificacao'},
-  // Pessoas & Trabalho
-  {e:'\u{1F465}',n:'pessoas grupo equipe'},  {e:'\u{1F464}',n:'pessoa usuario'},
-  {e:'\u{1F91D}',n:'aperto mao parceria'},   {e:'\u{1F3AF}',n:'alvo meta objetivo'},
-  {e:'\u{1F4AA}',n:'forca musculo'},         {e:'\u{1F3C6}',n:'trofeu premio'},
-  // Alimentacao
-  {e:'\u{1F37D}\u{FE0F}',n:'prato talheres restaurante'}, {e:'\u{2615}',n:'cafe xicara'},
-  {e:'\u{1F6D2}',n:'carrinho compras'},      {e:'\u{1F6D2}',n:'mercado compras'},
-  // Casa & Construcao
-  {e:'\u{1F3E0}',n:'casa moradia'},          {e:'\u{1F3D7}\u{FE0F}',n:'construcao obra'},
-  {e:'\u{1F6AA}',n:'porta entrada'},         {e:'\u{1F3E1}',n:'casa jardim'},
-  // Abstrato & Simbolos
-  {e:'\u{2B50}',n:'estrela destaque favorito'}, {e:'\u{1F525}',n:'fogo popular trending'},
-  {e:'\u{2705}',n:'check ok confirmar'},     {e:'\u{274C}',n:'x cancelar erro'},
-  {e:'\u{26A0}\u{FE0F}',n:'alerta atencao'}, {e:'\u{2139}\u{FE0F}',n:'info informacao'},
-  {e:'\u{1F4A1}',n:'lampada ideia'},         {e:'\u{1F680}',n:'foguete lancamento'},
-  {e:'\u{1F4CC}',n:'pin fixar mapa'},        {e:'\u{1F4CD}',n:'pin local'},
-  {e:'\u{1F4CE}',n:'clips anexo'},           {e:'\u{1F4C5}',n:'calendario data'},
-  {e:'\u{1F4C6}',n:'calendario dia'},        {e:'\u{23F0}',n:'relogio alarme'},
-  {e:'\u{1F50D}',n:'lupa busca pesquisa'},   {e:'\u{1F50E}',n:'lupa direita busca'},
-  {e:'\u{1F4F0}',n:'jornal noticia imprensa'},{e:'\u{1F5C3}\u{FE0F}',n:'arquivo pasta caixa'},
-  {e:'\u{1F4C1}',n:'pasta arquivo folder'},  {e:'\u{1F4C2}',n:'pasta aberta'},
-  {e:'\u{1F3F7}\u{FE0F}',n:'etiqueta tag label'},{e:'\u{1F4E6}',n:'caixa pacote entrega'},
-  {e:'\u{1F504}',n:'setas ciclo renovar'},   {e:'\u{1F503}',n:'setas recarregar'},
-  // Natureza
-  {e:'\u{1F33F}',n:'folha natureza eco'},    {e:'\u{1F333}',n:'arvore natureza'},
-  {e:'\u{2600}\u{FE0F}',n:'sol energia solar'},{e:'\u{1F30E}',n:'terra americas globo'},
-  // Mais icones uteis
-  {e:'\u{1F4F7}',n:'camera foto'},           {e:'\u{1F3A8}',n:'paleta arte design'},
-  {e:'\u{1F3AC}',n:'claquete video cinema'}, {e:'\u{1F3B5}',n:'nota musica'},
-  {e:'\u{1F6BF}',n:'chuveiro banho'},        {e:'\u{1F48E}',n:'diamante premium'},
-  {e:'\u{1F451}',n:'coroa rei premium vip'}, {e:'\u{1F381}',n:'presente regalo'},
-  {e:'\u{1F389}',n:'festa confete celebrar'},{e:'\u{1F38A}',n:'confete bola festa'},
-  {e:'\u{1F4AB}',n:'tontura estrelas wow'},  {e:'\u{1F31F}',n:'estrela brilhante'},
-  {e:'\u{1F4AF}',n:'cem pontos perfeito'},   {e:'\u{1F44D}',n:'joinha like positivo'},
-];
-
-let _emojiPickerTarget = null;
-let _emojiPickerOpen = false;
-
-function openEmojiPicker(inputId) {
-  _emojiPickerTarget = document.getElementById(inputId);
-  let picker = document.getElementById('emoji-picker-panel');
-  if (!picker) {
-    picker = document.createElement('div');
-    picker.id = 'emoji-picker-panel';
-    picker.innerHTML =
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
-        '<input type="text" id="emoji-search" placeholder="Buscar... (ex: saude, dinheiro)" ' +
-          'style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px;outline:none" ' +
-          'oninput="filterEmojis(this.value)">' +
-        '<button onclick="closeEmojiPicker()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);padding:4px">&times;</button>' +
-      '</div>' +
-      '<div id="emoji-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:260px;overflow-y:auto;padding:4px"></div>';
-    Object.assign(picker.style, {
-      position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
-      zIndex:'9999', background:'var(--surface)', border:'1px solid var(--border)',
-      borderRadius:'14px', padding:'16px', width:'340px',
-      boxShadow:'0 12px 40px rgba(0,0,0,.25)'
-    });
-    document.body.appendChild(picker);
-  }
-  picker.style.display = 'block';
-  _emojiPickerOpen = true;
-  document.getElementById('emoji-search').value = '';
-  renderEmojiGrid(EMOJI_DATA);
-  setTimeout(function(){ document.getElementById('emoji-search').focus(); }, 50);
-}
-
-function closeEmojiPicker() {
-  const p = document.getElementById('emoji-picker-panel');
-  if (p) p.style.display = 'none';
-  _emojiPickerOpen = false;
-}
-
-function renderEmojiGrid(list) {
-  const grid = document.getElementById('emoji-grid');
-  if (!grid) return;
-  if (!list.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:13px">Nenhum emoji encontrado</div>';
-    return;
-  }
-  grid.innerHTML = list.map(function(item) {
-    return '<button onclick="selectEmoji(\'' + item.e + '\')" title="' + item.n + '" ' +
-      'style="font-size:22px;padding:6px;border:none;background:none;cursor:pointer;border-radius:8px;transition:background .15s;line-height:1" ' +
-      'onmouseenter="this.style.background=\'var(--accent-soft)\'" onmouseleave="this.style.background=\'none\'">' +
-      item.e + '</button>';
-  }).join('');
-}
-
-function filterEmojis(q) {
-  if (!q) { renderEmojiGrid(EMOJI_DATA); return; }
-  q = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const filtered = EMOJI_DATA.filter(function(item) {
-    var name = item.n.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return name.indexOf(q) !== -1;
-  });
-  renderEmojiGrid(filtered);
-}
-
-function selectEmoji(emoji) {
-  if (_emojiPickerTarget) {
-    _emojiPickerTarget.value = emoji;
-    _emojiPickerTarget.dispatchEvent(new Event('input'));
-  }
-  closeEmojiPicker();
-}
-
-// Fechar picker ao clicar fora
-document.addEventListener('click', function(e) {
-  if (!_emojiPickerOpen) return;
-  const panel = document.getElementById('emoji-picker-panel');
-  if (panel && !panel.contains(e.target) && !e.target.closest('[onclick*="openEmojiPicker"]')) {
-    closeEmojiPicker();
-  }
-});
-
-// ============================================================
-// CATEGORIAS — CRUD (superadmin)
-// ============================================================
-let _categoriasAdminData = [];
-
-async function loadAdminCategorias() {
-  try {
-    _categoriasAdminData = await prodApi('categorias_admin', {}, 'GET');
-    renderCategoriasAdmin();
-  } catch(e) {
-    const el = document.getElementById('categorias-content');
-    if (el) el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Erro ao carregar categorias.</div>';
-  }
-}
-
-function renderCategoriasAdmin() {
-  const container = document.getElementById('categorias-content');
-  if (!container) return;
-
-  if (!_categoriasAdminData.length) {
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Nenhuma categoria cadastrada.</div>';
-    return;
-  }
-
-  let html = '<div style="display:grid;gap:8px">';
-  _categoriasAdminData.forEach(function(c) {
-    const ativo = c.ativo == 1;
-    const badge = ativo
-      ? '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">Ativa</span>'
-      : '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">Inativa</span>';
-    const nome = (c.nome || '').replace(/</g, '&lt;');
-    const slug = (c.slug || '').replace(/</g, '&lt;');
-    const icone = c.icone || '\u{1F4C1}';
-    const total = c.total_produtos || 0;
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;transition:var(--trans)">' +
-      '<div style="display:flex;align-items:center;gap:12px">' +
-        '<span style="font-size:20px">' + icone + '</span>' +
-        '<div>' +
-          '<div style="font-weight:600;font-size:14px;color:var(--text)">' + nome + '</div>' +
-          '<div style="font-size:11px;color:var(--text3)">' + total + ' produtos &middot; ' + slug + '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px">' +
-        badge +
-        '<button onclick="editarCategoria(' + c.id + ')" class="btn-table-action">Editar</button>' +
-        (ativo
-          ? '<button onclick="arquivarCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--text3)">Arquivar</button>' + (total == 0 ? '<button onclick="excluirCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--danger)">Excluir</button>' : '')
-          : '<button onclick="reativarCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--accent)">Reativar</button>') +
-      '</div>' +
-    '</div>';
-  });
-  html += '</div>';
-  container.innerHTML = html;
-}
-
-function abrirFormCategoria(cat) {
-  const isEdit = !!cat;
-  const modal = document.getElementById('categoria-modal');
-  if (!modal) return;
-  document.getElementById('cat-id').value = isEdit ? cat.id : '';
-  document.getElementById('cat-nome').value = isEdit ? cat.nome : '';
-  document.getElementById('cat-icone').value = isEdit ? (cat.icone || '') : '';
-  document.getElementById('cat-ativo').checked = isEdit ? cat.ativo == 1 : true;
-  document.getElementById('categoria-modal-title').textContent = isEdit ? 'Editar Categoria' : 'Nova Categoria';
-  modal.classList.remove('hidden');
-}
-
-function fecharFormCategoria() {
-  document.getElementById('categoria-modal')?.classList.add('hidden');
-}
-
-async function salvarCategoria(e) {
-  if (e) e.preventDefault();
-  const id = document.getElementById('cat-id').value;
-  const nome = document.getElementById('cat-nome').value.trim();
-  const icone = document.getElementById('cat-icone').value.trim();
-  const ativo = document.getElementById('cat-ativo').checked ? 1 : 0;
-  if (!nome) { mostrarToast('\u26a0\ufe0f Aten\u00e7\u00e3o', 'Nome \u00e9 obrigat\u00f3rio.', 'aviso'); return; }
-  try {
-    if (id) {
-      await prodApi('categoria_editar', { id: parseInt(id), nome, icone, ativo });
-      mostrarToast('\u2705 Sucesso', 'Categoria atualizada.', 'sucesso');
+function aplicarModulosSidebar(modulos) {
+  const map = {
+    'dashboard':   'button[onclick*="dashboard"]',
+    'catalogo':    'button[onclick*="catalogo"]',
+    'carteirinha': 'button[onclick*="carteirinha"]',
+    'cobrancas':   'button[onclick*="cobrancas"]',
+    'empresa':     'button[onclick*="empresa"]',
+    'metricas':    '#nav-metricas',
+    'comunicados': '#nav-comunicados',
+    'produtos':    '#nav-admin',
+    'categorias':  '#nav-categorias',
+    'parceiros':   '#nav-parceiros',
+  };
+  Object.entries(map).forEach(([mod, sel]) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    if (modulos.includes(mod)) {
+      el.className = el.className.replace(/hidden/g, '').trim();
+      el.setAttribute('style', 'display:flex !important');
     } else {
-      await prodApi('categoria_criar', { nome, icone });
-      mostrarToast('\u2705 Sucesso', 'Categoria criada.', 'sucesso');
+      el.setAttribute('style', 'display:none !important');
     }
-    fecharFormCategoria();
-    categoriasData = [];
-    loadAdminCategorias();
-  } catch(err) {
-    mostrarToast('Erro', err.message || 'Falha ao salvar.', 'alerta');
-  }
+  });
 }
-
-function editarCategoria(id) {
-  const cat = _categoriasAdminData.find(c => c.id == id);
-  if (cat) abrirFormCategoria(cat);
-}
-
-async function arquivarCategoria(id) {
-  const cat = _categoriasAdminData.find(c => c.id == id);
-  const nome = cat ? cat.nome : '';
-  if (!confirm('Arquivar a categoria "' + nome + '"? Produtos n\u00e3o ser\u00e3o afetados.')) return;
-  try {
-    await prodApi('categoria_excluir', { id });
-    mostrarToast('\u2705', 'Categoria arquivada.', 'sucesso');
-    categoriasData = [];
-    loadAdminCategorias();
-  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
-}
-
-async function excluirCategoria(id) {
-  const cat = _categoriasAdminData.find(c => c.id == id);
-  const nome = cat ? cat.nome : '';
-  if (!confirm('EXCLUIR DEFINITIVAMENTE a categoria "' + nome + '"?\n\nEssa a\u00e7\u00e3o n\u00e3o pode ser desfeita.')) return;
-  try {
-    await prodApi('categoria_excluir', { id, definitivo: true });
-    mostrarToast('\u2705', 'Categoria exclu\u00edda.', 'sucesso');
-    categoriasData = [];
-    loadAdminCategorias();
-  } catch(e) { mostrarToast('Erro', e.message || 'Falha ao excluir.', 'alerta'); }
-}
-
-async function reativarCategoria(id) {
-  try {
-    await prodApi('categoria_editar', { id, ativo: 1 });
-    mostrarToast('\u2705', 'Categoria reativada.', 'sucesso');
-    categoriasData = [];
-    loadAdminCategorias();
-  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
-}
-
-// ── showSection: registra admin sections ─────────────────
-const _adminSections = ['admin-metricas'];
-
-
-
-
-// ════════════════════════════════════════════════════════════
-// USUÁRIOS
-// ════════════════════════════════════════════════════════════
-let _usuariosData = [];
-
-async function carregarUsuarios() {
-  const tbody = document.getElementById('usuarios-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" class="table-empty"><div class="spinner" style="margin:0 auto;width:20px;height:20px"></div></td></tr>';
-  try {
-    _usuariosData = await adminApi('usuarios', {}, 'GET');
-    renderUsuarios(_usuariosData);
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="7" class="table-empty" style="color:var(--danger)">${e.message}</td></tr>`;
-  }
-}
-
-function filtrarUsuarios() {
-  const q = document.getElementById('usuarios-busca').value.toLowerCase();
-  const filtered = q
-    ? _usuariosData.filter(u => u.cpf_cnpj.includes(q) || (u.doc_fmt||'').includes(q) || (u.nome||'').toLowerCase().includes(q))
-    : _usuariosData;
-  renderUsuarios(filtered);
-}
-
-function renderUsuarios(lista) {
-  const tbody = document.getElementById('usuarios-tbody');
-  if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Nenhum usuário encontrado.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = lista.map(u => {
-    const isAdmin    = u.cpf_cnpj === '01057808121' || u.is_admin == 1;
-    const isSA       = u.cpf_cnpj === '01057808121';
-    const statusCls  = u.ativo ? 'badge active' : 'badge inactive';
-    const statusTxt  = u.ativo ? 'Ativo' : 'Bloqueado';
-    const acessoTxt  = u.ultimo_acesso ? fmtDate(u.ultimo_acesso) : '—';
-    const cadastroTxt= fmtDate(u.created_at);
-    const tipo       = u.tipo === 'empresa' ? 'Empresa' : 'Contribuinte';
-    const nomeExibir = u.nome || '';
-    const inicial    = (nomeExibir || u.doc_fmt || u.cpf_cnpj)[0]?.toUpperCase() || '?';
-    return `
-      <tr>
-        <td>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div class="sb-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;border-radius:10px">${inicial}</div>
-            <div>
-              ${nomeExibir ? `<div style="font-weight:600;font-size:13px;color:var(--text)">${escHtml(nomeExibir)}</div>` : ''}
-              <div style="font-size:${nomeExibir?'11px':'13px'};color:${nomeExibir?'var(--text3)':'var(--text)'};font-weight:${nomeExibir?'400':'600'}">${u.doc_fmt||u.cpf_cnpj}</div>
-              ${isSA ? '<div style="font-size:10px;color:var(--accent);font-weight:700;letter-spacing:.5px">SUPERADMIN</div>' : u.is_admin==1 ? '<div style="font-size:10px;color:#378ADD;font-weight:700;letter-spacing:.5px">ADMIN</div>' : ''}
-              ${u.primeiro_acesso ? '<div style="font-size:10px;color:var(--text3)">Aguardando 1º acesso</div>' : ''}
-            </div>
-          </div>
-        </td>
-        <td style="font-size:12px;color:var(--text2)">${tipo}</td>
-        <td style="font-size:12px;color:var(--text2)">${cadastroTxt}</td>
-        <td style="font-size:12px;color:var(--text2)">${acessoTxt}</td>
-        <td style="font-size:13px;text-align:center">${u.total_sessoes||0}</td>
-        <td><span class="${statusCls}">${statusTxt}</span></td>
-        <td>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn-table-action" onclick="verDetalheUsuario(${u.id})">Ver</button>
-            ${!isAdmin ? `<button class="btn-table-action ${u.ativo?'danger':''}" onclick="toggleBloqueio(${u.id},'${u.doc_fmt||u.cpf_cnpj}',${u.ativo})">${u.ativo?'Bloquear':'Ativar'}</button>` : ''}
-            ${!isAdmin && !u.primeiro_acesso ? `<button class="btn-table-action" onclick="resetarSenha(${u.id},'${u.doc_fmt||u.cpf_cnpj}')">Resetar senha</button>` : ''}
-          </div>
-        </td>
-      </tr>`;
-  }).join('');
-}
-
-async function verDetalheUsuario(id) {
-  const modal   = document.getElementById('modal-usuario');
-  const content = document.getElementById('modal-usuario-content');
-  modal.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-  content.innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Carregando...</span></div>';
-  try {
-    const d    = await adminApi('usuario', { id }, 'GET');
-    const u    = d.usuario;
-    const hg   = d.crm_dados || d.usuario || {};
-    const logs = d.acessos  || [];
-
-    content.innerHTML = `
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
-        <div class="sb-avatar" style="width:48px;height:48px;font-size:20px;border-radius:12px">${u.cpf_cnpj[0]}</div>
-        <div>
-          <h3 style="font-size:18px;font-weight:700;margin:0">${hg.razao_social||hg.nome||u.cpf_cnpj}</h3>
-          <div style="font-size:13px;color:var(--text2);margin-top:2px">${u.tipo==='empresa'?'Empresa':'Contribuinte'} · ${u.doc_fmt||u.cpf_cnpj}</div>
-        </div>
-        <span class="badge ${u.ativo?'active':'inactive'}" style="margin-left:auto">${u.ativo?'Ativo':'Bloqueado'}</span>
-      </div>
-
-      <div class="empresa-fields" style="margin-bottom:20px">
-        ${fieldRow('E-mail', hg.email||'—')}
-        ${fieldRow('Telefone', hg.telefone||hg.celular||'—')}
-        ${fieldRow('Cadastrado em', fmtDate(u.created_at))}
-        ${fieldRow('Último acesso', u.ultimo_acesso?fmtDate(u.ultimo_acesso):'Nunca')}
-        ${fieldRow('Total sessões', u.total_sessoes||0)}
-        ${fieldRow('1º acesso pendente', u.primeiro_acesso?'Sim':'Não')}
-      </div>
-
-      ${logs.length ? `
-      <div style="margin-bottom:20px">
-        <div class="dash-card-title" style="margin-bottom:10px">Últimos acessos</div>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          ${logs.map(l=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)">
-            <span style="color:var(--text2)">${fmtDate(l.created_at)}</span>
-            <span style="color:var(--text3)">${l.ip||'—'}</span>
-          </div>`).join('')}
-        </div>
-      </div>` : ''}
-
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
-        ${!u.primeiro_acesso?`<button class="btn-primary" style="width:auto;padding:10px 18px;font-size:13px" onclick="resetarSenha(${u.id},'${u.cpf_cnpj}');fecharModalUsuario()">Resetar senha</button>`:''}
-        <button class="btn-primary" style="width:auto;padding:10px 18px;font-size:13px;background:${u.ativo?'var(--danger)':'var(--success)'}" onclick="toggleBloqueio(${u.id},'${u.cpf_cnpj}',${u.ativo});fecharModalUsuario()">${u.ativo?'Bloquear usuário':'Ativar usuário'}</button>
-        <button class="btn-logout" style="width:auto;padding:10px 18px;font-size:13px" onclick="fecharModalUsuario()">Fechar</button>
-      </div>`;
-  } catch(e) {
-    content.innerHTML = `<div style="color:var(--danger);padding:20px">${e.message}</div>`;
-  }
-}
-
-function fieldRow(label, value) {
-  return `<div class="field-group"><label>${label}</label><span>${value}</span></div>`;
-}
-
-function fmtDate(str) {
-  if (!str) return '—';
-  const d = new Date(str);
-  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-}
-
-function fecharModalUsuario() {
-  document.getElementById('modal-usuario').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-async function toggleBloqueio(id, doc, ativo) {
-  const acao = ativo ? 'bloquear' : 'ativar';
-  if (!confirm(`${ativo?'Bloquear':'Ativar'} o usuário ${doc}?`)) return;
-  try {
-    await adminApi('bloquear', { id });
-    carregarUsuarios();
-  } catch(e) { notify.erro(e.message); }
-}
-
-async function resetarSenha(id, doc) {
-  if (!confirm(`Resetar a senha de ${doc}? O usuário precisará criar uma nova senha no próximo acesso.`)) return;
-  try {
-    await adminApi('resetar_senha', { id });
-    mostrarToast('Senha resetada', 'O usuário criará nova senha no próximo acesso.', 'sucesso');
-    carregarUsuarios();
-  } catch(e) { notify.erro(e.message); }
-}
-
-// ════════════════════════════════════════════════════════════
-// MÉTRICAS
-// ════════════════════════════════════════════════════════════
-let _chartAcessos = null;
 
 async function carregarMetricas() {
   const session = getSession() || {};
   const role = session.role || session.tipo || '';
   const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
+  const container = document.querySelector('#section-admin-metricas');
+  if (!container) return;
 
   try {
     if (isAdmin) {
-      // Superadmin/Gestor: metricas completas
       const m = await adminApi('metricas', {}, 'GET');
-      document.getElementById('met-total').textContent      = m.totais?.total_usuarios || 0;
-      document.getElementById('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
-      document.getElementById('met-views').textContent      = m.produtos?.total_views || 0;
-      document.getElementById('met-clicks').textContent     = m.produtos?.total_clicks || 0;
+      const el = id => document.getElementById(id);
+      if (el('met-total')) el('met-total').textContent = m.totais?.total_usuarios || 0;
+      if (el('met-sem-acesso')) el('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
+      if (el('met-views')) el('met-views').textContent = m.produtos?.total_views || 0;
+      if (el('met-clicks')) el('met-clicks').textContent = m.produtos?.total_clicks || 0;
       renderGraficoAcessos(m.acessos_30d || []);
       renderTopClicks(m.top_clicks || []);
       renderSemAcesso(m.sem_acesso || []);
-    } else if (role === 'associado_empresa') {
-      // Empresa: metricas dos seus colaboradores/dependentes
-      const container = document.getElementById('metricas-content') || document.querySelector('#section-admin-metricas .section-header')?.parentElement;
-      if (!container) return;
+    } else {
+      // Ocultar HTML admin
+      container.querySelectorAll('.stats-grid,.metricas-grid,.dash-card').forEach(el => el.style.display = 'none');
 
-      // Buscar dados via CRM API
-      const token = getToken();
-      let vinculados = [];
-      try {
-        const res = await fetch(AUTH_URL + '?action=dados', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
-        const json = await res.json();
-        if (json.success && json.data) {
-          vinculados = json.data.vinculados || [];
-        }
-      } catch(e) {}
+      let dynEl = document.getElementById('metricas-dinamico');
+      if (!dynEl) {
+        dynEl = document.createElement('div');
+        dynEl.id = 'metricas-dinamico';
+        const sh = container.querySelector('.section-header');
+        if (sh) sh.after(dynEl); else container.prepend(dynEl);
+      }
 
-      // Renderizar metricas da empresa
-      const stats = document.querySelector('.stats-grid.metricas-stats');
-      if (stats) {
-        stats.innerHTML =
-          '<div class="stat-card accent"><div class="stat-content"><span class="stat-label">Colaboradores</span><span class="stat-value">' + vinculados.filter(v => v.categoria === 'colaborador').length + '</span></div></div>' +
-          '<div class="stat-card"><div class="stat-content"><span class="stat-label">Dependentes</span><span class="stat-value">' + vinculados.filter(v => v.categoria === 'dependente').length + '</span></div></div>' +
-          '<div class="stat-card"><div class="stat-content"><span class="stat-label">Total Vinculados</span><span class="stat-value">' + vinculados.length + '</span></div></div>';
+      if (role === 'associado_empresa') {
+        dynEl.innerHTML = '<div style="text-align:center;padding:20px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto"></div></div>';
+
+        const token = getToken();
+        let cobrancas = [];
+        try {
+          const res = await fetch(AUTH_URL + '?action=cobrancas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          const json = await res.json();
+          if (json.success) cobrancas = json.data.cobrancas || [];
+        } catch(e) {}
+
+        let produtos = [];
+        try { produtos = (await prodApi('listar', { limit: 50 }, 'GET')).produtos || []; } catch(e) {}
+        produtos.sort((a,b) => (b.views+b.clicks) - (a.views+a.clicks));
+
+        const totalViews = produtos.reduce((s,p) => s + (p.views||0), 0);
+        const totalClicks = produtos.reduce((s,p) => s + (p.clicks||0), 0);
+        const pagas = cobrancas.filter(c => c.status === 'pago').length;
+        const pendentes = cobrancas.filter(c => c.status !== 'pago' && c.status !== 'cancelado').length;
+
+        dynEl.innerHTML =
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px">' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Cobran\u00e7as Pagas</div><div style="font-size:26px;font-weight:800;color:#22c55e">' + pagas + '</div></div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Pendentes</div><div style="font-size:26px;font-weight:800;color:#E8701A">' + pendentes + '</div></div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Total Views</div><div style="font-size:26px;font-weight:800;color:var(--text)">' + totalViews + '</div></div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Total Cliques</div><div style="font-size:26px;font-weight:800;color:var(--text)">' + totalClicks + '</div></div>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border)">' +
+              '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px">Produtos Mais Acessados</div>' +
+              (produtos.length === 0 ? '<div style="text-align:center;padding:16px;color:var(--text3)">Nenhum produto</div>'
+              : '<div style="display:grid;gap:8px">' + produtos.slice(0,5).map(function(p,i) {
+                  var bg = i===0?'#E8701A':i===1?'#1B2B6B':'var(--border)';
+                  return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--surface2,#f8f9fa)"><div style="width:24px;height:24px;border-radius:6px;background:'+bg+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">'+(i+1)+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.nome||'')+'</div><div style="font-size:11px;color:var(--text3)">'+(p.categoria_nome||'')+'</div></div><div style="text-align:right;font-size:11px;color:var(--text3)">'+(p.views||0)+' views<br>'+(p.clicks||0)+' clicks</div></div>';
+                }).join('') + '</div>') +
+            '</div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border)">' +
+              '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px">Hist\u00f3rico de Cobran\u00e7as</div>' +
+              (cobrancas.length === 0 ? '<div style="text-align:center;padding:16px;color:var(--text3)">Nenhuma cobran\u00e7a</div>'
+              : '<div style="display:grid;gap:8px">' + cobrancas.slice(0,5).map(function(co) {
+                  var st = co.status==='pago'?'#22c55e':co.status==='pendente'?'#E8701A':'#ef4444';
+                  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:var(--surface2,#f8f9fa)"><div><div style="font-size:13px;font-weight:600;color:var(--text)">'+(co.descricao||co.plano_nome||'Cobran\u00e7a')+'</div><div style="font-size:11px;color:var(--text3)">'+(co.data_vencimento||'')+'</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text)">R$ '+Number(co.valor||0).toFixed(2).replace('.',',')+'</div><div style="font-size:10px;font-weight:600;color:'+st+';text-transform:uppercase">'+(co.status||'')+'</div></div></div>';
+                }).join('') + '</div>') +
+            '</div>' +
+          '</div>';
+      } else {
+        dynEl.innerHTML = '<div style="background:var(--surface,#fff);border-radius:12px;padding:24px;border:1px solid var(--border);text-align:center"><div style="font-size:40px;margin-bottom:8px">\ud83d\udcca</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px">Suas M\u00e9tricas</div><div style="font-size:13px;color:var(--text3)">Explore o cat\u00e1logo para ver produtos e benef\u00edcios.</div></div>';
       }
     }
   } catch(e) {
-    console.error('M\u00e9tricas:', e.message);
+    console.error('Metricas:', e.message);
   }
 }
 

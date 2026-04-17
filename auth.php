@@ -251,6 +251,21 @@ if ($action === 'admin_check') {
 }
 
 // ============================================================
+// ACTION: permissoes — busca modulos permitidos para o perfil
+// ============================================================
+if ($action === 'permissoes') {
+    $token = $input['token'] ?? $bearer;
+    if (!$token) err(401, 'Token obrigatorio');
+
+    $resp = crmApi('GET', '/permissoes/modulos', [], $token);
+    if (!$resp['_ok']) err(401, 'Token invalido');
+
+    $data = $resp['data'] ?? $resp;
+    unset($data['_ok'], $data['_http']);
+    ok($data);
+}
+
+// ============================================================
 // ACTION: logout — noop (JWT stateless)
 // ============================================================
 if ($action === 'logout') {
