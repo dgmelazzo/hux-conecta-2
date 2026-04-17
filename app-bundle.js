@@ -1372,7 +1372,7 @@ function showPerfilRestrito(role) {
   });
   // Mostrar Metricas para todos
   const navMet = document.getElementById('nav-metricas');
-  if (navMet) { navMet.classList.remove('hidden'); navMet.style.display = ''; }
+  if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
   // Ocultar cobrancas e empresa para colaborador/dependente
   document.querySelectorAll('.sidebar-nav button, .sidebar-nav a').forEach(el => {
     const onclick = el.getAttribute('onclick') || '';
@@ -1391,7 +1391,7 @@ function showPerfilEmpresa() {
   });
   // Mostrar Metricas (hidden por default)
   const navMet = document.getElementById('nav-metricas');
-  if (navMet) { navMet.classList.remove('hidden'); navMet.style.display = ''; }
+  if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
 }
 function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
@@ -1435,7 +1435,7 @@ function showPortal() {
     // Empresa: garantir que metricas fica visivel
     if (_userRole === 'associado_empresa') {
       const navMet = document.getElementById('nav-metricas');
-      if (navMet) { navMet.classList.remove('hidden'); navMet.style.display = ''; }
+      if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
     }
   }
   // Empresa: ajustar menu
