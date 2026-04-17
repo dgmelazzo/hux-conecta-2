@@ -1382,6 +1382,9 @@ function showPerfilEmpresa() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
+  // Mostrar Metricas para empresa (oculto por default com class hidden)
+  const navMet = document.getElementById('nav-metricas');
+  if (navMet) { navMet.classList.remove('hidden'); navMet.style.display = ''; }
 }
 function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
