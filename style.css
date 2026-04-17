@@ -96,7 +96,7 @@ html[data-theme="light"] .sidebar-logo-img{filter:none}
 .main-content{margin-left:var(--sidebar-w);width:calc(100% - var(--sidebar-w));min-height:100vh;display:flex;flex-direction:column;background:var(--bg)}
 .topbar{width:100%;height:58px;display:flex;align-items:center;gap:12px;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
 .hamburger{display:none;background:none;border:none;color:var(--text2);cursor:pointer;padding:4px;flex-shrink:0;margin-right:auto}
-.topbar-title{flex:1;font-size:12px;font-weight:600;color:var(--text3);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none}
+.topbar-title{flex:1;font-size:16px;font-weight:700;color:var(--text);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar-right{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:auto}
 .topbar-tag{font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-border);white-space:nowrap}
 .portal-section{display:none;padding:28px 28px 40px;width:100%}

@@ -1382,6 +1382,7 @@ function showPerfilRestrito(role) {
   });
 }
 function showPerfilEmpresa() {
+  console.log("[DEBUG] showPerfilEmpresa EXECUTOU");
   // Empresa: Dashboard, Catalogo, Minha Empresa, Minhas Cobrancas, Carteirinha, Metricas
   // Ocultar abas admin-only
   ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias'].forEach(id => {
@@ -1438,6 +1439,7 @@ function showPortal() {
     }
   }
   // Empresa: ajustar menu
+  console.log("[DEBUG] _userRole=", window._userRole);
   if (window._userRole === 'associado_empresa') showPerfilEmpresa();
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
