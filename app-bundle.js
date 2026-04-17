@@ -100,16 +100,18 @@ async function apiLogin(cpfCnpj, senha) {
   const data = await authPost('login', { cpf_cnpj: cpfCnpj, password: senha });
   setToken(data.token);
   setSession({
-    tipo:        data.tipo,
+    tipo:        data.tipo || data.role || 'associado_empresa',
+    role:        data.role || data.tipo || 'associado_empresa',
     crm_associado_id: data.crm_associado_id,
     cpf:         cpfCnpj,
-    cpf_cnpj:    data.cpf_cnpj || cpfCnpj,
+    cpf_cnpj:    data.cpf_cnpj || data.documento || cpfCnpj,
     nome:        data.nome,
     status:      data.status || 'ativo',
     plano:       data.plano || '',
     plano_valor: data.plano_valor || 0,
     data_associacao: data.data_associacao || null,
     data_vencimento: data.data_vencimento || null,
+    empresa_id:  data.empresa_id || null,
     is_admin:      data.is_admin || false,
     is_superadmin: data.is_superadmin || false,
   });
