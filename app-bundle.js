@@ -2912,19 +2912,49 @@ function renderDashboardPerfil(d) {
   const role = session.role || session.tipo || 'associado_empresa';
   const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
   const nome = d.nomeFantasia !== '\u2014' ? d.nomeFantasia : (d.razaoSocial || session.nome || 'Associado');
-
   const validade = d.dataVencimento || session.data_vencimento || null;
-  // Hero card personalizado
   const heroEl = document.getElementById('dash-hero-perfil');
   if (!heroEl) return;
 
+  let html = '';
+
   if (isAdmin) {
-    heroEl.innerHTML = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
       '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Painel de Gest\u00e3o</div>' +
-      '<div style="font-size:24px;font-weight:800">Bem-vindo, ' + nome + '</div>' +
-    '</div>';
+      '<div style="font-size:24px;font-weight:800">Bem-vindo, ' + nome + '</div></div>';
+  } else if (role === 'associado_empresa') {
+    const statusColor = d.status === 'ativo' ? '#22c55e' : (d.status === 'inadimplente' ? '#ef4444' : '#f59e0b');
+    const statusTxt = d.status === 'ativo' ? 'Ativo' : (d.status || 'Ativo');
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px">' +
+        '<div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.2)">' +
+          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></span>' + statusTxt + '</div>' +
+        '<div style="font-size:13px;opacity:.8">' + (d.plano || session.plano || '') + '</div>' +
+        (validade ? '<div style="font-size:13px;opacity:.8">Vence: ' + validade + '</div>' : '') +
+      '</div></div>';
+  } else if (role === 'colaborador') {
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.8">Colaborador \u2014 ' + (d.razaoSocial || 'sua empresa') + '</div></div>';
+  } else if (role === 'dependente') {
+    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.8">Dependente \u2014 ' + (d.razaoSocial || 'sua empresa') + '</div></div>';
   }
 
+  heroEl.innerHTML = html;
+
+  // Mostrar boxes para admin e empresa, ocultar para colab/dep
+  document.querySelectorAll('.dash-admin-only').forEach(el => {
+    el.style.display = (isAdmin || role === 'associado_empresa') ? '' : 'none';
+  });
+  // Ocultar greeting
+  const greet = document.getElementById('dash-greeting');
+  if (greet && greet.closest('.section-header')) greet.closest('.section-header').style.display = 'none';
 }
 
 
