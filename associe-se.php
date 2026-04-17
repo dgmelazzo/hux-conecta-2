@@ -24,13 +24,13 @@
         body { font-family: 'Montserrat', -apple-system, sans-serif; background: var(--bg); color: var(--gray-900); line-height: 1.6; -webkit-font-smoothing: antialiased; }
 
         /* NAV — sticky clean */
-        .nav { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 0 32px; height: 72px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .nav-logo img { height: 44px; }
-        .nav-login { color: var(--white); background: var(--blue); text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 24px; border-radius: 8px; transition: all 0.2s; letter-spacing: 0.3px; }
-        .nav-login:hover { background: var(--blue-dark); transform: translateY(-1px); }
+        .acs-nav { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 0 32px; height: 72px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .acs-nav-logo img { height: 44px; }
+        .acs-nav-login { color: var(--white); background: var(--blue); text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 24px; border-radius: 8px; transition: all 0.2s; letter-spacing: 0.3px; }
+        .acs-nav-login:hover { background: var(--blue-dark); transform: translateY(-1px); }
 
         /* CONTAINER */
-        .container { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; }
+        .acs-container { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; }
 
         /* HERO — gradiente com mais presenca */
         .hero { background: linear-gradient(135deg, var(--blue) 0%, #2d4a9a 60%, #3b5cc6 100%); border-radius: 0 0 24px 24px; padding: 48px 32px 40px; color: #fff; text-align: center; margin: 0 -20px 32px; position: relative; overflow: hidden; }
@@ -57,9 +57,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
         /* SECTIONS — cards brancos */
-        .section { background: var(--white); border-radius: var(--radius); padding: 32px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid var(--gray-100); }
-        .section-title { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 24px; }
-        .section-title .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .acs-section { background: var(--white); border-radius: var(--radius); padding: 32px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid var(--gray-100); }
+        .acs-section-title { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 24px; }
+        .acs-section-title .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 
         /* PLANOS — grid premium */
         .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
@@ -114,7 +114,7 @@
         .field-hint { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
 
         /* Better section spacing */
-        .section + .section { margin-top: 0; }
+        .section + .acs-section { margin-top: 0; }
 
         /* Checkbox LGPD */
         .lgpd-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; color: var(--gray-700); line-height: 1.6; padding: 16px; background: var(--gray-50); border-radius: var(--radius-sm); border: 1px solid var(--gray-200); margin-bottom: 16px; }
@@ -178,10 +178,10 @@
 
         /* RESPONSIVE */
         @media (max-width: 640px) {
-            .container { padding: 0 16px 60px; }
+            .acs-container { padding: 0 16px 60px; }
             .hero { padding: 32px 20px; margin: 0 -16px 24px; }
             .hero h1 { font-size: 24px; }
-            .section { padding: 24px 18px; }
+            .acs-section { padding: 24px 18px; }
             .form-row, .form-row.triple { grid-template-columns: 1fr; }
             .plans-grid { grid-template-columns: 1fr; }
             .step-connector { min-width: 16px; }
@@ -190,8 +190,8 @@
             .step-nav { flex-direction: column-reverse; gap: 12px; }
             .btn-next { width: 100%; }
             .btn-back { justify-content: center; }
-            .nav { padding: 0 16px; height: 60px; }
-            .nav-logo img { height: 32px; }
+            .acs-nav { padding: 0 16px; height: 60px; }
+            .acs-nav-logo img { height: 32px; }
         }
     
     /* Bootstrap overrides for associe-se */
@@ -230,7 +230,7 @@
     .plan-select-btn { border-radius: 10px; font-weight: 700; transition: all 0.2s; }
 
     /* Section cards */
-    .section { border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .acs-section { border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 
     /* Step circles */
     .step-circle.active { box-shadow: 0 0 20px rgba(232,112,26,.4), 0 0 0 3px rgba(232,112,26,.15); }
@@ -257,22 +257,27 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
 
+    
+    /* Reset Bootstrap conflicts */
+    body { margin: 0 !important; padding: 0 !important; }
+    .acs-container { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; }
+    .acs-nav { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 0 32px; height: 72px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .acs-section { background: var(--white); border-radius: 14px; padding: 32px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); border: 1px solid var(--gray-100); }
+
     </style>
 <body>
 
 <!-- NAV -->
-<nav class="navbar navbar-expand bg-white border-bottom sticky-top shadow-sm" style="height:72px">
-    <div class="container-fluid px-4">
-      <a href="/" class="navbar-brand"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:40px"></a>
-      <div class="d-flex align-items-center gap-3">
-        <span class="text-muted d-none d-md-inline" style="font-size:12px"><i class="bi bi-telephone"></i> (61) 3371-2165</span>
-        <a href="/" class="btn btn-dark btn-sm fw-bold px-4 py-2 rounded-3"><i class="bi bi-box-arrow-in-right"></i> Já sou associado</a>
-      </div>
+<nav class="acs-nav">
+    <a href="/" class="acs-nav-logo"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:40px"></a>
+    <div style="display:flex;align-items:center;gap:16px">
+      <span style="font-size:12px;color:var(--gray-500)" class="d-none d-md-inline"><i class="bi bi-telephone"></i> (61) 3371-2165</span>
+      <a href="/" class="acs-nav-login"><i class="bi bi-box-arrow-in-right"></i> Já sou associado</a>
     </div>
 </nav>
 
 <!-- MAIN -->
-<div class="container">
+<div class="acs-container">
 
     <!-- HERO -->
     <div class="hero" style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:32px 28px;color:#fff;margin-bottom:24px">
@@ -304,8 +309,8 @@
 
     <!-- ============ STEP 1: PLANO ============ -->
     <div class="wizard-step active" id="wizard-step-1">
-        <div class="section">
-            <div class="section-title">
+        <div class="acs-section">
+            <div class="acs-section-title">
                 <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);"><i class="bi bi-list-check"></i></div>
                 Escolha seu plano
             </div>
@@ -320,8 +325,8 @@
 
     <!-- ============ STEP 2: DADOS DA EMPRESA ============ -->
     <div class="wizard-step" id="wizard-step-2">
-        <div class="section">
-            <div class="section-title">
+        <div class="acs-section">
+            <div class="acs-section-title">
                 <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);"><i class="bi bi-building"></i></div>
                 Dados da empresa
             </div>
@@ -384,8 +389,8 @@
             </div>
         </div>
 
-        <div class="section">
-            <div class="section-title">
+        <div class="acs-section">
+            <div class="acs-section-title">
                 <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);"><i class="bi bi-geo-alt"></i></div>
                 Endereço
             </div>
@@ -436,8 +441,8 @@
 
     <!-- ============ STEP 3: RESPONSÁVEL LEGAL ============ -->
     <div class="wizard-step" id="wizard-step-3">
-        <div class="section">
-            <div class="section-title">
+        <div class="acs-section">
+            <div class="acs-section-title">
                 <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);"><i class="bi bi-person-check"></i></div>
                 Responsável Legal
             </div>
@@ -499,8 +504,8 @@
 
     <!-- ============ STEP 4: PAGAMENTO ============ -->
     <div class="wizard-step" id="wizard-step-4">
-        <div class="section">
-            <div class="section-title">
+        <div class="acs-section">
+            <div class="acs-section-title">
                 <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);"><i class="bi bi-credit-card"></i></div>
                 Pagamento
             </div>
@@ -539,7 +544,7 @@
 
     <!-- ============ STEP 5: CONFIRMAÇÃO ============ -->
     <div class="wizard-step" id="wizard-step-5">
-        <div class="section">
+        <div class="acs-section">
             <div class="confirmation" id="confirmation-content">
                 <div class="check-icon">✅</div>
                 <h2>Inscrição realizada!</h2>
