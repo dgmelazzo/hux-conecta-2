@@ -11,7 +11,6 @@ require_once __DIR__ . '/config.php';
  * POST ?action=marcar_todas→ marca todas como lidas
  * POST ?action=enviar      → envia notificação (admin only)
  */
-require_once 'config.php';
 require_once 'email.php';
 
 header('Content-Type: application/json; charset=utf-8');
