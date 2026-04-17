@@ -40,7 +40,7 @@
         .hero p { font-size: 16px; color: rgba(255,255,255,.8); margin-bottom: 32px; position: relative; z-index: 1; }
 
         /* PROGRESS BAR — sobre o hero */
-        .progress-bar { display: flex; align-items: center; justify-content: center; gap: 0; max-width: 500px; margin: 0 auto; position: relative; z-index: 1; }
+        .acs-progress-bar { display: flex; align-items: center; justify-content: center; gap: 0; max-width: 500px; margin: 0 auto; position: relative; z-index: 1; }
         .step-wrapper { display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .step-circle { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.12); color: rgba(255,255,255,.5); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; transition: all 0.3s; border: 2px solid transparent; }
         .step-circle.active { background: var(--orange); color: #fff; border-color: rgba(255,255,255,.3); box-shadow: 0 0 20px rgba(232,112,26,.4); }
@@ -284,7 +284,7 @@
         <h1 style="color:#fff">Associe-se à ACIC-DF</h1>
         <p style="color:rgba(255,255,255,.8)">Faça parte da maior rede de comércio do Distrito Federal</p>
 
-        <div class="progress-bar" id="progress-bar">
+        <div class="acs-progress-bar" id="progress-bar">
             <div class="step-wrapper">
                 <div class="step-circle active" id="step-circle-1" data-step="1">1</div>
                 <div class="step-label active" id="step-label-1">Plano</div>
