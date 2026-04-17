@@ -3372,6 +3372,7 @@ function pararNotificacoes() {
 
 // Carrega apenas a contagem de não lidas (leve)
 async function carregarNaoLidas() {
+  if (!getToken()) return;
   try {
     const res  = await fetch(NOTIF_URL + '?action=nao_lidas', {
       headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -3383,6 +3384,7 @@ async function carregarNaoLidas() {
 
 // Carrega lista completa de notificações
 async function carregarNotificacoes() {
+  if (!getToken()) return;
   const lista = document.getElementById('notif-lista');
   if (!lista) return;
   lista.innerHTML = '<div class="notif-empty"><div class="spinner" style="width:20px;height:20px;margin:0 auto"></div></div>';

@@ -75,16 +75,52 @@
         .plan-card.selected .plan-select-btn { background: var(--orange); color: #fff; }
 
         /* FORM FIELDS */
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+        .form-row.single { grid-template-columns: 1fr; }
         .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
-        .field { margin-bottom: 0; }
-        .field label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
-        .field input, .field select, .field textarea { width: 100%; padding: 12px 14px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; color: var(--gray-900); background: var(--gray-50); transition: all 0.2s; outline: none; }
-        .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,112,26,.1); background: var(--white); }
-        .field input.valid { border-color: var(--green); }
-        .field input.error, .field select.error { border-color: var(--red); }
-        .error-msg { font-size: 11px; color: var(--red); margin-top: 4px; display: none; }
+        .field, .form-group { margin-bottom: 0; position: relative; }
+        .field label, .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--gray-700); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .field label .required, .form-group label .required { color: var(--orange); }
+        .field input, .field select, .field textarea,
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 13px 16px; border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+            font-family: inherit; font-size: 14px; color: var(--gray-900); background: var(--white);
+            transition: all 0.2s ease; outline: none; appearance: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,.04);
+        }
+        .form-group select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+        .field input:hover, .form-group input:hover,
+        .field select:hover, .form-group select:hover { border-color: var(--gray-300); }
+        .field input:focus, .field select:focus, .field textarea:focus,
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,112,26,.1); background: var(--white);
+        }
+        .field input.valid, .form-group input.valid { border-color: var(--green); background: #f0fdf4; }
+        .field input.error, .field select.error,
+        .form-group input.error, .form-group select.error { border-color: var(--red); background: #fef2f2; }
+        .field input:read-only, .form-group input:read-only { background: var(--gray-100); color: var(--gray-500); cursor: not-allowed; }
+        .field input::placeholder, .form-group input::placeholder { color: var(--gray-300); font-weight: 400; }
+        .error-msg { font-size: 11px; color: var(--red); margin-top: 4px; display: none; font-weight: 500; }
         .error-msg.show { display: block; }
+
+        
+        /* Input loading indicator */
+        .input-loading { position: relative; }
+        .input-loading::after { content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; border: 2px solid var(--gray-200); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.6s linear infinite; }
+
+        /* Tooltip helper */
+        .field-hint { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
+
+        /* Better section spacing */
+        .section + .section { margin-top: 0; }
+
+        /* Checkbox LGPD */
+        .lgpd-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; color: var(--gray-700); line-height: 1.6; padding: 16px; background: var(--gray-50); border-radius: var(--radius-sm); border: 1px solid var(--gray-200); margin-bottom: 16px; }
+        .lgpd-check input[type="checkbox"] { min-width: 18px; height: 18px; accent-color: var(--orange); margin-top: 2px; cursor: pointer; }
+        .lgpd-check a { color: var(--orange); text-decoration: underline; font-weight: 600; }
+
+        /* Better nav actions */
+        .step-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--gray-100); }
 
         /* PAYMENT */
         .payment-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -110,8 +146,9 @@
         .situacao-badge.irregular { background: #fee2e2; color: #991b1b; }
 
         /* PASSWORD */
-        .senha-strength { height: 4px; background: var(--gray-200); border-radius: 2px; margin-top: 8px; overflow: hidden; }
-        .senha-strength div { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+        .password-strength { height: 4px; background: var(--gray-200); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .password-strength-bar { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; width: 0; }
+        .password-hint { font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block; }
 
         /* CONFIRMATION */
         .confirmation { text-align: center; padding: 40px 20px; }
@@ -201,7 +238,7 @@
     <div class="wizard-step active" id="wizard-step-1">
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:var(--orange-light);color:var(--orange);">📋</div>
+                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);">📋</div>
                 Escolha seu plano
             </div>
             <div class="plans-grid" id="plans-grid">
@@ -217,7 +254,7 @@
     <div class="wizard-step" id="wizard-step-2">
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:var(--blue-light);color:var(--blue);">🏢</div>
+                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);">🏢</div>
                 Dados da empresa
             </div>
 
@@ -281,7 +318,7 @@
 
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:var(--blue-light);color:var(--blue);">📍</div>
+                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);">📍</div>
                 Endereço
             </div>
 
@@ -333,7 +370,7 @@
     <div class="wizard-step" id="wizard-step-3">
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:var(--blue-light);color:var(--blue);">👤</div>
+                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);">👤</div>
                 Responsável Legal
             </div>
             <p style="font-size:14px;color:var(--gray-500);margin:-16px 0 24px;">
@@ -379,16 +416,16 @@
                 </div>
             </div>
 
-            <div class="step-nav">
-                <button type="button" class="btn-back" onclick="goToStep(2)">&#8592; Voltar</button>
-                <div style="margin-bottom:16px">
-                    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:12px;color:var(--text2,#555);line-height:1.5">
-                        <input type="checkbox" id="aceite-lgpd" required style="margin-top:3px;min-width:16px;height:16px;accent-color:var(--orange)">
-                        <span>Li e concordo com os <a href="#" style="color:var(--orange);text-decoration:underline">Termos de Uso</a> e a <a href="#" style="color:var(--orange);text-decoration:underline">Politica de Privacidade (LGPD)</a>. Autorizo o tratamento dos meus dados para fins de associacao.</span>
+            <div style="margin-bottom:16px">
+                    <label class="lgpd-check">
+                        <input type="checkbox" id="aceite-lgpd" required>
+                        <span>Li e concordo com os <a href="#">Termos de Uso</a> e a <a href="#">Política de Privacidade (LGPD)</a>. Autorizo o tratamento dos meus dados pessoais para fins de associação.</span>
                     </label>
                 </div>
-                <button type="button" class="btn-next" onclick="validateAndGoStep4()">Continuar &#8594;</button>
-            </div>
+                <div class="step-nav">
+                    <button type="button" class="btn-back" onclick="goToStep(2)">&larr; Voltar</button>
+                    <button type="button" class="btn-next" onclick="validateAndGoStep4()">Continuar &rarr;</button>
+                </div>
         </div>
     </div>
 
@@ -396,7 +433,7 @@
     <div class="wizard-step" id="wizard-step-4">
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:var(--orange-light);color:var(--orange);">💳</div>
+                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);">💳</div>
                 Pagamento
             </div>
 
