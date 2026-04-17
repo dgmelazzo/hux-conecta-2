@@ -2899,7 +2899,7 @@ function renderDashboardPerfil(d) {
 
   heroEl.innerHTML = html;
 
-  // Ocultar stats genéricos e carousel para perfis nao-admin
+  // Ocultar greeting e stats genéricos e carousel para perfis nao-admin
   if (!isAdmin) {
     document.querySelectorAll(.stats-grid-dash, .dash-card, .dash-top, .carousel-section).forEach(el => {
       if (el) el.style.display = none;
