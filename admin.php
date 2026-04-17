@@ -257,16 +257,17 @@ switch ($action) {
     case 'metricas':
         $db = getDB();
 
-        // Totais gerais
-        $totais = $db->query("
+        // Totais gerais via CRM (source of truth)
+        $crmDb = new PDO('mysql:host='.DB_HOST.';dbname=conecta_crm_hml;charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
+        $totais = $crmDb->query("
             SELECT
                 COUNT(*) AS total_usuarios,
-                SUM(ativo=1) AS usuarios_ativos,
-                SUM(ativo=0) AS usuarios_bloqueados,
-                SUM(primeiro_acesso=1) AS aguardando_acesso,
-                SUM(tipo='empresa') AS empresas,
-                SUM(tipo='contribuinte') AS contribuintes
-            FROM conecta_users
+                SUM(status='ativo') AS usuarios_ativos,
+                SUM(status IN ('cancelado','suspenso')) AS usuarios_bloqueados,
+                0 AS aguardando_acesso,
+                SUM(categoria='empresa') AS empresas,
+                SUM(categoria='colaborador') AS contribuintes
+            FROM associados WHERE tenant_id = 1
         ")->fetch(PDO::FETCH_ASSOC);
 
         // Total de produtos e views/clicks
