@@ -2253,6 +2253,8 @@ function showSection(id) {
   if (window.innerWidth <= 900) closeSidebar();
   if (id === 'catalogo') { loadCatalogoProdutos(); carregarCategoriasFiltro(); }
   if (id === 'comunicados') iniciarComunicados();
+  if (id === 'carteirinha') loadCarteirinha();
+  if (id === 'cobrancas') loadCobrancas();
   const adminSections = ['admin-produtos','admin-metricas','admin-parceiros','admin-comunicados','admin-categorias'];
   if (adminSections.includes(id)) {
     const navAdmin = document.getElementById('nav-admin');
@@ -2263,8 +2265,6 @@ function showSection(id) {
       document.getElementById('topbar-title').textContent = 'Dashboard';
       return;
     }
-    if (id === 'carteirinha') loadCarteirinha();
-    if (id === 'cobrancas') loadCobrancas();
     if (id === 'admin-produtos') { loadAdminProdutos(); const w=document.getElementById('sub-admin-wrap'); if(w) w.style.display='none'; }
     if (id === 'admin-metricas') carregarMetricas();
     if (id === 'admin-comunicados') iniciarComunicados();
