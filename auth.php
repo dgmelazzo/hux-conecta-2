@@ -293,4 +293,4 @@ if ($action === 'validate-sso') {
 }
 
 // Acao desconhecida
-err(400, 'Acao invalida: ' . $action);
+err(400, 'Acao invalida');

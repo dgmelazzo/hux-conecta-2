@@ -258,7 +258,7 @@ switch ($action) {
         $db = getDB();
 
         // Totais gerais via CRM (source of truth)
-        $crmDb = new PDO('mysql:host='.DB_HOST.';dbname=conecta_crm_hml;charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
+        $crmDb = new PDO('mysql:host='.DB_HOST.';dbname=conecta_crm;charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
         $totais = $crmDb->query("
             SELECT
                 COUNT(*) AS total_usuarios,
