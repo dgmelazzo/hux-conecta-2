@@ -3535,26 +3535,52 @@ async function resetarSenha(id, doc) {
 let _chartAcessos = null;
 
 async function carregarMetricas() {
+  const session = getSession() || {};
+  const role = session.role || session.tipo || '';
+  const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
+
   try {
-    const m = await adminApi('metricas', {}, 'GET');
+    if (isAdmin) {
+      // Superadmin/Gestor: metricas completas
+      const m = await adminApi('metricas', {}, 'GET');
+      document.getElementById('met-total').textContent      = m.totais?.total_usuarios || 0;
+      document.getElementById('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
+      document.getElementById('met-views').textContent      = m.produtos?.total_views || 0;
+      document.getElementById('met-clicks').textContent     = m.produtos?.total_clicks || 0;
+      renderGraficoAcessos(m.acessos_30d || []);
+      renderTopClicks(m.top_clicks || []);
+      renderSemAcesso(m.sem_acesso || []);
+    } else if (role === 'associado_empresa') {
+      // Empresa: metricas dos seus colaboradores/dependentes
+      const container = document.getElementById('metricas-content') || document.querySelector('#section-admin-metricas .section-header')?.parentElement;
+      if (!container) return;
 
-    // Stats cards
-    document.getElementById('met-total').textContent      = m.totais?.total_usuarios || 0;
-    document.getElementById('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
-    document.getElementById('met-views').textContent      = m.produtos?.total_views || 0;
-    document.getElementById('met-clicks').textContent     = m.produtos?.total_clicks || 0;
+      // Buscar dados via CRM API
+      const token = getToken();
+      let vinculados = [];
+      try {
+        const res = await fetch(AUTH_URL + '?action=dados', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          vinculados = json.data.vinculados || [];
+        }
+      } catch(e) {}
 
-    // Gráfico acessos
-    renderGraficoAcessos(m.acessos_30d || []);
-
-    // Top clicks
-    renderTopClicks(m.top_clicks || []);
-
-    // Sem acesso
-    renderSemAcesso(m.sem_acesso || []);
-
+      // Renderizar metricas da empresa
+      const stats = document.querySelector('.stats-grid.metricas-stats');
+      if (stats) {
+        stats.innerHTML =
+          '<div class="stat-card accent"><div class="stat-content"><span class="stat-label">Colaboradores</span><span class="stat-value">' + vinculados.filter(v => v.categoria === 'colaborador').length + '</span></div></div>' +
+          '<div class="stat-card"><div class="stat-content"><span class="stat-label">Dependentes</span><span class="stat-value">' + vinculados.filter(v => v.categoria === 'dependente').length + '</span></div></div>' +
+          '<div class="stat-card"><div class="stat-content"><span class="stat-label">Total Vinculados</span><span class="stat-value">' + vinculados.length + '</span></div></div>';
+      }
+    }
   } catch(e) {
-    console.error('Métricas:', e.message);
+    console.error('M\u00e9tricas:', e.message);
   }
 }
 
