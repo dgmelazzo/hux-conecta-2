@@ -301,7 +301,7 @@
       <button class="hamburger" onclick="toggleSidebar()">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div style="display:flex;flex-direction:column"><div class="topbar-title" id="topbar-title">Dashboard</div><div id="topbar-subtitle" style="font-size:11px;color:var(--text3);font-weight:400;margin-top:1px">Seu painel de benefícios e informações</div></div>
       <div class="topbar-right">
         <!-- Sino de notificações -->
         <div class="notif-wrap" id="notif-wrap">
@@ -336,7 +336,7 @@
     <!-- ── DASHBOARD ── -->
     <section id="section-dashboard" class="portal-section active">
       <div id="dash-hero-perfil"></div>
-      <div class="section-header">
+      <div class="section-header" style="display:none">
         <div>
           <h2 id="dash-greeting">Olá! 👋</h2>
           <p class="section-sub">Seu painel de benefícios e informações da associação.</p>
@@ -344,7 +344,7 @@
       </div>
 
       <!-- Linha 1: Carrossel de Destaques (full width) -->
-      <div class="dash-top">
+      <div class="dash-top dash-admin-only" style="display:none">
         <div class="dash-card dash-card-carousel" style="grid-column:1/-1">
           <div class="carousel-header">
             <h3 class="dash-card-title" style="margin:0">Destaques do catálogo</h3>
@@ -362,7 +362,7 @@
         </div>
       </div>
       <!-- Links Importantes -->
-      <div class="dash-top" style="grid-template-columns:1fr">
+      <div class="dash-top dash-admin-only" style="display:none;grid-template-columns:1fr">
         <div class="dash-card dash-links">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
             <h3 class="dash-card-title" style="margin:0">Links Importantes</h3>
@@ -375,7 +375,7 @@
       </div>
 
       <!-- Linha 2: Stats (sem Benefícios) -->
-      <div class="stats-grid stats-grid-dash">
+      <div class="stats-grid stats-grid-dash dash-admin-only" style="display:none">
         <div class="stat-card accent">
           <div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
           <div class="stat-content"><span class="stat-label">Status</span><span class="stat-value" id="stat-status">—</span></div>
@@ -393,7 +393,7 @@
 
     <!-- ── MINHA EMPRESA ── -->
     <section id="section-empresa" class="portal-section">
-      <div class="section-header"><div><h2>Minha Empresa</h2><p class="section-sub">Dados cadastrais na ACIC-DF.</p></div></div>
+      <div class="section-header" style="display:none"><div><h2>Minha Empresa</h2><p class="section-sub">Dados cadastrais na ACIC-DF.</p></div></div>
       <div id="empresa-loading" class="loading-state"><div class="spinner"></div><span>Carregando dados...</span></div>
       <div id="empresa-content" class="hidden">
         <div class="empresa-grid">
@@ -419,7 +419,7 @@
 
     <!-- ── BENEFÍCIOS ACIC ── -->
     <section id="section-beneficios" class="portal-section">
-      <div class="section-header"><div><h2>Benefícios</h2><p class="section-sub">Vantagens exclusivas para empresas associadas à ACIC-DF.</p></div></div>
+      <div class="section-header" style="display:none"><div><h2>Benefícios</h2><p class="section-sub">Vantagens exclusivas para empresas associadas à ACIC-DF.</p></div></div>
       <div class="catalog-toolbar">
         <div class="search-wrap">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -437,7 +437,7 @@
 
     <!-- ── CATÁLOGO DE PRODUTOS ── -->
     <section id="section-catalogo" class="portal-section">
-      <div class="section-header"><div><h2>Catálogo de Produtos</h2><p class="section-sub">Produtos e serviços das empresas associadas à ACIC-DF.</p></div></div>
+      <div class="section-header" style="display:none"><div><h2>Catálogo de Produtos</h2><p class="section-sub">Produtos e serviços das empresas associadas à ACIC-DF.</p></div></div>
       <div class="catalog-toolbar">
         <div class="search-wrap">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -458,25 +458,20 @@
     <!-- Carteirinha (SPA) -->
     <section id="section-carteirinha" class="portal-section">
       <div style="padding:0;max-width:540px;margin:0 auto">
-        <div id="carteirinha-content">
-          <div style="height:320px;background:var(--surface2);border-radius:20px;animation:pulse 1.5s infinite"></div>
-        </div>
+        <div id="carteirinha-content"></div>
       </div>
     </section>
 
     <!-- Cobrancas (SPA) -->
     <section id="section-cobrancas" class="portal-section">
       <div style="max-width:900px;margin:0 auto">
-        <div id="cobrancas-content">
-          <div style="height:80px;background:var(--surface2);border-radius:14px;margin-bottom:12px;animation:pulse 1.5s infinite"></div>
-          <div style="height:80px;background:var(--surface2);border-radius:14px;margin-bottom:12px;animation:pulse 1.5s infinite"></div>
-        </div>
+        <div id="cobrancas-content"></div>
       </div>
     </section>
 
     <section id="section-admin-produtos" class="portal-section">
       <div class="section-header">
-        <div><h2>Gerenciar Produtos</h2><p class="section-sub">Cadastre e gerencie os produtos do catálogo.</p></div>
+        <div style="display:none"><h2>Gerenciar Produtos</h2><p class="section-sub">Cadastre e gerencie os produtos do catálogo.</p></div>
         <button class="btn-primary" style="width:auto;padding:10px 20px" onclick="abrirFormProduto()">+ Novo Produto</button>
       </div>
       <div class="table-wrap">

@@ -229,7 +229,7 @@ switch($action){
         break;
 
     case 'tracking':
-        $pid=(int)($in['produto_id']??0); $sid=(int)($in['subproduto_id']??0)||null;
+        $pid=(int)($in['produto_id']??0); $sid=!empty($in['subproduto_id'])?(int)$in['subproduto_id']:null;
         $te=$in['tipo_evento']??''; $sess=substr(preg_replace('/[^a-zA-Z0-9]/','', $in['session_id']??''),0,64);
         if(!$pid||!in_array($te,['view','click_whatsapp','click_externo'])) ok(['registered'=>false]);
         if($te==='view'&&$sess){ $ck=getDB()->prepare("SELECT id FROM conecta_tracking WHERE produto_id=? AND session_id=? AND tipo_evento='view' AND created_at>DATE_SUB(NOW(),INTERVAL 1 HOUR)"); $ck->execute([$pid,$sess]); if($ck->fetchColumn()) ok(['registered'=>false]); }

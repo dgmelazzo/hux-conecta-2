@@ -100,16 +100,18 @@ async function apiLogin(cpfCnpj, senha) {
   const data = await authPost('login', { cpf_cnpj: cpfCnpj, password: senha });
   setToken(data.token);
   setSession({
-    tipo:        data.tipo,
+    tipo:        data.tipo || data.role || 'associado_empresa',
+    role:        data.role || data.tipo || 'associado_empresa',
     crm_associado_id: data.crm_associado_id,
     cpf:         cpfCnpj,
-    cpf_cnpj:    data.cpf_cnpj || cpfCnpj,
+    cpf_cnpj:    data.cpf_cnpj || data.documento || cpfCnpj,
     nome:        data.nome,
     status:      data.status || 'ativo',
     plano:       data.plano || '',
     plano_valor: data.plano_valor || 0,
     data_associacao: data.data_associacao || null,
     data_vencimento: data.data_vencimento || null,
+    empresa_id:  data.empresa_id || null,
     is_admin:      data.is_admin || false,
     is_superadmin: data.is_superadmin || false,
   });
@@ -1368,6 +1370,9 @@ function showPerfilRestrito(role) {
     if (el.id && !allowed.includes(el.id)) el.style.display = 'none';
     else el.style.display = '';
   });
+  // Mostrar Metricas para todos
+  const navMet = document.getElementById('nav-metricas');
+  if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
   // Ocultar cobrancas e empresa para colaborador/dependente
   document.querySelectorAll('.sidebar-nav button, .sidebar-nav a').forEach(el => {
     const onclick = el.getAttribute('onclick') || '';
@@ -1375,6 +1380,18 @@ function showPerfilRestrito(role) {
       if (role === 'colaborador' || role === 'dependente') el.style.display = 'none';
     }
   });
+}
+function showPerfilEmpresa() {
+  console.log("[DEBUG] showPerfilEmpresa EXECUTOU");
+  // Empresa: Dashboard, Catalogo, Minha Empresa, Minhas Cobrancas, Carteirinha, Metricas
+  // Ocultar abas admin-only
+  ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  // Mostrar Metricas (hidden por default)
+  const navMet = document.getElementById('nav-metricas');
+  if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
 }
 function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
@@ -1409,10 +1426,21 @@ function showPortal() {
     mostrarNavAdmin(_sess?.is_superadmin);
     _adminChecked = true;
   } else {
-    ['nav-admin','nav-metricas','nav-comunicados','nav-parceiros','nav-categorias'].forEach(id => {
+    const _hideForNonAdmin = _userRole === 'associado_empresa'
+      ? ['nav-admin','nav-comunicados','nav-parceiros','nav-categorias']
+      : ['nav-admin','nav-metricas','nav-comunicados','nav-parceiros','nav-categorias'];
+    _hideForNonAdmin.forEach(id => {
       document.getElementById(id)?.classList.add('hidden');
     });
+    // Empresa: garantir que metricas fica visivel
+    if (_userRole === 'associado_empresa') {
+      const navMet = document.getElementById('nav-metricas');
+      if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
+    }
   }
+  // Empresa: ajustar menu
+  console.log("[DEBUG] _userRole=", window._userRole);
+  if (window._userRole === 'associado_empresa') showPerfilEmpresa();
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
   const tag = document.getElementById('topbar-tag');
@@ -1852,8 +1880,7 @@ function renderAssociado(d) {
   const nomeExibir = d.razaoSocial === 'Administrador' 
     ? (getSession()?.nome || d.razaoSocial)
     : (d.nomeFantasia !== '—' ? d.nomeFantasia : d.razaoSocial);
-  document.getElementById('dash-greeting').textContent =
-    `Olá, ${nomeExibir.split(' ')[0]}! 👋`;
+  // dash-greeting oculto
   // Personalizar stats por perfil
   const _role = getSession()?.role || getSession()?.tipo || '';
   if (_role === 'colaborador') {
@@ -2224,18 +2251,29 @@ document.addEventListener('keydown', e => {
 // NAVIGATION
 // ============================================================
 const SECTION_TITLES = {
-  'catalogo':             'Catálogo de Produtos',
+  dashboard:              'Dashboard',
+  catalogo:               'Catálogo de Produtos',
+  empresa:                'Minha Empresa',
+  carteirinha:            'Minha Carteirinha',
+  cobrancas:              'Minhas Cobranças',
   'admin-produtos':       'Gerenciar Produtos',
   'admin-metricas':       'Métricas',
   'admin-comunicados':    'Comunicados',
   'admin-parceiros':      'Parceiros',
   'admin-categorias':     'Categorias',
-  'carteirinha':          'Minha Carteirinha',
-  'cobrancas':            'Minhas Cobran\u00e7as',
-  dashboard:  'Dashboard',
-  empresa:    '',
-  beneficios: 'Benefícios',
-  configuracoes: 'Configurações',
+};
+
+const SECTION_SUBTITLES = {
+  dashboard:              'Seu painel de benefícios e informações',
+  catalogo:               'Produtos e serviços dos parceiros ACIC-DF',
+  empresa:                'Dados cadastrais na ACIC-DF',
+  carteirinha:            'Carteira digital do associado',
+  cobrancas:              'Taxas e cobranças da associação',
+  'admin-produtos':       'Gerenciar produtos do catálogo',
+  'admin-metricas':       'Indicadores e análise de uso',
+  'admin-comunicados':    'Templates e envio de comunicados',
+  'admin-parceiros':      'Fornecedores de produtos',
+  'admin-categorias':     'Categorias do catálogo',
 };
 
 function showSection(id) {
@@ -2250,10 +2288,16 @@ function showSection(id) {
     if (el.getAttribute('onclick')?.includes(`'${id}'`)) el.classList.add('active');
   });
   document.getElementById('topbar-title').textContent = SECTION_TITLES[id] || id;
+  const subEl = document.getElementById('topbar-subtitle');
+  if (subEl) subEl.textContent = SECTION_SUBTITLES[id] || '';
   if (window.innerWidth <= 900) closeSidebar();
   if (id === 'catalogo') { loadCatalogoProdutos(); carregarCategoriasFiltro(); }
   if (id === 'comunicados') iniciarComunicados();
-  const adminSections = ['admin-produtos','admin-metricas','admin-parceiros','admin-comunicados','admin-categorias'];
+  if (id === 'carteirinha') loadCarteirinha();
+  if (id === 'cobrancas') loadCobrancas();
+  // Metricas: acessivel para todos (nao depende do guard admin)
+  if (id === 'admin-metricas') { carregarMetricas(); }
+  const adminSections = ['admin-produtos','admin-parceiros','admin-comunicados','admin-categorias'];
   if (adminSections.includes(id)) {
     const navAdmin = document.getElementById('nav-admin');
     if (!navAdmin || navAdmin.classList.contains('hidden')) {
@@ -2263,8 +2307,6 @@ function showSection(id) {
       document.getElementById('topbar-title').textContent = 'Dashboard';
       return;
     }
-    if (id === 'carteirinha') loadCarteirinha();
-    if (id === 'cobrancas') loadCobrancas();
     if (id === 'admin-produtos') { loadAdminProdutos(); const w=document.getElementById('sub-admin-wrap'); if(w) w.style.display='none'; }
     if (id === 'admin-metricas') carregarMetricas();
     if (id === 'admin-comunicados') iniciarComunicados();
@@ -2288,13 +2330,13 @@ function renderizarMatrizPermissoes() {
     { nome: 'Dashboard',                superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Catálogo',            superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Carteirinha',              superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: false },
+    { nome: 'Cobranças',           superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
+    { nome: 'Minha Empresa',            superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
+    { nome: 'Métricas',            superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Comunicados (receber)',     superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Comunicados (enviar)',      superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
     { nome: 'Gerenciar Produtos',        superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
     { nome: 'Categorias',               superadmin: true,  gestor: false, empresa: false, colaborador: false, dependente: false },
-    { nome: 'Cobranças',           superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
-    { nome: 'Minha Empresa',            superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
-    { nome: 'Métricas',            superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
     { nome: 'Parceiros',                superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
   ];
 
@@ -2852,13 +2894,16 @@ function renderDashboardPerfil(d) {
   const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
   const nome = d.nomeFantasia !== '\u2014' ? d.nomeFantasia : (d.razaoSocial || session.nome || 'Associado');
 
+  const validade = d.dataVencimento || session.data_vencimento || null;
   // Hero card personalizado
   const heroEl = document.getElementById('dash-hero-perfil');
   if (!heroEl) return;
 
   if (isAdmin) {
-    heroEl.innerHTML = '';
-    return; // Admin usa o dashboard padrao
+    heroEl.innerHTML = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Painel de Gest\u00e3o</div>' +
+      '<div style="font-size:24px;font-weight:800">Bem-vindo, ' + nome + '</div>' +
+    '</div>';
   }
 
   let html = '';
@@ -2870,74 +2915,42 @@ function renderDashboardPerfil(d) {
 
     html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
       '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
-      '<div style="font-size:24px;font-weight:800;margin-bottom:4px">Bem-vindo, ' + nome + '</div>' +
-      '<div style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;margin-top:8px">' +
-        '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + ';margin-right:6px"></span>' + statusTxt +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px">' +
+        '<div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.2)">' +
+          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></span>' + statusTxt +
+        '</div>' +
+        '<div style="font-size:13px;opacity:.8">' + (d.plano || session.plano || '') + '</div>' +
+        (validade ? '<div style="font-size:13px;opacity:.8">Vence: ' + validade + '</div>' : '') +
       '</div>' +
-    '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px">' +
-      '<div style="background:var(--surface);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
-        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Plano</div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + (d.plano || session.plano || 'Associado') + '</div>' +
-      '</div>' +
-      '<div style="background:var(--surface);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
-        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Pr\u00f3ximo Vencimento</div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + (d.dataVencimento || '\u2014') + '</div>' +
-      '</div>' +
-      '<div style="background:var(--surface);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
-        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Associado Desde</div>' +
-        '<div style="font-size:16px;font-weight:700;color:var(--text)">' + (d.dataAssociacao || '\u2014') + '</div>' +
-      '</div>' +
-    '</div>' +
-    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
-      '<button onclick="showSection(\'carteirinha\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
-        '<div style="font-size:20px;margin-bottom:4px">\ud83c\udff7\ufe0f</div>' +
-        '<div style="font-size:13px;font-weight:600;color:var(--text)">Minha Carteirinha</div>' +
-      '</button>' +
-      '<button onclick="showSection(\'cobrancas\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
-        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udcb3</div>' +
-        '<div style="font-size:13px;font-weight:600;color:var(--text)">Minhas Cobran\u00e7as</div>' +
-      '</button>' +
-      '<button onclick="showSection(\'catalogo\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
-        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udce6</div>' +
-        '<div style="font-size:13px;font-weight:600;color:var(--text)">Cat\u00e1logo</div>' +
-      '</button>' +
     '</div>';
 
   } else if (role === 'colaborador') {
     // === COLABORADOR ===
     html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Colaborador</div>' +
-      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Ol\u00e1, ' + nome + '</div>' +
-      '<div style="font-size:13px;opacity:.8">Vinculado a ' + (d.razaoSocial || 'sua empresa') + '</div>' +
-    '</div>' +
-    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
-      '<button onclick="showSection(\'carteirinha\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
-        '<div style="font-size:20px;margin-bottom:4px">\ud83c\udff7\ufe0f</div>' +
-        '<div style="font-size:13px;font-weight:600;color:var(--text)">Minha Carteirinha</div>' +
-      '</button>' +
-      '<button onclick="showSection(\'catalogo\')" style="flex:1;min-width:140px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
-        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udce6</div>' +
-        '<div style="font-size:13px;font-weight:600;color:var(--text)">Cat\u00e1logo de Benef\u00edcios</div>' +
-      '</button>' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.8">Colaborador &mdash; ' + (d.razaoSocial || 'sua empresa') + '</div>' +
     '</div>';
 
   } else if (role === 'dependente') {
     // === DEPENDENTE ===
     html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Dependente</div>' +
-      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Ol\u00e1, ' + nome + '</div>' +
-      '<div style="font-size:13px;opacity:.8">Vinculado a ' + (d.razaoSocial || 'sua empresa') + '</div>' +
-    '</div>' +
-    '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
-      '<button onclick="showSection(\'catalogo\')" style="flex:1;min-width:200px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;text-align:center">' +
-        '<div style="font-size:20px;margin-bottom:4px">\ud83d\udce6</div>' +
-        '<div style="font-size:13px;font-weight:600;color:var(--text)">Cat\u00e1logo de Benef\u00edcios</div>' +
-      '</button>' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
+      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.8">Dependente &mdash; ' + (d.razaoSocial || 'sua empresa') + '</div>' +
     '</div>';
   }
 
   heroEl.innerHTML = html;
+
+  // Mostrar boxes para todos os perfis
+  document.querySelectorAll('.dash-admin-only').forEach(el => {
+    if (el) el.style.display = '';
+  });
+  // Ocultar greeting para todos (hero box ja tem Bem-vindo)
+  const greet = document.getElementById('dash-greeting');
+  if (greet && greet.closest('.section-header')) greet.closest('.section-header').style.display = 'none';
 }
 
 // ============================================================
@@ -2946,6 +2959,7 @@ function renderDashboardPerfil(d) {
 async function loadCarteirinha() {
   const container = document.getElementById('carteirinha-content');
   if (!container) return;
+  if (container.dataset.loaded) return;
 
   const session = getSession() || {};
   const nome = session.nome || 'Associado';
@@ -3000,6 +3014,7 @@ async function loadCarteirinha() {
       '<button onclick="shareCarteirinha()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text)">Compartilhar</button>' +
     '</div>';
 
+  container.dataset.loaded = '1';
   if (!qrSrc && typeof QRCode !== 'undefined') {
     const el = document.getElementById('qr-spa');
     if (el) new QRCode(el, { text: qrData, width: 200, height: 200, colorDark: '#1B2B6B', colorLight: '#ffffff' });
@@ -3561,26 +3576,52 @@ async function resetarSenha(id, doc) {
 let _chartAcessos = null;
 
 async function carregarMetricas() {
+  const session = getSession() || {};
+  const role = session.role || session.tipo || '';
+  const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
+
   try {
-    const m = await adminApi('metricas', {}, 'GET');
+    if (isAdmin) {
+      // Superadmin/Gestor: metricas completas
+      const m = await adminApi('metricas', {}, 'GET');
+      document.getElementById('met-total').textContent      = m.totais?.total_usuarios || 0;
+      document.getElementById('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
+      document.getElementById('met-views').textContent      = m.produtos?.total_views || 0;
+      document.getElementById('met-clicks').textContent     = m.produtos?.total_clicks || 0;
+      renderGraficoAcessos(m.acessos_30d || []);
+      renderTopClicks(m.top_clicks || []);
+      renderSemAcesso(m.sem_acesso || []);
+    } else if (role === 'associado_empresa') {
+      // Empresa: metricas dos seus colaboradores/dependentes
+      const container = document.getElementById('metricas-content') || document.querySelector('#section-admin-metricas .section-header')?.parentElement;
+      if (!container) return;
 
-    // Stats cards
-    document.getElementById('met-total').textContent      = m.totais?.total_usuarios || 0;
-    document.getElementById('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
-    document.getElementById('met-views').textContent      = m.produtos?.total_views || 0;
-    document.getElementById('met-clicks').textContent     = m.produtos?.total_clicks || 0;
+      // Buscar dados via CRM API
+      const token = getToken();
+      let vinculados = [];
+      try {
+        const res = await fetch(AUTH_URL + '?action=dados', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          vinculados = json.data.vinculados || [];
+        }
+      } catch(e) {}
 
-    // Gráfico acessos
-    renderGraficoAcessos(m.acessos_30d || []);
-
-    // Top clicks
-    renderTopClicks(m.top_clicks || []);
-
-    // Sem acesso
-    renderSemAcesso(m.sem_acesso || []);
-
+      // Renderizar metricas da empresa
+      const stats = document.querySelector('.stats-grid.metricas-stats');
+      if (stats) {
+        stats.innerHTML =
+          '<div class="stat-card accent"><div class="stat-content"><span class="stat-label">Colaboradores</span><span class="stat-value">' + vinculados.filter(v => v.categoria === 'colaborador').length + '</span></div></div>' +
+          '<div class="stat-card"><div class="stat-content"><span class="stat-label">Dependentes</span><span class="stat-value">' + vinculados.filter(v => v.categoria === 'dependente').length + '</span></div></div>' +
+          '<div class="stat-card"><div class="stat-content"><span class="stat-label">Total Vinculados</span><span class="stat-value">' + vinculados.length + '</span></div></div>';
+      }
+    }
   } catch(e) {
-    console.error('Métricas:', e.message);
+    console.error('M\u00e9tricas:', e.message);
   }
 }
 
