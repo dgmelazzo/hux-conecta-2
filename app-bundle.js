@@ -99,9 +99,20 @@ async function apiPrimeiroAcesso(cpfCnpj, senha, confirmarSenha) {
 async function apiLogin(cpfCnpj, senha) {
   const data = await authPost('login', { cpf_cnpj: cpfCnpj, password: senha });
   setToken(data.token);
+  // Buscar permissoes do CRM
+  try {
+    const permRes = await fetch(_baseUrl + '/auth.php?action=permissoes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: data.token })
+    });
+    const permJson = await permRes.json();
+    if (permJson.success) data._modulos = permJson.data.modulos || [];
+  } catch(e) {}
   setSession({
     tipo:        data.tipo || data.role || 'associado_empresa',
     role:        data.role || data.tipo || 'associado_empresa',
+    modulos:     data._modulos || [],
     crm_associado_id: data.crm_associado_id,
     cpf:         cpfCnpj,
     cpf_cnpj:    data.cpf_cnpj || data.documento || cpfCnpj,
@@ -1438,8 +1449,13 @@ function showPortal() {
       const navMet = document.getElementById('nav-metricas');
     }
   }
-  // Empresa: ajustar menu
-  if (window._userRole === 'associado_empresa') showPerfilEmpresa();
+  // Sidebar dinamico baseado em permissoes
+  const _modulos = getSession()?.modulos || [];
+  if (_modulos.length > 0) {
+    aplicarModulosSidebar(_modulos);
+  } else if (window._userRole === 'associado_empresa') {
+    showPerfilEmpresa();
+  }
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
   const tag = document.getElementById('topbar-tag');
