@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/auth-helper.php';
 require_once __DIR__ . '/config.php';
-?>
+
 /**
  * ACIC CONECTA 2.0 — Notificações
  * ====================================
