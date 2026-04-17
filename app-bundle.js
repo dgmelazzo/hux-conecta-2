@@ -2925,6 +2925,8 @@ function renderDashboardPerfil(d) {
     '</div>';
   }
 
+}
+
 async function carregarMetricas() {
   const session = getSession() || {};
   const role = session.role || session.tipo || '';
