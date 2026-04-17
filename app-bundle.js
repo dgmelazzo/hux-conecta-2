@@ -2927,6 +2927,32 @@ function renderDashboardPerfil(d) {
 
 }
 
+
+function aplicarModulosSidebar(modulos) {
+  const map = {
+    'dashboard':   'button[onclick*="dashboard"]',
+    'catalogo':    'button[onclick*="catalogo"]',
+    'carteirinha': 'button[onclick*="carteirinha"]',
+    'cobrancas':   'button[onclick*="cobrancas"]',
+    'empresa':     'button[onclick*="empresa"]',
+    'metricas':    '#nav-metricas',
+    'comunicados': '#nav-comunicados',
+    'produtos':    '#nav-admin',
+    'categorias':  '#nav-categorias',
+    'parceiros':   '#nav-parceiros',
+  };
+  Object.entries(map).forEach(([mod, sel]) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    if (modulos.includes(mod)) {
+      el.className = el.className.replace(/hidden/g, '').trim();
+      el.setAttribute('style', 'display:flex !important');
+    } else {
+      el.setAttribute('style', 'display:none !important');
+    }
+  });
+}
+
 async function carregarMetricas() {
   const session = getSession() || {};
   const role = session.role || session.tipo || '';
