@@ -88,7 +88,12 @@ function getAuthUser() {
 }
 
 function isAdmin($user) {
-    return preg_replace('/\D/', '', $user['cpf_cnpj']) === preg_replace('/\D/', '', ADMIN_DOC);
+    // CRM admin check
+    if (!empty($user['is_admin']) || !empty($user['is_superadmin'])) return true;
+    if (in_array($user['role'] ?? '', ['superadmin', 'gestor'])) return true;
+    // Legado: CPF match
+    $doc = preg_replace('/\D/', '', $user['cpf_cnpj'] ?? $user['documento'] ?? '');
+    return $doc === preg_replace('/\D/', '', ADMIN_DOC);
 }
 
 // ── ROTAS ────────────────────────────────────────────────────
