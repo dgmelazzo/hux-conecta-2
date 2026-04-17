@@ -4080,7 +4080,7 @@ async function loadAdminCategorias() {
       '</div>' +
       '<div style="display:grid;gap:8px">' + (cats.length === 0 ? '<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma categoria cadastrada.</div>' :
       cats.map(cat =>
-        '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;transition:all .2s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">' +
+        '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;transition:all .2s">' +
           '<span style="font-size:22px;width:36px;text-align:center">' + (cat.icone||'\ud83d\udcc1') + '</span>' +
           '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px;color:var(--text)">' + cat.nome + '</div>' +
           '<div style="font-size:12px;color:var(--text3)">' + (cat.total_produtos||0) + ' produtos &middot; ' + (cat.ativo ? 'Ativa' : 'Inativa') + '</div></div>' +
