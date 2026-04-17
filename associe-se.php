@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Associe-se — ACIC Conecta</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -191,15 +193,81 @@
             .nav { padding: 0 16px; height: 60px; }
             .nav-logo img { height: 32px; }
         }
+    
+    /* Bootstrap overrides for associe-se */
+    .form-group label { font-size: 12px; font-weight: 700; color: var(--gray-700); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; display: block; }
+    .form-group label .required { color: var(--orange); font-weight: 800; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 12px 16px; border: 1.5px solid var(--gray-200); border-radius: 10px;
+      font-family: inherit; font-size: 14px; color: var(--gray-900); background: #fff;
+      transition: all 0.2s; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .form-group input:hover, .form-group select:hover { border-color: var(--gray-300); }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,112,26,.12); background: #fff;
+    }
+    .form-group input:read-only { background: var(--gray-100); color: var(--gray-500); cursor: not-allowed; }
+    .form-group input::placeholder { color: var(--gray-300); }
+    .form-group select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+    }
+
+    /* Botoes modernos */
+    .btn-next { background: var(--orange); color: #fff; border: none; padding: 14px 32px; border-radius: 10px;
+      font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(232,112,26,.25); }
+    .btn-next:hover { background: var(--orange-hover); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(232,112,26,.3); }
+    .btn-back { background: none; border: none; color: var(--gray-500); font-size: 14px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; transition: all .2s; }
+    .btn-back:hover { color: var(--gray-700); }
+
+    /* Plan cards */
+    .plan-card { border-radius: 14px; transition: all 0.25s; }
+    .plan-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+    .plan-card.selected { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,112,26,.15), 0 8px 24px rgba(232,112,26,.1); }
+    .plan-select-btn { border-radius: 10px; font-weight: 700; transition: all 0.2s; }
+
+    /* Section cards */
+    .section { border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+
+    /* Step circles */
+    .step-circle.active { box-shadow: 0 0 20px rgba(232,112,26,.4), 0 0 0 3px rgba(232,112,26,.15); }
+
+    /* Progress connector */
+    .step-connector.done { background: var(--green); }
+
+    /* LGPD */
+    .lgpd-check { border-radius: 10px; }
+
+    /* Step nav */
+    .step-nav { border-top: 1px solid var(--gray-100); padding-top: 20px; }
+
+    /* Confirmation */
+    .confirmation .check-icon { font-size: 56px; }
+    .btn-portal { border-radius: 10px; font-weight: 700; box-shadow: 0 2px 8px rgba(232,112,26,.25); }
+    .btn-portal:hover { box-shadow: 0 4px 16px rgba(232,112,26,.3); transform: translateY(-1px); }
+
+    /* Hero gradient */
+    .hero { border-radius: 16px; overflow: hidden; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+
     </style>
 <body>
 
 <!-- NAV -->
-<nav class="nav">
-    <a href="/" class="nav-logo"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:40px"></a>
-    <div style="display:flex;align-items:center;gap:16px">
-      <span style="font-size:12px;color:var(--gray-500);display:none" id="nav-help-text">Dúvidas? (61) 3371-2165</span>
-      <a href="/" class="nav-login">Já sou associado</a>
+<nav class="navbar navbar-expand bg-white border-bottom sticky-top shadow-sm" style="height:72px">
+    <div class="container-fluid px-4">
+      <a href="/" class="navbar-brand"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:40px"></a>
+      <div class="d-flex align-items-center gap-3">
+        <span class="text-muted d-none d-md-inline" style="font-size:12px"><i class="bi bi-telephone"></i> (61) 3371-2165</span>
+        <a href="/" class="btn btn-dark btn-sm fw-bold px-4 py-2 rounded-3"><i class="bi bi-box-arrow-in-right"></i> Já sou associado</a>
+      </div>
     </div>
 </nav>
 
@@ -238,7 +306,7 @@
     <div class="wizard-step active" id="wizard-step-1">
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);">📋</div>
+                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);"><i class="bi bi-list-check"></i></div>
                 Escolha seu plano
             </div>
             <div class="plans-grid" id="plans-grid">
@@ -254,7 +322,7 @@
     <div class="wizard-step" id="wizard-step-2">
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);">🏢</div>
+                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);"><i class="bi bi-building"></i></div>
                 Dados da empresa
             </div>
 
@@ -318,7 +386,7 @@
 
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);">📍</div>
+                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);"><i class="bi bi-geo-alt"></i></div>
                 Endereço
             </div>
 
@@ -360,8 +428,8 @@
             </div>
 
             <div class="step-nav">
-                <button type="button" class="btn-back" onclick="goToStep(1)">&#8592; Voltar</button>
-                <button type="button" class="btn-next" onclick="validateAndGoStep3()">Continuar &#8594;</button>
+                <button type="button" class="btn-back" onclick="goToStep(1)"><i class="bi bi-arrow-left"></i> <span>Voltar</span></button>
+                <button type="button" class="btn-next" onclick="validateAndGoStep3()"><span>Continuar</span> <i class="bi bi-arrow-right"></i></button>
             </div>
         </div>
     </div>
@@ -370,7 +438,7 @@
     <div class="wizard-step" id="wizard-step-3">
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);">👤</div>
+                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);"><i class="bi bi-person-check"></i></div>
                 Responsável Legal
             </div>
             <p style="font-size:14px;color:var(--gray-500);margin:-16px 0 24px;">
@@ -423,8 +491,8 @@
                     </label>
                 </div>
                 <div class="step-nav">
-                    <button type="button" class="btn-back" onclick="goToStep(2)">&larr; Voltar</button>
-                    <button type="button" class="btn-next" onclick="validateAndGoStep4()">Continuar &rarr;</button>
+                    <button type="button" class="btn-back" onclick="goToStep(2)"><i class="bi bi-arrow-left"></i> <span>Voltar</span></button>
+                    <button type="button" class="btn-next" onclick="validateAndGoStep4()"><span>Continuar</span> <i class="bi bi-arrow-right"></i></button>
                 </div>
         </div>
     </div>
@@ -433,7 +501,7 @@
     <div class="wizard-step" id="wizard-step-4">
         <div class="section">
             <div class="section-title">
-                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);">💳</div>
+                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);"><i class="bi bi-credit-card"></i></div>
                 Pagamento
             </div>
 
@@ -463,7 +531,7 @@
             </div>
 
             <div class="step-nav">
-                <button type="button" class="btn-back" onclick="goToStep(3)">&#8592; Voltar</button>
+                <button type="button" class="btn-back" onclick="goToStep(3)"><i class="bi bi-arrow-left"></i> <span>Voltar</span></button>
                 <button type="button" class="btn-next" id="btn-submit" onclick="submitForm()">Finalizar inscrição &#8594;</button>
             </div>
         </div>
@@ -1049,5 +1117,6 @@
 
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
