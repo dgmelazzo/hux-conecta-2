@@ -1024,3 +1024,10 @@ html[data-theme="dark"] .ql-picker-label{color:var(--text2)}
 .modal-content{border-radius:16px!important;box-shadow:0 24px 64px rgba(0,0,0,.2),0 0 0 1px rgba(0,0,0,.05)!important;animation:modalIn .25s ease-out}
 @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .modal-close:hover{transform:rotate(90deg)}
+
+/* ── LOGIN REFINEMENTS ── */
+.login-card { backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); }
+.login-title { letter-spacing: -.3px; }
+.field input { border-radius: 10px !important; }
+.btn-primary { border-radius: 10px !important; box-shadow: 0 2px 8px var(--accent-soft); }
+.btn-primary:hover { box-shadow: 0 4px 16px var(--accent-soft); }
