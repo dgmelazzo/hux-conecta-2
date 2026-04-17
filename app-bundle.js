@@ -2977,7 +2977,6 @@ function renderDashboardPerfil(d) {
 // SIDEBAR DINAMICO — baseado em permissoes do CRM
 // ============================================================
 function aplicarModulosSidebar(modulos) {
-  // Mapa: modulo da API → seletor do nav item no sidebar
   const map = {
     'dashboard':   'button[onclick*="dashboard"]',
     'catalogo':    'button[onclick*="catalogo"]',
@@ -2995,10 +2994,10 @@ function aplicarModulosSidebar(modulos) {
     const el = document.querySelector(sel);
     if (!el) return;
     if (modulos.includes(mod)) {
-      el.classList.remove('hidden');
-      el.style.display = '';
+      el.className = el.className.replace(/\bhidden\b/g, '').trim();
+      el.setAttribute('style', 'display:flex !important');
     } else {
-      el.style.display = 'none';
+      el.setAttribute('style', 'display:none !important');
     }
   });
 }
