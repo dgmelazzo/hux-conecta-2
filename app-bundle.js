@@ -2276,7 +2276,9 @@ function showSection(id) {
   if (id === 'comunicados') iniciarComunicados();
   if (id === 'carteirinha') loadCarteirinha();
   if (id === 'cobrancas') loadCobrancas();
-  const adminSections = ['admin-produtos','admin-metricas','admin-parceiros','admin-comunicados','admin-categorias'];
+  // Metricas: acessivel para todos (nao depende do guard admin)
+  if (id === 'admin-metricas') { carregarMetricas(); }
+  const adminSections = ['admin-produtos','admin-parceiros','admin-comunicados','admin-categorias'];
   if (adminSections.includes(id)) {
     const navAdmin = document.getElementById('nav-admin');
     if (!navAdmin || navAdmin.classList.contains('hidden')) {
