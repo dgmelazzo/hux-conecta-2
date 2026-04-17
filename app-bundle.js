@@ -1422,12 +1422,18 @@ function showPortal() {
     mostrarNavAdmin(_sess?.is_superadmin);
     _adminChecked = true;
   } else {
-    ['nav-admin','nav-metricas','nav-comunicados','nav-parceiros','nav-categorias'].forEach(id => {
+    const _hideForNonAdmin = _userRole === 'associado_empresa'
+      ? ['nav-admin','nav-comunicados','nav-parceiros','nav-categorias']
+      : ['nav-admin','nav-metricas','nav-comunicados','nav-parceiros','nav-categorias'];
+    _hideForNonAdmin.forEach(id => {
       document.getElementById(id)?.classList.add('hidden');
     });
+    // Empresa: garantir que metricas fica visivel
+    if (_userRole === 'associado_empresa') {
+      const navMet = document.getElementById('nav-metricas');
+      if (navMet) { navMet.classList.remove('hidden'); navMet.style.display = ''; }
+    }
   }
-  // Empresa: mostrar metricas e ajustar menu APOS o bloco admin
-  if (_userRole === 'associado_empresa') showPerfilEmpresa();
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
   const tag = document.getElementById('topbar-tag');
