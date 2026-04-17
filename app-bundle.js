@@ -2928,6 +2928,176 @@ function renderDashboardPerfil(d) {
 }
 
 
+
+// ============================================================
+// CARTEIRINHA — SPA (sem page reload)
+// ============================================================
+async function loadCarteirinha() {
+  const container = document.getElementById('carteirinha-content');
+  if (!container) return;
+
+  const session = getSession() || {};
+  const nome = session.nome || 'Associado';
+  const doc = session.documento || session.cpf_cnpj || session.cpf || '';
+  const isAdmin = session.is_admin || false;
+  const status = isAdmin ? 'ativo' : (session.status || 'ativo');
+  const plano = isAdmin ? 'Administrador' : (session.plano || session.plano_nome || 'Associado');
+  const validade = isAdmin ? null : (session.data_vencimento || null);
+  const desde = isAdmin ? 'ACIC-DF' : (session.data_associacao || '');
+
+  const isAtivo = status === 'ativo';
+  const badgeSt = isAtivo ? 'background:#dcfce7;color:#166534' : 'background:#fee2e2;color:#991b1b';
+  const badgeTxt = isAtivo ? 'ASSOCIADO ATIVO' : status.toUpperCase();
+
+  const qrData = JSON.stringify({ doc, nome, plano, validade, src:'acic-conecta' });
+
+  let qrSrc = '';
+  try {
+    if (typeof QRCode !== 'undefined') {
+      const qd = document.createElement('div');
+      new QRCode(qd, { text: qrData, width: 200, height: 200, colorDark: '#1B2B6B', colorLight: '#ffffff' });
+      await new Promise(r => setTimeout(r, 150));
+      const cv = qd.querySelector('canvas');
+      if (cv) qrSrc = cv.toDataURL('image/png');
+      else { const im = qd.querySelector('img'); if (im) qrSrc = im.src; }
+    }
+  } catch(e) {}
+
+  container.innerHTML =
+    '<div id="carteirinha-card" style="background:linear-gradient(135deg,#1B2B6B 0%,#1a3a7a 50%,#2d4a9a 100%);border-radius:20px;padding:28px 24px 24px;color:#fff;max-width:440px;margin:0 auto 24px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,43,74,.3)">' +
+      '<div style="position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:rgba(232,112,26,.15);border-radius:50%"></div>' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;position:relative;z-index:1">' +
+        '<img src="/conecta/uploads/logo-dark-320.png?v=2" alt="ACIC" style="height:32px">' +
+        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:.8">Carteira Digital do Associado</div>' +
+      '</div>' +
+      '<div style="font-size:22px;font-weight:800;margin-bottom:4px;position:relative;z-index:1">' + nome + '</div>' +
+      '<div style="font-size:13px;opacity:.75;margin-bottom:16px;position:relative;z-index:1">' + doc + '</div>' +
+      '<div style="display:inline-block;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;' + badgeSt + ';position:relative;z-index:1">' + badgeTxt + '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;position:relative;z-index:1">' +
+        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Plano</div><div style="font-size:14px;font-weight:600">' + plano + '</div></div>' +
+        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Associado Desde</div><div style="font-size:14px;font-weight:600">' + (desde || '\u2014') + '</div></div>' +
+        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Validade</div><div style="font-size:14px;font-weight:600">' + (validade || 'Administrador') + '</div></div>' +
+        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Status</div><div style="font-size:14px;font-weight:600">' + badgeTxt + '</div></div>' +
+      '</div>' +
+      '<div style="text-align:center;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);position:relative;z-index:1">' +
+        '<div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;opacity:.7;margin-bottom:10px;font-weight:600">QR Code de Valida\u00e7\u00e3o</div>' +
+        (qrSrc ? '<img src="' + qrSrc + '" width="200" height="200" style="display:block;margin:0 auto;border-radius:8px;background:#fff;padding:8px">' : '<div id="qr-spa"></div>') +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+      '<button onclick="downloadCarteirinha()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:#E8701A;color:#fff">Baixar</button>' +
+      '<button onclick="shareCarteirinha()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text)">Compartilhar</button>' +
+    '</div>';
+
+  if (!qrSrc && typeof QRCode !== 'undefined') {
+    const el = document.getElementById('qr-spa');
+    if (el) new QRCode(el, { text: qrData, width: 200, height: 200, colorDark: '#1B2B6B', colorLight: '#ffffff' });
+  }
+}
+
+function downloadCarteirinha() {
+  const el = document.getElementById('carteirinha-card');
+  if (!el || typeof html2canvas === 'undefined') return;
+  html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null }).then(c => {
+    const a = document.createElement('a');
+    a.download = 'carteirinha-acic.png';
+    a.href = c.toDataURL('image/png');
+    a.click();
+  });
+}
+
+function shareCarteirinha() {
+  const el = document.getElementById('carteirinha-card');
+  if (!el) return;
+  if (navigator.share && typeof html2canvas !== 'undefined') {
+    html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null }).then(c => {
+      c.toBlob(blob => {
+        const file = new File([blob], 'carteirinha-acic.png', { type: 'image/png' });
+        navigator.share({ title: 'Carteirinha ACIC-DF', files: [file] }).catch(() => {});
+      });
+    });
+  } else downloadCarteirinha();
+}
+
+// ============================================================
+// COBRANCAS — SPA (sem page reload)
+// ============================================================
+async function loadCobrancas() {
+  const container = document.getElementById('cobrancas-content');
+  if (!container) return;
+
+  const token = getToken();
+  if (!token) {
+    container.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--text3)"><h3 style="color:var(--text)">Sess\u00e3o expirada</h3><p>Fa\u00e7a login novamente.</p></div>';
+    return;
+  }
+
+  container.innerHTML = '<div style="text-align:center;padding:40px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto"></div></div>';
+
+  try {
+    const res = await fetch(AUTH_URL + '?action=cobrancas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message || 'Erro');
+    _renderCobrancasSPA(json.data.cobrancas || []);
+  } catch(e) {
+    container.innerHTML =
+      '<div style="text-align:center;padding:48px 24px;color:var(--text3)">' +
+      '<h3 style="color:var(--text)">Erro ao carregar</h3><p>' + (e.message || 'Erro') + '</p>' +
+      '<button onclick="loadCobrancas()" style="margin-top:12px;padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer">Tentar novamente</button></div>';
+  }
+}
+
+function _renderCobrancasSPA(list) {
+  const container = document.getElementById('cobrancas-content');
+  const money = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  const fmtD = d => { if(!d)return'\u2014'; const p=d.split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d; };
+  const cls = c => {
+    if(c.status==='pago'||c.status==='paid')return'paid';
+    if(!c.data_vencimento)return'pending';
+    const t=new Date();t.setHours(0,0,0,0);
+    return new Date(c.data_vencimento+'T00:00:00')<t?'overdue':'pending';
+  };
+  const badge = c => c==='paid'?'Pago':c==='overdue'?'Vencido':'Pendente';
+  const colors = {paid:'#22c55e',pending:'#E8701A',overdue:'#ef4444'};
+
+  if (!list.length) {
+    container.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--text3)"><h3 style="color:var(--text)">Nenhuma cobran\u00e7a</h3><p>Suas cobran\u00e7as aparecer\u00e3o aqui.</p></div>';
+    return;
+  }
+
+  const pagas = list.filter(c => cls(c)==='paid').length;
+  const venc = list.filter(c => cls(c)==='overdue').length;
+  const total = list.reduce((s,c) => s+Number(c.valor||0), 0);
+
+  let html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d3f8a 100%);border-radius:16px;padding:24px 22px;color:#fff;margin-bottom:22px">' +
+    '<div style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;opacity:.85;margin-bottom:4px">Resumo Financeiro</div>' +
+    '<div style="font-size:28px;font-weight:800">' + money(total) + '</div>' +
+    '<div style="font-size:12px;opacity:.7;margin-top:2px">Total em cobran\u00e7as</div>' +
+    '<div style="display:flex;gap:18px;margin-top:16px"><div style="text-align:center"><div style="font-size:20px;font-weight:700">' + pagas + '</div><div style="font-size:11px;opacity:.7">Pagas</div></div>' +
+    '<div style="text-align:center"><div style="font-size:20px;font-weight:700">' + venc + '</div><div style="font-size:11px;opacity:.7">Vencidas</div></div></div></div>';
+
+  list.forEach(c => {
+    const st = cls(c);
+    const canPay = (st==='pending'||st==='overdue') && c.gateway_url;
+    const desc = c.descricao || c.plano_nome || 'Cobran\u00e7a ACIC-DF';
+    html += '<div style="background:var(--surface);border-radius:14px;padding:18px 20px;margin-bottom:12px;border-left:4px solid '+colors[st]+'">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">' +
+        '<div style="flex:1"><div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:4px">' + desc + '</div>' +
+        '<div style="font-size:12px;color:var(--text3)">Venc: ' + fmtD(c.data_vencimento) + ' <span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:6px;' +
+          (st==='paid'?'background:#dcfce7;color:#166534':st==='overdue'?'background:#fee2e2;color:#991b1b':'background:#fef3c7;color:#92400e') + '">' + badge(st) + '</span></div></div>' +
+        '<div style="font-size:18px;font-weight:700;color:var(--text)">' + money(c.valor) + '</div>' +
+      '</div>' +
+      (canPay ? '<div style="margin-top:12px"><a href="' + c.gateway_url + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;color:#fff;background:' + (st==='overdue'?'#ef4444':'#E8701A') + '">Pagar</a></div>' : '') +
+    '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
 function aplicarModulosSidebar(modulos) {
   const map = {
     'dashboard':   'button[onclick*="dashboard"]',
