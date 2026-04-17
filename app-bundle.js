@@ -1376,7 +1376,6 @@ function showPerfilRestrito(role) {
   });
   // Mostrar Metricas para todos
   const navMet = document.getElementById('nav-metricas');
-  if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
   // Ocultar cobrancas e empresa para colaborador/dependente
   document.querySelectorAll('.sidebar-nav button, .sidebar-nav a').forEach(el => {
     const onclick = el.getAttribute('onclick') || '';
@@ -1386,7 +1385,6 @@ function showPerfilRestrito(role) {
   });
 }
 function showPerfilEmpresa() {
-  console.log("[DEBUG] showPerfilEmpresa EXECUTOU");
   // Empresa: Dashboard, Catalogo, Minha Empresa, Minhas Cobrancas, Carteirinha, Metricas
   // Ocultar abas admin-only
   ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias'].forEach(id => {
@@ -1395,7 +1393,6 @@ function showPerfilEmpresa() {
   });
   // Mostrar Metricas (hidden por default)
   const navMet = document.getElementById('nav-metricas');
-  if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
 }
 function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
@@ -1439,11 +1436,9 @@ function showPortal() {
     // Empresa: garantir que metricas fica visivel
     if (_userRole === 'associado_empresa') {
       const navMet = document.getElementById('nav-metricas');
-      if (navMet) { navMet.className = navMet.className.replace(/hidden/g, '').trim(); navMet.setAttribute('style', 'display:flex !important'); console.log('[DEBUG] nav-metricas forcado visivel'); }
     }
   }
   // Empresa: ajustar menu
-  console.log("[DEBUG] _userRole=", window._userRole);
   if (window._userRole === 'associado_empresa') showPerfilEmpresa();
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
