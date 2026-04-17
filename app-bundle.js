@@ -1435,6 +1435,8 @@ function showPortal() {
       if (navMet) { navMet.classList.remove('hidden'); navMet.style.display = ''; }
     }
   }
+  // Empresa: ajustar menu
+  if (window._userRole === 'associado_empresa') showPerfilEmpresa();
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
   const tag = document.getElementById('topbar-tag');
