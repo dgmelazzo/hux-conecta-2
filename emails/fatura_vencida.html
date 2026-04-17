@@ -1,72 +1,57 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fatura ACIC-DF em atraso — {{dias_atraso}} dias</title>
-</head>
-<body style="margin:0;padding:0;background-color:#F8F9FA;font-family:Arial,Helvetica,sans-serif;">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Fatura ACIC-DF em atraso</title></head>
+<body style="margin:0;padding:0;background-color:#F5F6FA;font-family:Arial,Helvetica,sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-<!-- HEADER -->
 <tr>
-<td align="center" style="background-color:#1B2B6B;padding:28px 20px;">
+<td align="center" style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);padding:28px 20px;">
 <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
 <tr>
-<td align="center" style="color:#ffffff;font-size:26px;font-weight:bold;letter-spacing:1px;">
+<td align="center" style="color:#ffffff;font-size:24px;font-weight:bold;letter-spacing:0.5px;">
 ACIC Conecta
 </td>
 </tr>
+<tr>
+<td align="center" style="color:rgba(255,255,255,.6);font-size:12px;padding-top:4px;">
+Associa&ccedil;&atilde;o Comercial e Industrial de Ceil&acirc;ndia
+</td>
+</tr>
 </table>
 </td>
 </tr>
-<!-- BODY -->
 <tr>
 <td align="center" style="padding:32px 16px;">
-<table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;">
+<table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);">
 <tr>
 <td style="padding:36px 32px;">
-<h1 style="margin:0 0 16px;font-size:22px;color:#C0392B;">Fatura em atraso</h1>
-<p style="margin:0 0 14px;font-size:15px;color:#333333;line-height:1.6;">
-Olá, <strong>{{nome}}</strong>. Identificamos que a fatura da empresa <strong>{{empresa}}</strong> está com <strong>{{dias_atraso}} dias de atraso</strong>.
+<h1 style="margin:0 0 16px;font-size:22px;color:#EF4444;">Fatura em atraso &#x26A0;</h1>
+<p style="margin:0 0 14px;font-size:15px;color:#333;line-height:1.6;">
+Ol&aacute;, <strong>{{nome}}</strong>! Sua fatura est&aacute; em atraso h&aacute; <strong>{{dias_atraso}} dias</strong>.
 </p>
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FDF2F2;border-radius:8px;border-left:4px solid #C0392B;margin:20px 0;">
-<tr>
-<td style="padding:20px 24px;">
-<p style="margin:0 0 8px;font-size:14px;color:#555555;"><strong>Valor em aberto:</strong> R$ {{valor}}</p>
-<p style="margin:0;font-size:14px;color:#555555;"><strong>Dias em atraso:</strong> {{dias_atraso}} dias</p>
-</td>
-</tr>
+<p style="margin:0 0 14px;font-size:15px;color:#333;line-height:1.6;">
+Valor: <strong>R$ {{valor}}</strong>. Regularize para manter seu acesso ao Portal e benef&iacute;cios.
+</p>
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td align="center" style="padding:8px 0 24px;">
+<a href="{{link_pagamento}}" style="background:#EF4444;color:#fff;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;display:inline-block;">Regularizar agora</a>
+</td></tr>
 </table>
-<p style="margin:0 0 14px;font-size:15px;color:#333333;line-height:1.6;">
-Para evitar a <strong>suspensão dos benefícios</strong> e do acesso ao Portal do Associado, regularize sua situação o mais breve possível:
-</p>
-<!-- CTA -->
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px auto;">
-<tr>
-<td align="center" style="background-color:#E8701A;border-radius:8px;">
-<a href="{{link_pix}}" target="_blank" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">
-Pagar agora &rarr;
-</a>
-</td>
-</tr>
-</table>
-<p style="margin:0 0 14px;font-size:14px;color:#888888;line-height:1.5;">
-Caso o pagamento já tenha sido efetuado, a confirmação pode levar até 48 horas úteis. Desconsidere este aviso.
-</p>
-<p style="margin:16px 0 0;font-size:14px;color:#888888;">
-Precisa de ajuda? <a href="mailto:contato@acicdf.org.br" style="color:#1B2B6B;">contato@acicdf.org.br</a>
-</p>
 </td>
 </tr>
 </table>
 </td>
 </tr>
-<!-- FOOTER -->
 <tr>
-<td align="center" style="padding:16px 20px 32px;">
-<p style="margin:0;font-size:12px;color:#999999;line-height:1.5;">
-ACIC-DF &mdash; Associação Comercial Industrial e Empresarial de Ceilândia
-</p>
+<td align="center" style="padding:20px 16px 32px;">
+<table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+<tr>
+<td align="center" style="color:#94a3b8;font-size:11px;line-height:1.6;">
+ACIC-DF &mdash; Associa&ccedil;&atilde;o Comercial e Industrial de Ceil&acirc;ndia<br>
+(61) 3371-2165 &bull; secretaria@acicdf.org.br<br>
+<span style="color:#c4c9d4">Voc&ecirc; recebeu este e-mail por ser associado da ACIC-DF.</span>
+</td>
+</tr>
+</table>
 </td>
 </tr>
 </table>
