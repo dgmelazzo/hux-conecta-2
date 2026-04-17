@@ -80,6 +80,7 @@ function getAuthUser() {
     $db  = getDB();
     $user = requireCrmAuth();
     if (!$user) err(401, 'Sessão inválida ou expirada.');
+    if (!isset($user['id'])) $user['id'] = $user['sub'] ?? $user['associado_id'] ?? 0;
     return $user;
 }
 
