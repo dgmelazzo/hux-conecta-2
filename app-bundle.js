@@ -2901,12 +2901,15 @@ function renderDashboardPerfil(d) {
 
   heroEl.innerHTML = html;
 
-  // Ocultar greeting e stats genéricos e carousel para perfis nao-admin
-  if (!isAdmin) { // Ocultar para nao-admin
-    document.querySelectorAll('.stats-grid-dash, .dash-card, .dash-top, .carousel-section').forEach(el => {
-      if (el) el.style.display = 'none';
+  // Mostrar boxes apenas para admin (ocultos por default no HTML)
+  if (isAdmin) {
+    document.querySelectorAll('.dash-admin-only').forEach(el => {
+      if (el) el.style.display = '';
     });
   }
+  // Ocultar greeting para todos (hero box ja tem Bem-vindo)
+  const greet = document.getElementById('dash-greeting');
+  if (greet && greet.closest('.section-header')) greet.closest('.section-header').style.display = 'none';
 }
 
 // ============================================================
