@@ -2851,6 +2851,7 @@ function renderDashboardPerfil(d) {
   const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
   const nome = d.nomeFantasia !== '\u2014' ? d.nomeFantasia : (d.razaoSocial || session.nome || 'Associado');
 
+  const validade = d.dataVencimento || session.data_vencimento || null;
   // Hero card personalizado
   const heroEl = document.getElementById('dash-hero-perfil');
   if (!heroEl) return;
