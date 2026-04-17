@@ -1090,13 +1090,13 @@
 <!-- Modal: Form Subproduto -->
 <div id="fsub-modal" class="modal-overlay hidden">
   <div class="modal-box">
-    <button class="modal-close" onclick="fecharFormSub()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <button class="modal-close" onclick="fecharFormSub()"><i class="bi bi-x-lg"></i></button>
     <h2 class="modal-title">Subproduto / Plano</h2>
     <form onsubmit="salvarSub(event)">
       <input type="hidden" id="fsub-id"/><input type="hidden" id="fsub-produto-id"/>
       <div class="form-grid">
         <div class="field" style="grid-column:1/-1"><label>Nome *</label><input type="text" id="fsub-nome" required placeholder="Ex: Plano Básico"/></div>
-        <div class="field" style="grid-column:1/-1"><label>Descrição</label><textarea id="fsub-descricao" rows="2"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><label>Descrição</label><div id="fsub-descricao-editor" style="min-height:120px;background:var(--surface2,#f8fafc);border:1px solid var(--border,#e2e8f0);border-radius:8px"></div><textarea id="fsub-descricao" style="display:none"></textarea></div>
         <div class="field"><label>Preço</label><input type="number" id="fsub-preco" step="0.01" placeholder="0.00"/></div>
         <div class="field"><label>Cobrança</label><select id="fsub-cobranca"><option value="unico">Único</option><option value="mensal">Mensal</option><option value="anual">Anual</option><option value="recorrente">Recorrente</option></select></div>
         <div class="field"><label>Status</label><select id="fsub-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div>

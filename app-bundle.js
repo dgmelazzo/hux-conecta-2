@@ -1093,6 +1093,26 @@ function abrirFormSub(sub, produtoId) {
   document.getElementById('fsub-id').value          = sub?.id || '';
   document.getElementById('fsub-produto-id').value  = sub?.produto_id || produtoId || produtoEditando?.id || '';
   document.getElementById('fsub-nome').value         = sub?.nome || '';
+  // Inicializar Quill para subproduto se nao existe
+  if (typeof Quill !== 'undefined' && !window._quillSubEditor) {
+    window._quillSubEditor = new Quill('#fsub-descricao-editor', {
+      theme: 'snow',
+      placeholder: 'Detalhes do subproduto/plano...',
+      modules: { toolbar: [
+        ['bold','italic','underline'],
+        [{'list':'ordered'},{'list':'bullet'}],
+        ['link'],
+        ['clean']
+      ]}
+    });
+    window._quillSubEditor.on('text-change', () => {
+      document.getElementById('fsub-descricao').value = window._quillSubEditor.root.innerHTML;
+    });
+  }
+  // Popular Quill com conteudo existente
+  if (window._quillSubEditor) {
+    window._quillSubEditor.root.innerHTML = sub?.descricao || '';
+  }
   document.getElementById('fsub-descricao').value    = sub?.descricao || '';
   document.getElementById('fsub-preco').value        = sub?.preco || '';
   document.getElementById('fsub-cobranca').value     = sub?.tipo_cobranca || 'unico';
