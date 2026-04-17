@@ -138,14 +138,14 @@
         }
 
         .step-circle.active {
-            background: var(--orange);
-            color: var(--white);
+            background: #E8701A;
+            color: #fff;
             box-shadow: 0 0 0 4px rgba(232,112,26,0.18);
         }
 
         .step-circle.done {
-            background: var(--green);
-            color: var(--white);
+            background: #22c55e;
+            color: #fff;
             cursor: pointer;
         }
 
@@ -719,17 +719,20 @@
 
 <!-- NAV -->
 <nav class="nav">
-    <a href="/" class="nav-logo"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:32px"></a>
-    <a href="' + PORTAL_URL + '" class="nav-login">Já é associado? Entrar</a>
+    <a href="/" class="nav-logo"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:40px"></a>
+    <div style="display:flex;align-items:center;gap:16px">
+      <span style="font-size:12px;color:var(--gray-500);display:none" id="nav-help-text">Dúvidas? (61) 3371-2165</span>
+      <a href="/" class="nav-login">Já sou associado</a>
+    </div>
 </nav>
 
 <!-- MAIN -->
 <div class="container">
 
     <!-- HERO -->
-    <div class="hero">
-        <h1>Associe-se à ACIC-DF</h1>
-        <p>Faça parte da maior rede de comércio do Distrito Federal</p>
+    <div class="hero" style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:32px 28px;color:#fff;margin-bottom:24px">
+        <h1 style="color:#fff">Associe-se à ACIC-DF</h1>
+        <p style="color:rgba(255,255,255,.8)">Faça parte da maior rede de comércio do Distrito Federal</p>
 
         <div class="progress-bar" id="progress-bar">
             <div class="step-wrapper">
