@@ -406,7 +406,7 @@ switch($action){
             ok(['id'=>getDB()->lastInsertId()]);
         } catch(PDOException $e) {
             if(strpos($e->getMessage(),'Duplicate')!==false) err(409,'Este produto já está vinculado ao combo.');
-            throw $e;
+            error_log('[PRODUTOS] ' . $e->getMessage()); err(500, 'Erro interno');
         }
         break;
 

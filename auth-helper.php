@@ -18,7 +18,7 @@ function validateCrmToken(?string $token = null): ?array {
     if (!$token) return null;
 
     // Cache: evita chamar CRM em toda request (5min TTL)
-    $cacheKey = '/tmp/crm_token_' . md5($token);
+    $cacheKey = '/tmp/crm_token_' . hash('sha256', $token);
     if (file_exists($cacheKey) && (time() - filemtime($cacheKey)) < 300) {
         $cached = json_decode(file_get_contents($cacheKey), true);
         if ($cached) return $cached;
@@ -61,7 +61,7 @@ function validateCrmToken(?string $token = null): ?array {
     ];
 
     // Salvar cache
-    @file_put_contents($cacheKey, json_encode($result));
+    $oldMask = umask(0077); @file_put_contents($cacheKey, json_encode($result)); umask($oldMask);
 
     return $result;
 }
