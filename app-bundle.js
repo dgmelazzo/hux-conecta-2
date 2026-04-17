@@ -3627,45 +3627,100 @@ async function carregarMetricas() {
   const session = getSession() || {};
   const role = session.role || session.tipo || '';
   const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
+  const container = document.querySelector('#section-admin-metricas');
+  if (!container) return;
 
   try {
     if (isAdmin) {
-      // Superadmin/Gestor: metricas completas
+      // Superadmin/Gestor: metricas completas (usa HTML existente)
       const m = await adminApi('metricas', {}, 'GET');
-      document.getElementById('met-total').textContent      = m.totais?.total_usuarios || 0;
-      document.getElementById('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
-      document.getElementById('met-views').textContent      = m.produtos?.total_views || 0;
-      document.getElementById('met-clicks').textContent     = m.produtos?.total_clicks || 0;
+      const el = id => document.getElementById(id);
+      if (el('met-total')) el('met-total').textContent = m.totais?.total_usuarios || 0;
+      if (el('met-sem-acesso')) el('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
+      if (el('met-views')) el('met-views').textContent = m.produtos?.total_views || 0;
+      if (el('met-clicks')) el('met-clicks').textContent = m.produtos?.total_clicks || 0;
       renderGraficoAcessos(m.acessos_30d || []);
       renderTopClicks(m.top_clicks || []);
       renderSemAcesso(m.sem_acesso || []);
-    } else if (role === 'associado_empresa') {
-      // Empresa: metricas dos seus colaboradores/dependentes
-      const container = document.getElementById('metricas-content') || document.querySelector('#section-admin-metricas .section-header')?.parentElement;
-      if (!container) return;
 
-      // Buscar dados via CRM API
-      const token = getToken();
-      let vinculados = [];
-      try {
-        const res = await fetch(AUTH_URL + '?action=dados', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        });
-        const json = await res.json();
-        if (json.success && json.data) {
-          vinculados = json.data.vinculados || [];
-        }
-      } catch(e) {}
+    } else {
+      // Empresa/Colaborador/Dependente: metricas personalizadas
+      // Ocultar HTML admin e renderizar conteudo dinamico
+      const statsGrid = container.querySelector('.stats-grid');
+      const metGrid = container.querySelector('.metricas-grid');
+      const semAcesso = container.querySelector('.dash-card:last-child');
+      if (statsGrid) statsGrid.style.display = 'none';
+      if (metGrid) metGrid.style.display = 'none';
+      if (semAcesso) semAcesso.style.display = 'none';
 
-      // Renderizar metricas da empresa
-      const stats = document.querySelector('.stats-grid.metricas-stats');
-      if (stats) {
-        stats.innerHTML =
-          '<div class="stat-card accent"><div class="stat-content"><span class="stat-label">Colaboradores</span><span class="stat-value">' + vinculados.filter(v => v.categoria === 'colaborador').length + '</span></div></div>' +
-          '<div class="stat-card"><div class="stat-content"><span class="stat-label">Dependentes</span><span class="stat-value">' + vinculados.filter(v => v.categoria === 'dependente').length + '</span></div></div>' +
-          '<div class="stat-card"><div class="stat-content"><span class="stat-label">Total Vinculados</span><span class="stat-value">' + vinculados.length + '</span></div></div>';
+      // Container para metricas do perfil
+      let dynEl = document.getElementById('metricas-dinamico');
+      if (!dynEl) {
+        dynEl = document.createElement('div');
+        dynEl.id = 'metricas-dinamico';
+        const header = container.querySelector('.section-header');
+        if (header) header.after(dynEl);
+        else container.prepend(dynEl);
+      }
+
+      if (role === 'associado_empresa') {
+        // Empresa: vinculados + produtos acessados + cobrancas
+        dynEl.innerHTML = '<div style="text-align:center;padding:20px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto"></div></div>';
+
+        // Buscar dados
+        const token = getToken();
+        let cobrancas = [];
+        try {
+          const res = await fetch(AUTH_URL + '?action=cobrancas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          const json = await res.json();
+          if (json.success) cobrancas = json.data.cobrancas || [];
+        } catch(e) {}
+
+        const pagas = cobrancas.filter(c => c.status === 'pago').length;
+        const pendentes = cobrancas.filter(c => c.status !== 'pago' && c.status !== 'cancelado').length;
+        const totalValor = cobrancas.reduce((s, c) => s + Number(c.valor || 0), 0);
+
+        dynEl.innerHTML =
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px">' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border,#e5e7eb)">' +
+              '<div style="font-size:11px;color:var(--text3,#94a3b8);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cobran\u00e7as Pagas</div>' +
+              '<div style="font-size:28px;font-weight:800;color:#22c55e">' + pagas + '</div>' +
+            '</div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border,#e5e7eb)">' +
+              '<div style="font-size:11px;color:var(--text3,#94a3b8);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cobran\u00e7as Pendentes</div>' +
+              '<div style="font-size:28px;font-weight:800;color:#E8701A">' + pendentes + '</div>' +
+            '</div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border,#e5e7eb)">' +
+              '<div style="font-size:11px;color:var(--text3,#94a3b8);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Total Faturado</div>' +
+              '<div style="font-size:28px;font-weight:800;color:var(--text,#1a1a1a)">R$ ' + totalValor.toFixed(2).replace('.',',') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border,#e5e7eb)">' +
+            '<div style="font-size:14px;font-weight:700;color:var(--text,#1a1a1a);margin-bottom:12px">Hist\u00f3rico de Cobran\u00e7as</div>' +
+            (cobrancas.length === 0
+              ? '<div style="text-align:center;padding:20px;color:var(--text3,#94a3b8)">Nenhuma cobran\u00e7a encontrada</div>'
+              : '<div style="display:grid;gap:8px">' + cobrancas.slice(0, 10).map(function(co) {
+                  const st = co.status === 'pago' ? '#22c55e' : co.status === 'pendente' ? '#E8701A' : '#ef4444';
+                  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:8px;background:var(--surface2,#f8f9fa)">' +
+                    '<div><div style="font-size:13px;font-weight:600;color:var(--text)">' + (co.descricao || co.plano_nome || 'Cobran\u00e7a') + '</div>' +
+                    '<div style="font-size:11px;color:var(--text3)">' + (co.data_vencimento || '') + '</div></div>' +
+                    '<div style="text-align:right"><div style="font-size:14px;font-weight:700;color:var(--text)">R$ ' + Number(co.valor||0).toFixed(2).replace('.',',') + '</div>' +
+                    '<div style="font-size:10px;font-weight:600;color:' + st + ';text-transform:uppercase">' + (co.status || '') + '</div></div></div>';
+                }).join('') + '</div>') +
+          '</div>';
+
+      } else {
+        // Colaborador/Dependente: beneficios do plano
+        dynEl.innerHTML =
+          '<div style="background:var(--surface,#fff);border-radius:12px;padding:24px;border:1px solid var(--border,#e5e7eb);text-align:center">' +
+            '<div style="font-size:40px;margin-bottom:8px">\ud83d\udcca</div>' +
+            '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px">Suas M\u00e9tricas</div>' +
+            '<div style="font-size:13px;color:var(--text3)">Explore o cat\u00e1logo para ver produtos e benef\u00edcios dispon\u00edveis no seu plano.</div>' +
+          '</div>';
       }
     }
   } catch(e) {
