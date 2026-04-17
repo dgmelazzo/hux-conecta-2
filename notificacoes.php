@@ -14,7 +14,10 @@ require_once __DIR__ . '/config.php';
 require_once 'email.php';
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+$allowedOrigins = ['https://conecta.acicdf.org.br', 'https://hml.conecta.acicdf.org.br', 'https://crm.acicdf.org.br', 'https://hml.crm.acicdf.org.br'];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) header('Access-Control-Allow-Origin: ' . $origin);
+else header('Access-Control-Allow-Origin: https://conecta.acicdf.org.br');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
@@ -80,11 +83,17 @@ function getAuthUser() {
     $db  = getDB();
     $user = requireCrmAuth();
     if (!$user) err(401, 'Sessão inválida ou expirada.');
+    if (!isset($user['id'])) $user['id'] = $user['sub'] ?? $user['associado_id'] ?? 0;
     return $user;
 }
 
 function isAdmin($user) {
-    return preg_replace('/\D/', '', $user['cpf_cnpj']) === preg_replace('/\D/', '', ADMIN_DOC);
+    // CRM admin check
+    if (!empty($user['is_admin']) || !empty($user['is_superadmin'])) return true;
+    if (in_array($user['role'] ?? '', ['superadmin', 'gestor'])) return true;
+    // Legado: CPF match
+    $doc = preg_replace('/\D/', '', $user['cpf_cnpj'] ?? $user['documento'] ?? '');
+    return $doc === preg_replace('/\D/', '', ADMIN_DOC);
 }
 
 // ── ROTAS ────────────────────────────────────────────────────

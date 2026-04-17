@@ -17,7 +17,10 @@ require_once __DIR__ . '/auth-helper.php';
 require_once 'config.php';
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+$allowedOrigins = ['https://conecta.acicdf.org.br', 'https://hml.conecta.acicdf.org.br', 'https://crm.acicdf.org.br', 'https://hml.crm.acicdf.org.br'];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) header('Access-Control-Allow-Origin: ' . $origin);
+else header('Access-Control-Allow-Origin: https://conecta.acicdf.org.br');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
@@ -38,16 +41,27 @@ function input()    { static $c=null; if($c!==null)return $c; $c=json_decode(fil
 
 // ── AUTH SUPERADMIN ─────────────────────────────────────────
 function requireSuperAdmin() {
-    $db  = getDB();
+    // CRM JWT primeiro (fonte unica de verdade)
     $user = requireCrmAdmin();
-    $row = ['cpf_cnpj' => $user['documento'] ?? ADMIN_DOC, 'tipo' => $user['role'] ?? 'superadmin', 'sess_tipo' => $user['role'] ?? 'superadmin'];
+    if ($user) return $user['token'] ?? '';
+    // Fallback legado: conecta_sessions
+    $db  = getDB();
+    $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??''));
+    if (!$tok) {
+        $in  = input();
+        $tok = $in['token'] ?? '';
+    }
+    if (!$tok) err(401,'Token ausente.');
+    $st = $db->prepare('SELECT u.cpf_cnpj, u.tipo, s.tipo AS sess_tipo FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
+    $st->execute([$tok]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
     if (!$row) err(401,'Sessão inválida ou expirada.');
     // Admin por CPF (fluxo legado) ou por tipo de sessão SSO (superadmin/gestor)
     $docMatch = preg_replace('/\D/','',$row['cpf_cnpj']) === preg_replace('/\D/','',ADMIN_DOC);
     $tipoMatch = in_array($row['tipo'] ?? $row['sess_tipo'] ?? '', ['admin','superadmin','gestor']);
     if (!$docMatch && !$tipoMatch)
         err(403,'Acesso restrito ao superadmin.');
-    return $row['cpf_cnpj'];
+    return $tok;
 }
 
 // ── CRM BRIDGE ──────────────────────────────────────────────
@@ -62,21 +76,57 @@ function crmGet($path) {
 
 // ── AUTH: qualquer associado logado ─────────────────────────
 function requireAuth() {
+    // CRM JWT primeiro
     $user = requireCrmAuth();
-    if (!$user) err(401, 'Token ausente ou invalido.');
-    return $user;
+    if ($user) return $user;
+    // Fallback legado
+    $db  = getDB();
+    $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??''));
+    if (!$tok) { $in = input(); $tok = $in['token'] ?? ''; }
+    if (!$tok) err(401,'Token ausente.');
+    $st = $db->prepare('SELECT u.id FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
+    $st->execute([$tok]);
+    if (!$st->fetch()) err(401,'Sessão inválida ou expirada.');
 }
-// Acoes publicas (sem requireSuperAdmin)
-$action = $_GET['action'] ?? '';
+
+// ── SETUP TABELAS ────────────────────────────────────────────
+getDB()->exec("CREATE TABLE IF NOT EXISTS conecta_acessos (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT NOT NULL,
+    cpf_cnpj   VARCHAR(20),
+    ip         VARCHAR(45),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user (user_id),
+    INDEX idx_data (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+getDB()->exec("CREATE TABLE IF NOT EXISTS conecta_links (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    titulo     VARCHAR(200) NOT NULL,
+    url        VARCHAR(500) NOT NULL,
+    icone      VARCHAR(10)  DEFAULT '🔗',
+    ordem      INT          DEFAULT 0,
+    cliques    INT          DEFAULT 0,
+    ativo      TINYINT(1)   DEFAULT 1,
+    created_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ordem (ordem)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+// ── ROTAS ────────────────────────────────────────────────────
+$action = $_GET['action'] ?? (input()['action'] ?? '');
+
+// Rotas públicas (qualquer associado autenticado) — NÃO exigem superadmin
 switch ($action) {
     case 'links_listar':
-        $user = requireCrmAuth();
-        if (!$user) err(401, 'Token invalido.');
-        $links = getDB()->query("SELECT * FROM conecta_links WHERE ativo=1 ORDER BY ordem")->fetchAll(PDO::FETCH_ASSOC);
+        requireAuth();
+        $links = getDB()->query(
+            "SELECT id, titulo, url, icone, ordem, cliques FROM conecta_links WHERE ativo=1 ORDER BY ordem ASC, id ASC"
+        )->fetchAll(PDO::FETCH_ASSOC);
         ok($links);
         break;
 
     case 'links_clique':
+        requireAuth();
         $in = input();
         if (!empty($in['id'])) {
             getDB()->prepare("UPDATE conecta_links SET cliques = cliques + 1 WHERE id=?")->execute([(int)$in['id']]);
@@ -85,8 +135,14 @@ switch ($action) {
         break;
 
     case 'admin_check':
-        $user = validateCrmToken();
-        ok(['is_admin' => $user && $user['is_admin'], 'is_superadmin' => $user && ($user['is_superadmin'] ?? false), 'nome' => $user['nome'] ?? '']);
+        $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??''));
+        if (!$tok) { $in = input(); $tok = $in['token'] ?? ''; }
+        if (!$tok) { ok(['is_admin'=>false]); }
+        $st = getDB()->prepare('SELECT u.cpf_cnpj FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
+        $st->execute([$tok]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$row) { ok(['is_admin'=>false]); }
+        ok(['is_admin' => preg_replace('/\D/','',$row['cpf_cnpj']) === preg_replace('/\D/','',ADMIN_DOC)]);
         break;
 }
 
@@ -107,10 +163,11 @@ switch ($action) {
                      JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia')),
                      ''
                    ) AS nome,
-                   0 AS total_sessoes
+                   MAX(s.created_at) AS ultimo_acesso,
+                   COUNT(DISTINCT s.id) AS total_sessoes
             FROM conecta_users u
-            
-            GROUP BY u.id, u.tipo, u.higestor_id,
+            LEFT JOIN conecta_sessions s ON s.user_id = u.id
+            GROUP BY u.id, u.cpf_cnpj, u.tipo, u.higestor_id,
                      u.primeiro_acesso, u.ativo, u.created_at, u.crm_dados
             ORDER BY u.created_at DESC
         ");
@@ -136,9 +193,9 @@ switch ($action) {
         if (!$id) err(400,'ID obrigatório.');
         $db   = getDB();
         $stmt = $db->prepare("
-            SELECT u.*, 0 AS total_sessoes
+            SELECT u.*, MAX(s.created_at) AS ultimo_acesso, COUNT(DISTINCT s.id) AS total_sessoes
             FROM conecta_users u
-            
+            LEFT JOIN conecta_sessions s ON s.user_id = u.id
             WHERE u.id = ?
             GROUP BY u.id
         ");
@@ -180,7 +237,7 @@ switch ($action) {
 
         // Encerra sessões se bloqueando
         if (!$novoStatus) {
-            // conecta_sessions deprecated
+            $db->prepare('DELETE FROM conecta_sessions WHERE user_id=?')->execute([$in['id']]);
         }
 
         ok(['id'=>$in['id'],'ativo'=>$novoStatus,'label'=>$novoStatus?'Ativo':'Bloqueado']);
@@ -192,7 +249,7 @@ switch ($action) {
         if (empty($in['id'])) err(400,'ID obrigatório.');
         $db = getDB();
         $db->prepare('UPDATE conecta_users SET password=NULL, primeiro_acesso=1 WHERE id=?')->execute([$in['id']]);
-        // conecta_sessions deprecated
+        $db->prepare('DELETE FROM conecta_sessions WHERE user_id=?')->execute([$in['id']]);
         ok(['reset'=>true,'message'=>'Usuário precisará redefinir a senha no próximo acesso.']);
         break;
 
@@ -200,16 +257,17 @@ switch ($action) {
     case 'metricas':
         $db = getDB();
 
-        // Totais gerais
-        $totais = $db->query("
+        // Totais gerais via CRM (source of truth)
+        $crmDb = new PDO('mysql:host='.DB_HOST.';dbname=conecta_crm_hml;charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
+        $totais = $crmDb->query("
             SELECT
                 COUNT(*) AS total_usuarios,
-                SUM(ativo=1) AS usuarios_ativos,
-                SUM(ativo=0) AS usuarios_bloqueados,
-                SUM(primeiro_acesso=1) AS aguardando_acesso,
-                SUM(tipo='empresa') AS empresas,
-                SUM(tipo='contribuinte') AS contribuintes
-            FROM conecta_users
+                SUM(status='ativo') AS usuarios_ativos,
+                SUM(status IN ('cancelado','suspenso')) AS usuarios_bloqueados,
+                0 AS aguardando_acesso,
+                SUM(categoria='empresa') AS empresas,
+                SUM(categoria='colaborador') AS contribuintes
+            FROM associados WHERE tenant_id = 1
         ")->fetch(PDO::FETCH_ASSOC);
 
         // Total de produtos e views/clicks
@@ -242,7 +300,7 @@ switch ($action) {
         // Acessos últimos 30 dias (por dia)
         $acessos_30d = $db->query("
             SELECT DATE(created_at) AS dia, COUNT(*) AS total
-            FROM conecta_sessions -- deprecated, dados historicos apenas
+            FROM conecta_sessions
             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
             GROUP BY DATE(created_at)
             ORDER BY dia ASC
@@ -252,8 +310,8 @@ switch ($action) {
         $sem_acesso = $db->query("
             SELECT u.cpf_cnpj, u.tipo, u.higestor_id, u.created_at
             FROM conecta_users u
-            
-            WHERE u.primeiro_acesso = 1
+            LEFT JOIN conecta_sessions s ON s.user_id = u.id
+            WHERE s.id IS NULL OR u.primeiro_acesso = 1
             GROUP BY u.id
             ORDER BY u.created_at DESC
             LIMIT 20

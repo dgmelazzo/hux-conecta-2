@@ -541,7 +541,7 @@ async function loadCatalogoProdutos(filtros = {}) {
     loading?.classList.add('hidden');
 
     if (!produtosData.length) {
-      grid.innerHTML = '<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><p>Nenhum produto encontrado.</p></div>';
+      grid.innerHTML = '<div class="empty-state"><i class="bi bi-box-seam" style="font-size:40px;opacity:.4"></i><p>Nenhum produto encontrado.</p></div>';
       return;
     }
 
@@ -557,7 +557,7 @@ function renderCardProduto(p) {
   _prodCache.set(p.id, p);
   const tipoIcon = p.link_venda_tipo === 'whatsapp'
     ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.553 4.103 1.523 5.828L0 24l6.338-1.499A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.178-1.381l-.371-.22-3.765.89.938-3.667-.242-.386A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`
-    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+    : `<i class="bi bi-box-arrow-up-right" style="font-size:14px"></i>`;
 
   const badgeTipo = { produto:'Produto', servico:'Serviço', beneficio:'Benefício' };
 
@@ -566,7 +566,7 @@ function renderCardProduto(p) {
       <div class="produto-img ${!p.imagem ? 'placeholder' : ''}">
         ${p.imagem
           ? `<img src="${p.imagem}" alt="${p.nome}" loading="lazy"/>`
-          : `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+          : `<i class="bi bi-image" style="font-size:32px;opacity:.4"></i>`
         }
         <span class="produto-badge-destaque">${p.categoria_nome || 'Geral'}</span>
         ${p.no_meu_plano ? `<span class="produto-badge-combo">${p.combo_incluido ? '✓ Incluído no seu plano' : p.combo_desconto + '% OFF no seu plano'}</span>` : ''}
@@ -632,8 +632,8 @@ function renderModalProduto(p) {
   const isWhats = (s) => (s.link_venda_tipo || p.link_venda_tipo) === 'whatsapp';
 
   // Ícone WhatsApp
-  const icWhats = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.553 4.103 1.523 5.828L0 24l6.338-1.499A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.651-.502-5.178-1.381l-.371-.22-3.765.89.938-3.667-.242-.386A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
-  const icExt  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+  const icWhats = `<i class="bi bi-whatsapp" style="font-size:15px;flex-shrink:0"></i>`;
+  const icExt  = `<i class="bi bi-box-arrow-up-right" style="font-size:14px;flex-shrink:0"></i>`;
 
   // Galeria
   const galeriaHtml = temGaleria ? `
@@ -663,7 +663,7 @@ function renderModalProduto(p) {
         <div class="modal-tag">${p.categoria_nome || 'Geral'}</div>
         <h2 class="modal-title">${p.nome}</h2>
         ${p.marca ? `<p class="modal-marca">${p.marca}</p>` : ''}
-        ${(p.parceiro_nome || p.associado_nome) ? `<p class="modal-empresa">${p.parceiro_logo ? `<img src="${p.parceiro_logo}" alt="" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px">` : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`} ${p.parceiro_fantasia || p.parceiro_nome || p.associado_nome}</p>` : ''}
+        ${(p.parceiro_nome || p.associado_nome) ? `<p class="modal-empresa">${p.parceiro_logo ? `<img src="${p.parceiro_logo}" alt="" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px">` : `<i class="bi bi-building" style="font-size:12px"></i>`} ${p.parceiro_fantasia || p.parceiro_nome || p.associado_nome}</p>` : ''}
       </div>
     </div>
 
@@ -1289,7 +1289,7 @@ function mostrarTelaConvite(conviteToken) {
         <div class="input-wrap">
           <input type="password" id="convite-senha" placeholder="••••••••" required minlength="8"/>
           <button type="button" class="toggle-pw" onclick="togglePw('convite-senha')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <i class="bi bi-eye" style="font-size:18px"></i>
           </button>
         </div>
       </div>
@@ -1450,10 +1450,24 @@ function showPortal() {
     }
   }
   // Sidebar dinamico baseado em permissoes
-  const _modulos = getSession()?.modulos || [];
+  let _modulos = getSession()?.modulos || [];
   if (_modulos.length > 0) {
     aplicarModulosSidebar(_modulos);
-  } else if (window._userRole === 'associado_empresa') {
+  } else if (getToken()) {
+    // Sem modulos na sessao — buscar do CRM
+    fetch(_baseUrl + '/auth.php?action=permissoes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: getToken() })
+    }).then(r => r.json()).then(j => {
+      if (j.success && j.data?.modulos) {
+        const s = getSession() || {};
+        s.modulos = j.data.modulos;
+        setSession(s);
+        aplicarModulosSidebar(j.data.modulos);
+      }
+    }).catch(() => {});
+  }
+  if (window._userRole === 'associado_empresa') {
     showPerfilEmpresa();
   }
   const btnLink = document.getElementById('btn-novo-link');
@@ -2012,7 +2026,7 @@ function renderBenefitsGrid(list) {
       ${b.tags.length ? `<div class="benefit-tags">${b.tags.map(t => `<span class="benefit-tag">${t}</span>`).join('')}</div>` : ''}
       <div class="benefit-cta">
         ${b.ctaTexto || 'Saiba mais'}
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <i class="bi bi-arrow-right" style="font-size:14px"></i>
       </div>
     </div>
   `).join('');
@@ -2048,7 +2062,7 @@ function renderFeaturedBenefits(list) {
       <div class="carousel-img-wrap">
         ${b.imagem
           ? `<img src="${b.imagem}" alt="${b.titulo}" class="carousel-img" loading="lazy">`
-          : `<div class="carousel-img-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`}
+          : `<div class="carousel-img-placeholder"><i class="bi bi-image" style="font-size:48px;opacity:.3"></i></div>`}
         <div class="carousel-overlay">
           <span class="carousel-cat-badge">${b.categoria}</span>
           ${b.parceiro_logo ? '<div style="position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);padding:6px 12px;border-radius:8px"><img src="' + b.parceiro_logo + '" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.3)"><span style="color:#fff;font-size:11px;font-weight:600">' + (b.parceiro_fantasia || b.parceiro_nome || '') + '</span></div>' : ''}
@@ -2059,7 +2073,7 @@ function renderFeaturedBenefits(list) {
         <div class="carousel-empresa">${b.empresa || 'ACIC-DF'}</div>
         <h4 class="carousel-title">${b.titulo}</h4>
         <p class="carousel-desc">${b.descricao ? (b.descricao.substring(0,120) + (b.descricao.length > 120 ? '...' : '')) : ''}</p>
-        <div class="carousel-cta"><span>Saiba mais</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+        <div class="carousel-cta"><span>Saiba mais</span><i class="bi bi-arrow-right" style="font-size:14px"></i></div>
       </div>
     </div>`;
   }).join('');
@@ -2376,6 +2390,18 @@ function renderizarMatrizPermissoes() {
     </tr>`;
   }).join('');
 }
+
+// Sidebar collapse (desktop)
+function collapseSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('collapsed');
+  localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '');
+}
+// Restaurar estado collapsed
+if (localStorage.getItem('sb_collapsed') === '1' && window.innerWidth > 768) {
+  document.getElementById('sidebar')?.classList.add('collapsed');
+}
+
 function toggleSidebar() {
   const sidebar  = document.getElementById('sidebar');
   const overlay  = document.getElementById('sidebar-overlay');
@@ -2718,8 +2744,8 @@ function applyTheme(theme, save = true) {
 
   if (track) track.classList.toggle('active', isLight);
   if (label) label.innerHTML = isLight
-    ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Light'
-    : '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Dark';
+    ? '<i class="bi bi-sun" style="font-size:13px"></i> Light'
+    : '<i class="bi bi-moon" style="font-size:13px"></i> Dark';
 }
 
 function toggleTheme() {
@@ -2872,6 +2898,7 @@ function atualizarPreviewCapa(url) {
 // ════════════════════════════════════════════════════════════
 // SUPERADMIN — Usuários & Métricas
 // ════════════════════════════════════════════════════════════
+let _chartAcessos = null;
 const ADMIN_URL = _baseUrl + '/admin.php';
 
 async function adminApi(action, params = {}, method = 'POST') {
@@ -2913,47 +2940,21 @@ function renderDashboardPerfil(d) {
   const role = session.role || session.tipo || 'associado_empresa';
   const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
   const nome = d.nomeFantasia !== '\u2014' ? d.nomeFantasia : (d.razaoSocial || session.nome || 'Associado');
-  const validade = d.dataVencimento || session.data_vencimento || null;
   const heroEl = document.getElementById('dash-hero-perfil');
-  if (!heroEl) return;
+  if (heroEl) heroEl.innerHTML = '';
 
-  let html = '';
-
-  if (isAdmin) {
-    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Painel de Gest\u00e3o</div>' +
-      '<div style="font-size:24px;font-weight:800">Bem-vindo, ' + nome + '</div></div>';
-  } else if (role === 'associado_empresa') {
-    const statusColor = d.status === 'ativo' ? '#22c55e' : (d.status === 'inadimplente' ? '#ef4444' : '#f59e0b');
-    const statusTxt = d.status === 'ativo' ? 'Ativo' : (d.status || 'Ativo');
-    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
-      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
-      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px">' +
-        '<div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.2)">' +
-          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></span>' + statusTxt + '</div>' +
-        '<div style="font-size:13px;opacity:.8">' + (d.plano || session.plano || '') + '</div>' +
-        (validade ? '<div style="font-size:13px;opacity:.8">Vence: ' + validade + '</div>' : '') +
-      '</div></div>';
-  } else if (role === 'colaborador') {
-    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
-      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
-      '<div style="font-size:13px;opacity:.8">Colaborador \u2014 ' + (d.razaoSocial || 'sua empresa') + '</div></div>';
-  } else if (role === 'dependente') {
-    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
-      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
-      '<div style="font-size:13px;opacity:.8">Dependente \u2014 ' + (d.razaoSocial || 'sua empresa') + '</div></div>';
+  // Topbar: titulo + saudacao
+  const topTitle = document.querySelector('.topbar-title');
+  if (topTitle) {
+    const label = isAdmin ? 'Painel de Gest\u00e3o' : 'Portal do Associado';
+    const sub = role === 'colaborador' ? 'Colaborador' : role === 'dependente' ? 'Dependente' : '';
+    topTitle.innerHTML = '<div style="line-height:1.2"><div style="font-size:16px;font-weight:700;color:var(--text)">' + label + '</div><div style="font-size:12px;font-weight:500;color:var(--text2)">Bem-vindo, ' + nome + (sub ? ' \u2014 ' + sub : '') + '</div></div>';
   }
-
-  heroEl.innerHTML = html;
 
   // Mostrar boxes para admin e empresa, ocultar para colab/dep
   document.querySelectorAll('.dash-admin-only').forEach(el => {
     el.style.display = (isAdmin || role === 'associado_empresa') ? '' : 'none';
   });
-  // Ocultar greeting
   const greet = document.getElementById('dash-greeting');
   if (greet && greet.closest('.section-header')) greet.closest('.section-header').style.display = 'none';
 }
@@ -3280,7 +3281,7 @@ function renderGraficoAcessos(dados) {
   const grid   = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
   const text   = isDark ? '#7A8EAA' : '#4A6080';
 
-  if (_chartAcessos) _chartAcessos.destroy();
+  if (typeof _chartAcessos !== 'undefined' && _chartAcessos) _chartAcessos.destroy();
   _chartAcessos = new Chart(ctx, {
     type: 'line',
     data: {
@@ -3372,6 +3373,7 @@ function pararNotificacoes() {
 
 // Carrega apenas a contagem de não lidas (leve)
 async function carregarNaoLidas() {
+  if (!getToken()) return;
   try {
     const res  = await fetch(NOTIF_URL + '?action=nao_lidas', {
       headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -3383,6 +3385,7 @@ async function carregarNaoLidas() {
 
 // Carrega lista completa de notificações
 async function carregarNotificacoes() {
+  if (!getToken()) return;
   const lista = document.getElementById('notif-lista');
   if (!lista) return;
   lista.innerHTML = '<div class="notif-empty"><div class="spinner" style="width:20px;height:20px;margin:0 auto"></div></div>';
@@ -3441,10 +3444,10 @@ function abrirModalComunicado(n) {
   if (!modal || !body) return;
 
   const cfg = {
-    info:   { cor:'#378ADD', bg:'rgba(55,138,221,.1)',  label:'Informativo', icone:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' },
-    aviso:  { cor:'#E8640A', bg:'rgba(232,100,10,.1)',  label:'Aviso',       icone:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' },
-    alerta: { cor:'#E24B4A', bg:'rgba(226,75,74,.1)',   label:'Alerta',      icone:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' },
-    sucesso:{ cor:'#1D9E75', bg:'rgba(29,158,117,.1)',  label:'Sucesso',     icone:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
+    info:   { cor:'#378ADD', bg:'rgba(55,138,221,.1)',  label:'Informativo', icone:'<i class="bi bi-info-circle" style="font-size:16px"></i>' },
+    aviso:  { cor:'#E8640A', bg:'rgba(232,100,10,.1)',  label:'Aviso',       icone:'<i class="bi bi-exclamation-triangle" style="font-size:16px"></i>' },
+    alerta: { cor:'#E24B4A', bg:'rgba(226,75,74,.1)',   label:'Alerta',      icone:'<i class="bi bi-x-circle" style="font-size:16px"></i>' },
+    sucesso:{ cor:'#1D9E75', bg:'rgba(29,158,117,.1)',  label:'Sucesso',     icone:'<i class="bi bi-check-circle" style="font-size:16px"></i>' },
   };
   const c = cfg[n.tipo] || cfg.info;
 
@@ -3472,12 +3475,12 @@ function abrirModalComunicado(n) {
     ${n.link && n.link !== 'null' && n.link !== '' ? `
       <div style="margin-top:20px">
         <a href="${n.link}" target="_blank" rel="noopener" class="btn-primary" style="display:inline-flex;align-items:center;gap:8px;width:auto;padding:10px 20px;font-size:13px;text-decoration:none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <i class="bi bi-box-arrow-up-right" style="font-size:14px"></i>
           Ver mais
         </a>
       </div>` : ''}
     <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <i class="bi bi-clock" style="font-size:12px"></i>
       <span style="font-size:11px;color:var(--text3)">${tempoRelativo(n.created_at)}</span>
     </div>
   `;
@@ -3601,7 +3604,7 @@ function tempoRelativo(dataStr) {
 
 // ── TOAST NOTIFICATION SYSTEM ──
 const _toastIcons = {
-  sucesso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  sucesso: '<i class="bi bi-check-lg"></i>',
   erro:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
   aviso:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
   info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
@@ -4063,6 +4066,142 @@ const _origShowPortal = showPortal;
 // (já chamado via loadPortalData — iniciarNotificacoes é chamado após login)
 
 // ════════════════════════════════════════════════════════════
+
+
+// ============================================================
+// ADMIN CATEGORIAS
+// ============================================================
+async function loadAdminCategorias() {
+  const section = document.getElementById('section-admin-categorias');
+  if (!section) return;
+  section.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)"><div class="spinner" style="width:24px;height:24px;margin:0 auto 8px"></div></div>';
+
+  try {
+    const token = getToken();
+    const res = await fetch(_baseUrl + '/produtos.php?action=categorias_admin', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const json = await res.json();
+    if (!json.success || !json.data) { section.innerHTML = '<p style="text-align:center;color:var(--text3);padding:40px">Erro ao carregar categorias</p>'; return; }
+
+    const cats = json.data;
+    section.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+        '<h3 style="font-size:16px;font-weight:700;color:var(--text)">Categorias</h3>' +
+        '<button class="btn-primary" onclick="criarCategoria()" style="width:auto;padding:8px 16px;font-size:12px"><i class="bi bi-plus-lg"></i> Nova Categoria</button>' +
+      '</div>' +
+      '<div style="display:grid;gap:8px">' + (cats.length === 0 ? '<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma categoria cadastrada.</div>' :
+      cats.map(cat =>
+        '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;transition:all .2s">' +
+          '<span style="font-size:22px;width:36px;text-align:center">' + (cat.icone||'\ud83d\udcc1') + '</span>' +
+          '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px;color:var(--text)">' + cat.nome + '</div>' +
+          '<div style="font-size:12px;color:var(--text3)">' + (cat.total_produtos||0) + ' produtos &middot; ' + (cat.ativo ? 'Ativa' : 'Inativa') + '</div></div>' +
+          '<div style="display:flex;gap:6px">' +
+            '<button class="btn-table-action" onclick="editarCategoria(' + cat.id + ',\'' + (cat.nome||'').replace(/'/g,"\\'") + '\',\'' + (cat.icone||'') + '\')"><i class="bi bi-pencil"></i></button>' +
+            '<button class="btn-table-action danger" onclick="excluirCategoria(' + cat.id + ',\'' + (cat.nome||'').replace(/'/g,"\\'") + '\')"><i class="bi bi-trash"></i></button>' +
+          '</div>' +
+        '</div>'
+      ).join('')) + '</div>';
+  } catch(e) {
+    section.innerHTML = '<p style="text-align:center;color:var(--danger);padding:40px">Erro: ' + e.message + '</p>';
+  }
+}
+
+let _catEditId = null;
+const _catEmojis = ['\ud83d\udcbc','\ud83c\udfeb','\ud83c\udfe5','\ud83d\udcb0','\u2696\ufe0f','\ud83d\udce6','\ud83d\udd12','\ud83c\udf93','\ud83d\udcca','\ud83d\udcbb','\ud83d\udcc4','\ud83c\udfe2','\ud83d\ude97','\u2708\ufe0f','\ud83c\udf4e','\ud83d\udc8a','\ud83e\uddb7','\ud83d\udee1\ufe0f','\u2764\ufe0f','\ud83c\udfe6','\ud83d\udcdc','\ud83d\udda5\ufe0f','\ud83c\udfaf','\ud83d\udce1','\ud83c\udf1f','\ud83c\udfd7\ufe0f','\ud83c\udf0d','\ud83d\udd27','\ud83c\udfa8','\ud83c\udfac'];
+
+function abrirModalCategoria(id, nome, icone) {
+  _catEditId = id || null;
+  // Criar modal se nao existe
+  let modal = document.getElementById('cat-modal-overlay');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'cat-modal-overlay';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width:440px">
+        <button class="modal-close" onclick="fecharModalCat()"><i class="bi bi-x-lg"></i></button>
+        <div class="modal-title" id="cat-modal-title">Nova Categoria</div>
+        <div class="modal-subtitle">Defina o nome e escolha um icone</div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Nome *</label>
+          <input type="text" id="cat-modal-nome" class="field-input" placeholder="Nome da categoria" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);font-size:14px;outline:none">
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Icone</label>
+          <div id="cat-emoji-selected" style="font-size:32px;text-align:center;margin-bottom:8px;cursor:pointer" title="Clique para trocar"></div>
+          <div id="cat-emoji-grid" style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-height:120px;overflow-y:auto"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-table-action" onclick="fecharModalCat()">Cancelar</button>
+          <button class="btn-primary" onclick="salvarCategoria()" style="width:auto;padding:10px 24px;font-size:13px">Salvar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  // Popular
+  document.getElementById('cat-modal-title').textContent = id ? 'Editar Categoria' : 'Nova Categoria';
+  document.getElementById('cat-modal-nome').value = nome || '';
+  const selEl = document.getElementById('cat-emoji-selected');
+  selEl.textContent = icone || '\ud83d\udcbc';
+  selEl._value = icone || '\ud83d\udcbc';
+
+  // Grid de emojis
+  const grid = document.getElementById('cat-emoji-grid');
+  grid.innerHTML = _catEmojis.map(e =>
+    '<span style="font-size:20px;text-align:center;padding:6px;cursor:pointer;border-radius:6px;transition:all .15s" onmouseenter="this.style.background=\'var(--surface2)\'" onmouseleave="this.style.background=\'\'" onclick="selecionarEmojiCat(this,\''+e+'\')">'+e+'</span>'
+  ).join('');
+
+  modal.classList.add('active');
+  document.getElementById('cat-modal-nome').focus();
+}
+
+function selecionarEmojiCat(el, emoji) {
+  const sel = document.getElementById('cat-emoji-selected');
+  sel.textContent = emoji;
+  sel._value = emoji;
+  // Highlight
+  el.parentElement.querySelectorAll('span').forEach(s => s.style.background = '');
+  el.style.background = 'var(--accent-soft)';
+}
+
+function fecharModalCat() {
+  const modal = document.getElementById('cat-modal-overlay');
+  if (modal) modal.classList.remove('active');
+  _catEditId = null;
+}
+
+async function salvarCategoria() {
+  const nome = document.getElementById('cat-modal-nome').value.trim();
+  const icone = document.getElementById('cat-emoji-selected')._value || '';
+  if (!nome) { mostrarToast('Erro', 'Nome obrigatorio', 'alerta'); return; }
+
+  try {
+    if (_catEditId) {
+      await prodApi('categoria_editar', { id: _catEditId, nome, icone, token: getToken() });
+      mostrarToast('Atualizada!', nome, 'sucesso');
+    } else {
+      await prodApi('categoria_criar', { nome, icone, token: getToken() });
+      mostrarToast('Criada!', nome, 'sucesso');
+    }
+    fecharModalCat();
+    loadAdminCategorias();
+  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
+}
+
+function criarCategoria() { abrirModalCategoria(null, '', ''); }
+function editarCategoria(id, nome, icone) { abrirModalCategoria(id, nome, icone); }
+
+async function excluirCategoria(id, nome) {
+  if (!confirm('Excluir categoria "' + nome + '"?')) return;
+  try {
+    await prodApi('categoria_excluir', { id, token: getToken() });
+    mostrarToast('Categoria excluida', nome, 'sucesso');
+    loadAdminCategorias();
+  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
+}
+
 // COMUNICADOS — Editor rico com busca de destinatários
 // ════════════════════════════════════════════════════════════
 
@@ -4447,3 +4586,14 @@ function recarregarComunicado(c) {
   document.getElementById('editor-status-label').textContent = 'Reenviar comunicado';
   document.getElementById('com-titulo').focus();
 }
+
+// Capa hover overlay
+document.getElementById('capa-preview-box')?.addEventListener('mouseenter', function() {
+  const img = document.getElementById('fp-img-preview');
+  const overlay = document.getElementById('capa-hover-overlay');
+  if (img && img.style.display !== 'none' && overlay) overlay.style.display = 'flex';
+});
+document.getElementById('capa-preview-box')?.addEventListener('mouseleave', function() {
+  const overlay = document.getElementById('capa-hover-overlay');
+  if (overlay) overlay.style.display = 'none';
+});
