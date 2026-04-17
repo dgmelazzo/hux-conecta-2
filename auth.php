@@ -15,7 +15,10 @@
  */
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+$allowedOrigins = ['https://conecta.acicdf.org.br', 'https://hml.conecta.acicdf.org.br', 'https://crm.acicdf.org.br', 'https://hml.crm.acicdf.org.br'];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) header('Access-Control-Allow-Origin: ' . $origin);
+else header('Access-Control-Allow-Origin: https://conecta.acicdf.org.br');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Authorization, Content-Type');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }

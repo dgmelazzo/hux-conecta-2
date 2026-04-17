@@ -2886,6 +2886,7 @@ function atualizarPreviewCapa(url) {
 // ════════════════════════════════════════════════════════════
 // SUPERADMIN — Usuários & Métricas
 // ════════════════════════════════════════════════════════════
+let _chartAcessos = null;
 const ADMIN_URL = _baseUrl + '/admin.php';
 
 async function adminApi(action, params = {}, method = 'POST') {
@@ -3294,7 +3295,7 @@ function renderGraficoAcessos(dados) {
   const grid   = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
   const text   = isDark ? '#7A8EAA' : '#4A6080';
 
-  if (_chartAcessos) _chartAcessos.destroy();
+  if (typeof _chartAcessos !== 'undefined' && _chartAcessos) _chartAcessos.destroy();
   _chartAcessos = new Chart(ctx, {
     type: 'line',
     data: {

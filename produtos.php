@@ -3,7 +3,10 @@ require_once __DIR__ . '/auth-helper.php';
 require_once 'config.php';
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+$allowedOrigins = ['https://conecta.acicdf.org.br', 'https://hml.conecta.acicdf.org.br', 'https://crm.acicdf.org.br', 'https://hml.crm.acicdf.org.br'];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins)) header('Access-Control-Allow-Origin: ' . $origin);
+else header('Access-Control-Allow-Origin: https://conecta.acicdf.org.br');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
@@ -229,6 +232,15 @@ switch($action){
         break;
 
     case 'tracking':
+        // Rate limit: max 10 tracking/min por IP
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $rlKey = '/tmp/rl_track_' . md5($ip);
+        $rlCount = 0;
+        if (file_exists($rlKey) && (time() - filemtime($rlKey)) < 60) {
+            $rlCount = (int)file_get_contents($rlKey);
+        }
+        if ($rlCount >= 10) { ok(['limited' => true]); break; }
+        @file_put_contents($rlKey, $rlCount + 1);
         $pid=(int)($in['produto_id']??0); $sid=!empty($in['subproduto_id'])?(int)$in['subproduto_id']:null;
         $te=$in['tipo_evento']??''; $sess=substr(preg_replace('/[^a-zA-Z0-9]/','', $in['session_id']??''),0,64);
         if(!$pid||!in_array($te,['view','click_whatsapp','click_externo'])) ok(['registered'=>false]);
