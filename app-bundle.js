@@ -1368,6 +1368,9 @@ function showPerfilRestrito(role) {
     if (el.id && !allowed.includes(el.id)) el.style.display = 'none';
     else el.style.display = '';
   });
+  // Mostrar Metricas para todos
+  const navMet = document.getElementById('nav-metricas');
+  if (navMet) { navMet.classList.remove('hidden'); navMet.style.display = ''; }
   // Ocultar cobrancas e empresa para colaborador/dependente
   document.querySelectorAll('.sidebar-nav button, .sidebar-nav a').forEach(el => {
     const onclick = el.getAttribute('onclick') || '';
@@ -1377,12 +1380,14 @@ function showPerfilRestrito(role) {
   });
 }
 function showPerfilEmpresa() {
-  // Empresa no Conecta: ocultar abas admin-only
-  // Empresa ve: Dashboard, Catalogo, Carteirinha, Cobrancas, Minha Empresa
-  ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias','nav-metricas'].forEach(id => {
+  // Empresa: Dashboard, Catalogo, Carteirinha, Cobrancas, Empresa, Metricas
+  ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
+  // Mostrar Metricas (oculto por default)
+  const m = document.getElementById('nav-metricas');
+  if (m) { m.classList.remove('hidden'); m.style.display = ''; }
 }
 function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
