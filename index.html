@@ -1048,50 +1048,28 @@
         <div class="field" id="fp-wrap-url" style="grid-column:1/-1"><label>URL de venda</label><input type="url" id="fp-link-url" placeholder="https://..."/></div>
         <div class="field" style="grid-column:1/-1;display:flex;align-items:center;gap:10px"><input type="checkbox" id="fp-destaque" style="width:auto;accent-color:var(--accent)"/><label for="fp-destaque" style="text-transform:none;font-size:14px;color:var(--text)">Exibir como destaque</label></div>
       </div>
-      <!-- Galeria unificada — capa + fotos adicionais -->
-      <div id="admin-galeria-wrap" class="galeria-unificada">
-        <!-- Preview da capa atual -->
-        <div class="capa-preview-wrap">
-          <div class="capa-preview-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Imagem de capa
+      <!-- Imagem de capa do produto (900x506px) -->
+      <div id="admin-galeria-wrap" style="margin-top:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          <i class="bi bi-image"></i> Imagem de Capa
+          <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3);font-size:10px">(900 x 506px)</span>
+        </div>
+        <div id="capa-preview-box" onclick="document.getElementById('fp-img-file').click()" style="width:100%;aspect-ratio:900/506;border:2px dashed var(--border);border-radius:12px;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--surface2);transition:all .2s;position:relative" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+          <img id="fp-img-preview" src="" alt="capa" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>
+          <div id="capa-preview-empty" style="text-align:center;color:var(--text3);padding:20px">
+            <i class="bi bi-cloud-arrow-up" style="font-size:32px;display:block;margin-bottom:8px;opacity:.5"></i>
+            <div style="font-size:13px;font-weight:600">Clique para fazer upload</div>
+            <div style="font-size:11px;margin-top:4px">JPG ou PNG, 900 x 506px recomendado</div>
           </div>
-          <div class="capa-preview-box" id="capa-preview-box" onclick="document.getElementById('fp-img-file').click()">
-            <img id="fp-img-preview" src="" alt="capa" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px"/>
-            <div class="capa-preview-empty" id="capa-preview-empty">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              <span>Clique para adicionar capa</span>
-            </div>
-            <div class="capa-preview-overlay">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Trocar imagem
-            </div>
-          </div>
-          <div id="upload-progress" class="upload-progress hidden" style="margin-top:8px">
-            <div class="upload-bar"><div id="upload-fill"></div></div>
-            <span id="upload-status">Enviando...</span>
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;gap:6px;border-radius:10px" id="capa-hover-overlay">
+            <i class="bi bi-arrow-repeat"></i> Trocar imagem
           </div>
         </div>
-
-        <!-- Galeria adicional -->
-        <div class="galeria-adicional">
-          <div class="galeria-admin-header">
-            <h4>Fotos adicionais</h4>
-            <label class="btn-upload-galeria">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              + Adicionar
-              <input type="file" id="fp-galeria-file" accept="image/*" multiple style="display:none" onchange="handleGaleriaUpload(this)"/>
-            </label>
-          </div>
-          <div id="galeria-upload-progress" class="hidden" style="margin-bottom:8px">
-            <div class="upload-bar"><div id="galeria-upload-fill"></div></div>
-            <span id="galeria-upload-status" style="font-size:11px;color:var(--text2)">Enviando...</span>
-          </div>
-          <div id="admin-galeria-grid"></div>
-          <small style="color:var(--text3);font-size:11px;margin-top:6px;display:block">
-            Clique em "Capa" em qualquer foto para usá-la como imagem principal.
-          </small>
+        <div id="upload-progress" class="upload-progress hidden" style="margin-top:8px">
+          <div class="upload-bar"><div id="upload-fill"></div></div>
+          <span id="upload-status">Enviando...</span>
         </div>
+        <div id="admin-galeria-grid" style="display:none"></div>
       </div>
 
       <div id="sub-admin-wrap" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-top:20px;display:none">

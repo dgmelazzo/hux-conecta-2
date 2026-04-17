@@ -4497,3 +4497,14 @@ function recarregarComunicado(c) {
   document.getElementById('editor-status-label').textContent = 'Reenviar comunicado';
   document.getElementById('com-titulo').focus();
 }
+
+// Capa hover overlay
+document.getElementById('capa-preview-box')?.addEventListener('mouseenter', function() {
+  const img = document.getElementById('fp-img-preview');
+  const overlay = document.getElementById('capa-hover-overlay');
+  if (img && img.style.display !== 'none' && overlay) overlay.style.display = 'flex';
+});
+document.getElementById('capa-preview-box')?.addEventListener('mouseleave', function() {
+  const overlay = document.getElementById('capa-hover-overlay');
+  if (overlay) overlay.style.display = 'none';
+});
