@@ -4062,7 +4062,7 @@ const _origShowPortal = showPortal;
 async function loadAdminCategorias() {
   const section = document.getElementById('section-admin-categorias');
   if (!section) return;
-  section.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8"><div class="spinner" style="width:24px;height:24px;margin:0 auto 8px"></div></div>';
+  section.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)"><div class="spinner" style="width:24px;height:24px;margin:0 auto 8px"></div></div>';
 
   try {
     const token = getToken();
@@ -4070,21 +4070,69 @@ async function loadAdminCategorias() {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const json = await res.json();
-    if (!json.success || !json.data) { section.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:40px">Erro ao carregar categorias</p>'; return; }
+    if (!json.success || !json.data) { section.innerHTML = '<p style="text-align:center;color:var(--text3);padding:40px">Erro ao carregar categorias</p>'; return; }
 
     const cats = json.data;
-    section.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-size:16px;font-weight:700">Categorias</h3></div>' +
-      '<div style="display:grid;gap:8px">' + cats.map(c =>
-        '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px">' +
-          '<span style="font-size:20px">' + (c.icone||'') + '</span>' +
-          '<div style="flex:1"><div style="font-weight:600;font-size:14px">' + c.nome + '</div>' +
-          '<div style="font-size:12px;color:#94a3b8">' + (c.total_produtos||0) + ' produtos</div></div>' +
-          '<span style="font-size:12px;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:6px">#' + c.ordem + '</span>' +
+    section.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+        '<h3 style="font-size:16px;font-weight:700;color:var(--text)">Categorias</h3>' +
+        '<button class="btn-primary" onclick="criarCategoria()" style="width:auto;padding:8px 16px;font-size:12px"><i class="bi bi-plus-lg"></i> Nova Categoria</button>' +
+      '</div>' +
+      '<div style="display:grid;gap:8px">' + (cats.length === 0 ? '<div style="padding:32px;text-align:center;color:var(--text3)">Nenhuma categoria cadastrada.</div>' :
+      cats.map(cat =>
+        '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;transition:all .2s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">' +
+          '<span style="font-size:22px;width:36px;text-align:center">' + (cat.icone||'\ud83d\udcc1') + '</span>' +
+          '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px;color:var(--text)">' + cat.nome + '</div>' +
+          '<div style="font-size:12px;color:var(--text3)">' + (cat.total_produtos||0) + ' produtos &middot; ' + (cat.ativo ? 'Ativa' : 'Inativa') + '</div></div>' +
+          '<div style="display:flex;gap:6px">' +
+            '<button class="btn-table-action" onclick="editarCategoria(' + cat.id + ',\'' + (cat.nome||'').replace(/'/g,"\\'") + '\',\'' + (cat.icone||'') + '\')"><i class="bi bi-pencil"></i></button>' +
+            '<button class="btn-table-action danger" onclick="excluirCategoria(' + cat.id + ',\'' + (cat.nome||'').replace(/'/g,"\\'") + '\')"><i class="bi bi-trash"></i></button>' +
+          '</div>' +
         '</div>'
-      ).join('') + '</div>';
+      ).join('')) + '</div>';
   } catch(e) {
-    section.innerHTML = '<p style="text-align:center;color:#ef4444;padding:40px">Erro: ' + e.message + '</p>';
+    section.innerHTML = '<p style="text-align:center;color:var(--danger);padding:40px">Erro: ' + e.message + '</p>';
   }
+}
+
+async function criarCategoria() {
+  const nome = prompt('Nome da categoria:');
+  if (!nome) return;
+  const icone = prompt('Emoji/Icone (ex: \ud83d\udcbc):', '\ud83d\udcbc');
+  try {
+    await prodApi('categoria_criar', { nome, icone: icone || '', token: getToken() });
+    mostrarToast('Categoria criada!', nome, 'sucesso');
+    loadAdminCategorias();
+  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
+}
+
+async function editarCategoria(id, nome, icone) {
+  const novoNome = prompt('Nome da categoria:', nome);
+  if (!novoNome || novoNome === nome) {
+    const novoIcone = prompt('Emoji/Icone:', icone);
+    if (!novoIcone && !novoNome) return;
+    try {
+      await prodApi('categoria_editar', { id, nome: novoNome || nome, icone: novoIcone || icone, token: getToken() });
+      mostrarToast('Categoria atualizada!', '', 'sucesso');
+      loadAdminCategorias();
+    } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
+    return;
+  }
+  const novoIcone = prompt('Emoji/Icone:', icone);
+  try {
+    await prodApi('categoria_editar', { id, nome: novoNome, icone: novoIcone || icone, token: getToken() });
+    mostrarToast('Categoria atualizada!', '', 'sucesso');
+    loadAdminCategorias();
+  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
+}
+
+async function excluirCategoria(id, nome) {
+  if (!confirm('Excluir categoria "' + nome + '"?')) return;
+  try {
+    await prodApi('categoria_excluir', { id, token: getToken() });
+    mostrarToast('Categoria excluida', nome, 'sucesso');
+    loadAdminCategorias();
+  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
 }
 
 // COMUNICADOS — Editor rico com busca de destinatários
