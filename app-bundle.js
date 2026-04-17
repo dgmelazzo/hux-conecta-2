@@ -4081,6 +4081,39 @@ const _origShowPortal = showPortal;
 // (já chamado via loadPortalData — iniciarNotificacoes é chamado após login)
 
 // ════════════════════════════════════════════════════════════
+
+
+// ============================================================
+// ADMIN CATEGORIAS
+// ============================================================
+async function loadAdminCategorias() {
+  const section = document.getElementById('section-admin-categorias');
+  if (!section) return;
+  section.innerHTML = '<div style="padding:40px;text-align:center;color:#94a3b8"><div class="spinner" style="width:24px;height:24px;margin:0 auto 8px"></div></div>';
+
+  try {
+    const token = getToken();
+    const res = await fetch(_baseUrl + '/produtos.php?action=categorias_admin', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const json = await res.json();
+    if (!json.success || !json.data) { section.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:40px">Erro ao carregar categorias</p>'; return; }
+
+    const cats = json.data;
+    section.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="font-size:16px;font-weight:700">Categorias</h3></div>' +
+      '<div style="display:grid;gap:8px">' + cats.map(c =>
+        '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px">' +
+          '<span style="font-size:20px">' + (c.icone||'') + '</span>' +
+          '<div style="flex:1"><div style="font-weight:600;font-size:14px">' + c.nome + '</div>' +
+          '<div style="font-size:12px;color:#94a3b8">' + (c.total_produtos||0) + ' produtos</div></div>' +
+          '<span style="font-size:12px;color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:6px">#' + c.ordem + '</span>' +
+        '</div>'
+      ).join('') + '</div>';
+  } catch(e) {
+    section.innerHTML = '<p style="text-align:center;color:#ef4444;padding:40px">Erro: ' + e.message + '</p>';
+  }
+}
+
 // COMUNICADOS — Editor rico com busca de destinatários
 // ════════════════════════════════════════════════════════════
 

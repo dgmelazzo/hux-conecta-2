@@ -38,6 +38,10 @@ function input()    { static $c=null; if($c!==null)return $c; $c=json_decode(fil
 
 // ── AUTH SUPERADMIN ─────────────────────────────────────────
 function requireSuperAdmin() {
+    // CRM JWT primeiro (fonte unica de verdade)
+    $user = requireCrmAdmin();
+    if ($user) return $user['token'] ?? '';
+    // Fallback legado: conecta_sessions
     $db  = getDB();
     $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??''));
     if (!$tok) {
@@ -69,6 +73,10 @@ function crmGet($path) {
 
 // ── AUTH: qualquer associado logado ─────────────────────────
 function requireAuth() {
+    // CRM JWT primeiro
+    $user = requireCrmAuth();
+    if ($user) return $user;
+    // Fallback legado
     $db  = getDB();
     $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION']??''));
     if (!$tok) { $in = input(); $tok = $in['token'] ?? ''; }
