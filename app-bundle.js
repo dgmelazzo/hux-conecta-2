@@ -2916,8 +2916,9 @@ function renderDashboardPerfil(d) {
 
   heroEl.innerHTML = html;
 
-  // Mostrar boxes apenas para admin (ocultos por default no HTML)
-  if (isAdmin) {
+  // Mostrar boxes para admin e empresa (ocultos para colaborador/dependente)
+  const _showBoxes = isAdmin || role === 'associado_empresa';
+  if (_showBoxes) {
     document.querySelectorAll('.dash-admin-only').forEach(el => {
       if (el) el.style.display = '';
     });
