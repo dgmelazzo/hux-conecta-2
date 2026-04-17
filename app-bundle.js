@@ -2033,7 +2033,11 @@ function renderFeaturedBenefits(list) {
         ${b.imagem
           ? `<img src="${b.imagem}" alt="${b.titulo}" class="carousel-img" loading="lazy">`
           : `<div class="carousel-img-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>`}
-        <div class="carousel-overlay"><span class="carousel-cat-badge">${b.categoria}</span></div>
+        <div class="carousel-overlay">
+          <span class="carousel-cat-badge">${b.categoria}</span>
+          ${b.parceiro_logo ? '<div style="position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);padding:6px 12px;border-radius:8px"><img src="' + b.parceiro_logo + '" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.3)"><span style="color:#fff;font-size:11px;font-weight:600">' + (b.parceiro_fantasia || b.parceiro_nome || '') + '</span></div>' : ''}
+        </div>
+        <div style="position:absolute;top:16px;right:-30px;transform:rotate(45deg);background:#E8701A;color:#fff;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 40px;box-shadow:0 2px 8px rgba(232,112,26,.3)">DESTAQUE</div>
       </div>
       <div class="carousel-info">
         <div class="carousel-empresa">${b.empresa || 'ACIC-DF'}</div>
