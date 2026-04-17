@@ -1377,14 +1377,12 @@ function showPerfilRestrito(role) {
   });
 }
 function showPerfilEmpresa() {
-  // Empresa: ocultar abas admin-only, manter Catalogo/Carteirinha/Cobrancas/Empresa/Metricas
-  ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias'].forEach(id => {
+  // Empresa no Conecta: ocultar abas admin-only
+  // Empresa ve: Dashboard, Catalogo, Carteirinha, Cobrancas, Minha Empresa
+  ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias','nav-metricas'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  // Mostrar Metricas para empresa (oculto por default com class hidden)
-  const navMet = document.getElementById('nav-metricas');
-  if (navMet) { navMet.classList.remove('hidden'); navMet.style.display = ''; }
 }
 function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
