@@ -2249,18 +2249,29 @@ document.addEventListener('keydown', e => {
 // NAVIGATION
 // ============================================================
 const SECTION_TITLES = {
-  'catalogo':             'Catálogo de Produtos',
+  dashboard:              'Dashboard',
+  catalogo:               'Catálogo de Produtos',
+  empresa:                'Minha Empresa',
+  carteirinha:            'Minha Carteirinha',
+  cobrancas:              'Minhas Cobranças',
   'admin-produtos':       'Gerenciar Produtos',
   'admin-metricas':       'Métricas',
   'admin-comunicados':    'Comunicados',
   'admin-parceiros':      'Parceiros',
   'admin-categorias':     'Categorias',
-  'carteirinha':          'Minha Carteirinha',
-  'cobrancas':            'Minhas Cobran\u00e7as',
-  dashboard:  'Dashboard',
-  empresa:    '',
-  beneficios: 'Benefícios',
-  configuracoes: 'Configurações',
+};
+
+const SECTION_SUBTITLES = {
+  dashboard:              'Seu painel de benefícios e informações',
+  catalogo:               'Produtos e serviços dos parceiros ACIC-DF',
+  empresa:                'Dados cadastrais na ACIC-DF',
+  carteirinha:            'Carteira digital do associado',
+  cobrancas:              'Taxas e cobranças da associação',
+  'admin-produtos':       'Gerenciar produtos do catálogo',
+  'admin-metricas':       'Indicadores e análise de uso',
+  'admin-comunicados':    'Templates e envio de comunicados',
+  'admin-parceiros':      'Fornecedores de produtos',
+  'admin-categorias':     'Categorias do catálogo',
 };
 
 function showSection(id) {
@@ -2275,6 +2286,8 @@ function showSection(id) {
     if (el.getAttribute('onclick')?.includes(`'${id}'`)) el.classList.add('active');
   });
   document.getElementById('topbar-title').textContent = SECTION_TITLES[id] || id;
+  const subEl = document.getElementById('topbar-subtitle');
+  if (subEl) subEl.textContent = SECTION_SUBTITLES[id] || '';
   if (window.innerWidth <= 900) closeSidebar();
   if (id === 'catalogo') { loadCatalogoProdutos(); carregarCategoriasFiltro(); }
   if (id === 'comunicados') iniciarComunicados();
