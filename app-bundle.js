@@ -2972,6 +2972,36 @@ function renderDashboardPerfil(d) {
   if (greet && greet.closest('.section-header')) greet.closest('.section-header').style.display = 'none';
 }
 
+
+// ============================================================
+// SIDEBAR DINAMICO — baseado em permissoes do CRM
+// ============================================================
+function aplicarModulosSidebar(modulos) {
+  // Mapa: modulo da API → seletor do nav item no sidebar
+  const map = {
+    'dashboard':   'button[onclick*="dashboard"]',
+    'catalogo':    'button[onclick*="catalogo"]',
+    'carteirinha': 'button[onclick*="carteirinha"]',
+    'cobrancas':   'button[onclick*="cobrancas"]',
+    'empresa':     'button[onclick*="empresa"]',
+    'metricas':    '#nav-metricas',
+    'comunicados': '#nav-comunicados',
+    'produtos':    '#nav-admin',
+    'categorias':  '#nav-categorias',
+    'parceiros':   '#nav-parceiros',
+  };
+
+  Object.entries(map).forEach(([mod, sel]) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    if (modulos.includes(mod)) {
+      el.classList.remove('hidden');
+      el.style.display = '';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
 // ============================================================
 // CARTEIRINHA — SPA (sem page reload)
 // ============================================================
