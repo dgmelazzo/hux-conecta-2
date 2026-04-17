@@ -1448,7 +1448,7 @@
                     ? '<div class="pix-code" style="background:var(--surface2,#f5f5f5);border:1px solid var(--border,#ddd);border-radius:8px;padding:12px;font-size:11px;word-break:break-all;margin-top:12px;position:relative">' +
                       '<div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text2,#555)">PIX Copia e Cola:</div>' +
                       escapeHTML(result.pix_copia_cola) +
-                      '<button onclick="navigator.clipboard.writeText('' + result.pix_copia_cola.replace(/'/g, "\'") + '');this.textContent='Copiado!';setTimeout(function(){this.textContent='Copiar'},2000)" style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--orange,#E8701A);background:var(--orange,#E8701A);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Copiar</button>' +
+                      '<button onclick="navigator.clipboard.writeText(this.dataset.pix);this.textContent=\'Copiado!\';setTimeout(()=>this.textContent=\'Copiar\',2000)" data-pix="' + escapeAttr(result.pix_copia_cola) + '" style="margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--orange,#E8701A);background:var(--orange,#E8701A);color:#fff;font-size:12px;font-weight:600;cursor:pointer">Copiar</button>' +
                       '</div>'
                     : '');
         } else if (paymentMethod === 'boleto' && result.boleto_url) {
