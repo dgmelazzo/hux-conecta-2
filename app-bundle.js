@@ -2390,6 +2390,18 @@ function renderizarMatrizPermissoes() {
     </tr>`;
   }).join('');
 }
+
+// Sidebar collapse (desktop)
+function collapseSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('collapsed');
+  localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '');
+}
+// Restaurar estado collapsed
+if (localStorage.getItem('sb_collapsed') === '1' && window.innerWidth > 768) {
+  document.getElementById('sidebar')?.classList.add('collapsed');
+}
+
 function toggleSidebar() {
   const sidebar  = document.getElementById('sidebar');
   const overlay  = document.getElementById('sidebar-overlay');
