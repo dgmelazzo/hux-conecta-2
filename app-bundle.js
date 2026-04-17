@@ -1376,6 +1376,13 @@ function showPerfilRestrito(role) {
     }
   });
 }
+function showPerfilEmpresa() {
+  // Empresa: ocultar abas admin-only, manter Catalogo/Carteirinha/Cobrancas/Empresa/Metricas
+  ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
 function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
   // Gestor v apenas: Comunicados, Produtos, Parceiros, Mtricas
