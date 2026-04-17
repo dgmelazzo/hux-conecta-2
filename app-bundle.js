@@ -1852,8 +1852,7 @@ function renderAssociado(d) {
   const nomeExibir = d.razaoSocial === 'Administrador' 
     ? (getSession()?.nome || d.razaoSocial)
     : (d.nomeFantasia !== '—' ? d.nomeFantasia : d.razaoSocial);
-  document.getElementById('dash-greeting').textContent =
-    `Olá, ${nomeExibir.split(' ')[0]}! 👋`;
+  // dash-greeting oculto
   // Personalizar stats por perfil
   const _role = getSession()?.role || getSession()?.tipo || '';
   if (_role === 'colaborador') {
@@ -2857,8 +2856,10 @@ function renderDashboardPerfil(d) {
   if (!heroEl) return;
 
   if (isAdmin) {
-    heroEl.innerHTML = '';
-    return; // Admin usa o dashboard padrao
+    heroEl.innerHTML = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
+      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Painel de Gest\u00e3o</div>' +
+      '<div style="font-size:24px;font-weight:800">Bem-vindo, ' + nome + '</div>' +
+    '</div>';
   }
 
   let html = '';
@@ -2900,7 +2901,7 @@ function renderDashboardPerfil(d) {
   heroEl.innerHTML = html;
 
   // Ocultar greeting e stats genéricos e carousel para perfis nao-admin
-  if (!isAdmin) {
+  { // Ocultar greeting e stats para todos
     document.querySelectorAll(.stats-grid-dash, .dash-card, .dash-top, .carousel-section).forEach(el => {
       if (el) el.style.display = none;
     });
