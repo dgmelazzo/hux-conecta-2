@@ -2296,6 +2296,7 @@ const SECTION_SUBTITLES = {
 };
 
 function showSection(id) {
+  refreshPermissoes();
   currentSection = id;
   sessionStorage.setItem('acic_last_section', id);
   // Fechar painel de comunicados se estiver aberto
@@ -3126,6 +3127,29 @@ function _renderCobrancasSPA(list) {
   });
 
   container.innerHTML = html;
+}
+
+
+let _lastPermRefresh = 0;
+async function refreshPermissoes() {
+  if (Date.now() - _lastPermRefresh < 300000) return;
+  _lastPermRefresh = Date.now();
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res = await fetch(_baseUrl + '/auth.php?action=permissoes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const json = await res.json();
+    if (json.success && json.data && json.data.modulos) {
+      const sess = getSession() || {};
+      sess.modulos = json.data.modulos;
+      setSession(sess);
+      aplicarModulosSidebar(json.data.modulos);
+    }
+  } catch(e) {}
 }
 
 function aplicarModulosSidebar(modulos) {
