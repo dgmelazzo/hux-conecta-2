@@ -1414,7 +1414,6 @@ function showPortal() {
   const _sessRole = getSession();
   window._userRole = _sessRole?.role || _sessRole?.tipo || '';
   if (_userRole === 'gestor') showGestorMenu();
-  if (_userRole === 'associado_empresa') showPerfilEmpresa();
   if (_userRole === 'colaborador' || _userRole === 'dependente') showPerfilRestrito(_userRole);
   _adminChecked = false;
   // Admin items: mostrar imediatamente se session tem is_admin
@@ -1427,6 +1426,8 @@ function showPortal() {
       document.getElementById(id)?.classList.add('hidden');
     });
   }
+  // Empresa: mostrar metricas e ajustar menu APOS o bloco admin
+  if (_userRole === 'associado_empresa') showPerfilEmpresa();
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
   const tag = document.getElementById('topbar-tag');
