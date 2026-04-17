@@ -841,9 +841,13 @@ function abrirFormProduto(p = null) {
       theme: 'snow',
       placeholder: 'Detalhes do produto/serviço...',
       modules: { toolbar: [
-        ['bold','italic','underline'],
+        [{'header':[2,3,false]}],
+        ['bold','italic','underline','strike'],
+        [{'color':[]},{'background':[]}],
         [{'list':'ordered'},{'list':'bullet'}],
-        ['link'],['clean']
+        [{'align':[]}],
+        ['link','image','blockquote','code-block'],
+        ['clean']
       ]}
     });
     window._quillEditor.on('text-change', () => {
