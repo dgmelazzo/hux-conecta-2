@@ -2916,13 +2916,10 @@ function renderDashboardPerfil(d) {
 
   heroEl.innerHTML = html;
 
-  // Mostrar boxes para admin e empresa (ocultos para colaborador/dependente)
-  const _showBoxes = isAdmin || role === 'associado_empresa';
-  if (_showBoxes) {
-    document.querySelectorAll('.dash-admin-only').forEach(el => {
-      if (el) el.style.display = '';
-    });
-  }
+  // Mostrar boxes para todos os perfis
+  document.querySelectorAll('.dash-admin-only').forEach(el => {
+    if (el) el.style.display = '';
+  });
   // Ocultar greeting para todos (hero box ja tem Bem-vindo)
   const greet = document.getElementById('dash-greeting');
   if (greet && greet.closest('.section-header')) greet.closest('.section-header').style.display = 'none';
