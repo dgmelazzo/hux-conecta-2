@@ -1380,14 +1380,15 @@ function showPerfilRestrito(role) {
   });
 }
 function showPerfilEmpresa() {
-  // Empresa: Dashboard, Catalogo, Carteirinha, Cobrancas, Empresa, Metricas
+  // Empresa: Dashboard, Catalogo, Minha Empresa, Minhas Cobrancas, Carteirinha, Metricas
+  // Ocultar abas admin-only
   ['nav-comunicados','nav-admin','nav-parceiros','nav-categorias'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  // Mostrar Metricas (oculto por default)
-  const m = document.getElementById('nav-metricas');
-  if (m) { m.classList.remove('hidden'); m.style.display = ''; }
+  // Mostrar Metricas (hidden por default)
+  const navMet = document.getElementById('nav-metricas');
+  if (navMet) { navMet.classList.remove('hidden'); navMet.style.display = ''; }
 }
 function showColaboradorMenu() { showPerfilRestrito('colaborador'); }
 function showGestorMenu() {
