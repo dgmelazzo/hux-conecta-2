@@ -2302,13 +2302,13 @@ function renderizarMatrizPermissoes() {
     { nome: 'Dashboard',                superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Catálogo',            superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Carteirinha',              superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: false },
+    { nome: 'Cobranças',           superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
+    { nome: 'Minha Empresa',            superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
+    { nome: 'Métricas',            superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Comunicados (receber)',     superadmin: true,  gestor: true,  empresa: true,  colaborador: true,  dependente: true  },
     { nome: 'Comunicados (enviar)',      superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
     { nome: 'Gerenciar Produtos',        superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
     { nome: 'Categorias',               superadmin: true,  gestor: false, empresa: false, colaborador: false, dependente: false },
-    { nome: 'Cobranças',           superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
-    { nome: 'Minha Empresa',            superadmin: true,  gestor: true,  empresa: true,  colaborador: false, dependente: false },
-    { nome: 'Métricas',            superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
     { nome: 'Parceiros',                superadmin: true,  gestor: true,  empresa: false, colaborador: false, dependente: false },
   ];
 
