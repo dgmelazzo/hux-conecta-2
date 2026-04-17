@@ -17,6 +17,13 @@ function validateCrmToken(?string $token = null): ?array {
     }
     if (!$token) return null;
 
+    // Cache: evita chamar CRM em toda request (5min TTL)
+    $cacheKey = '/tmp/crm_token_' . md5($token);
+    if (file_exists($cacheKey) && (time() - filemtime($cacheKey)) < 300) {
+        $cached = json_decode(file_get_contents($cacheKey), true);
+        if ($cached) return $cached;
+    }
+
     $ch = curl_init(CRM_API_URL . '/auth/conecta-validate');
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -37,14 +44,20 @@ function validateCrmToken(?string $token = null): ?array {
 
     if (empty($inner['valid']) && empty($inner['nome'])) return null;
 
-    return [
+    $result = [
         'nome' => $inner['nome'] ?? '',
         'role' => $inner['role'] ?? '',
         'is_admin' => (bool)($inner['is_admin'] ?? false),
         'is_superadmin' => (bool)($inner['is_superadmin'] ?? false),
         'documento' => $inner['documento'] ?? '',
+        'plano' => $inner['plano'] ?? '',
         'token' => $inner['token'] ?? $token,
     ];
+
+    // Salvar cache
+    @file_put_contents($cacheKey, json_encode($result));
+
+    return $result;
 }
 
 function requireCrmAdmin(): array {
