@@ -2928,748 +2928,13 @@ function renderDashboardPerfil(d) {
   let html = '';
 
   if (role === 'associado_empresa') {
-    // === EMPRESA ===
-    const statusColor = d.status === 'ativo' ? '#22c55e' : (d.status === 'inadimplente' ? '#ef4444' : '#f59e0b');
-    const statusTxt = d.status === 'ativo' ? 'Ativo' : (d.status === 'inadimplente' ? 'Inadimplente' : d.status || 'Ativo');
-
-    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
-      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
-      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px">' +
-        '<div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.2)">' +
-          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></span>' + statusTxt +
-        '</div>' +
-        '<div style="font-size:13px;opacity:.8">' + (d.plano || session.plano || '') + '</div>' +
-        (validade ? '<div style="font-size:13px;opacity:.8">Vence: ' + validade + '</div>' : '') +
-      '</div>' +
-    '</div>';
-
-  } else if (role === 'colaborador') {
-    // === COLABORADOR ===
-    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
-      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
-      '<div style="font-size:13px;opacity:.8">Colaborador &mdash; ' + (d.razaoSocial || 'sua empresa') + '</div>' +
-    '</div>';
-
-  } else if (role === 'dependente') {
-    // === DEPENDENTE ===
-    html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:28px 24px;color:#fff;margin-bottom:20px">' +
-      '<div style="font-size:13px;opacity:.7;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Portal do Associado</div>' +
-      '<div style="font-size:24px;font-weight:800;margin-bottom:8px">Bem-vindo, ' + nome + '</div>' +
-      '<div style="font-size:13px;opacity:.8">Dependente &mdash; ' + (d.razaoSocial || 'sua empresa') + '</div>' +
-    '</div>';
-  }
-
-  heroEl.innerHTML = html;
-
-  // Mostrar boxes para todos os perfis
-  document.querySelectorAll('.dash-admin-only').forEach(el => {
-    if (el) el.style.display = '';
-  });
-  // Ocultar greeting para todos (hero box ja tem Bem-vindo)
-  const greet = document.getElementById('dash-greeting');
-  if (greet && greet.closest('.section-header')) greet.closest('.section-header').style.display = 'none';
-}
-
-
-// ============================================================
-// SIDEBAR DINAMICO — baseado em permissoes do CRM
-// ============================================================
-function aplicarModulosSidebar(modulos) {
-  const map = {
-    'dashboard':   'button[onclick*="dashboard"]',
-    'catalogo':    'button[onclick*="catalogo"]',
-    'carteirinha': 'button[onclick*="carteirinha"]',
-    'cobrancas':   'button[onclick*="cobrancas"]',
-    'empresa':     'button[onclick*="empresa"]',
-    'metricas':    '#nav-metricas',
-    'comunicados': '#nav-comunicados',
-    'produtos':    '#nav-admin',
-    'categorias':  '#nav-categorias',
-    'parceiros':   '#nav-parceiros',
-  };
-
-  Object.entries(map).forEach(([mod, sel]) => {
-    const el = document.querySelector(sel);
-    if (!el) return;
-    if (modulos.includes(mod)) {
-      el.className = el.className.replace(/\bhidden\b/g, '').trim();
-      el.setAttribute('style', 'display:flex !important');
-    } else {
-      el.setAttribute('style', 'display:none !important');
-    }
-  });
-}
-// ============================================================
-// CARTEIRINHA — SPA (sem page reload)
-// ============================================================
-async function loadCarteirinha() {
-  const container = document.getElementById('carteirinha-content');
-  if (!container) return;
-  if (container.dataset.loaded) return;
-
-  const session = getSession() || {};
-  const nome = session.nome || 'Associado';
-  const doc = session.documento || session.cpf_cnpj || session.cpf || '';
-  const isAdmin = session.is_admin || false;
-  const status = isAdmin ? 'ativo' : (session.status || 'ativo');
-  const plano = isAdmin ? 'Administrador' : (session.plano || session.plano_nome || 'Associado');
-  const validade = isAdmin ? null : (session.data_vencimento || null);
-  const desde = isAdmin ? 'ACIC-DF' : (session.data_associacao || '');
-
-  const isAtivo = status === 'ativo';
-  const badgeSt = isAtivo ? 'background:#dcfce7;color:#166534' : 'background:#fee2e2;color:#991b1b';
-  const badgeTxt = isAtivo ? 'ASSOCIADO ATIVO' : status.toUpperCase();
-
-  const qrData = JSON.stringify({ doc, nome, plano, validade, src:'acic-conecta' });
-
-  let qrSrc = '';
-  try {
-    if (typeof QRCode !== 'undefined') {
-      const qd = document.createElement('div');
-      new QRCode(qd, { text: qrData, width: 200, height: 200, colorDark: '#1B2B6B', colorLight: '#ffffff' });
-      await new Promise(r => setTimeout(r, 150));
-      const cv = qd.querySelector('canvas');
-      if (cv) qrSrc = cv.toDataURL('image/png');
-      else { const im = qd.querySelector('img'); if (im) qrSrc = im.src; }
-    }
-  } catch(e) {}
-
-  container.innerHTML =
-    '<div id="carteirinha-card" style="background:linear-gradient(135deg,#1B2B6B 0%,#1a3a7a 50%,#2d4a9a 100%);border-radius:20px;padding:28px 24px 24px;color:#fff;max-width:440px;margin:0 auto 24px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,43,74,.3)">' +
-      '<div style="position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:rgba(232,112,26,.15);border-radius:50%"></div>' +
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;position:relative;z-index:1">' +
-        '<img src="/conecta/uploads/logo-dark-320.png?v=2" alt="ACIC" style="height:32px">' +
-        '<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:.8">Carteira Digital do Associado</div>' +
-      '</div>' +
-      '<div style="font-size:22px;font-weight:800;margin-bottom:4px;position:relative;z-index:1">' + nome + '</div>' +
-      '<div style="font-size:13px;opacity:.75;margin-bottom:16px;position:relative;z-index:1">' + doc + '</div>' +
-      '<div style="display:inline-block;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;' + badgeSt + ';position:relative;z-index:1">' + badgeTxt + '</div>' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;position:relative;z-index:1">' +
-        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Plano</div><div style="font-size:14px;font-weight:600">' + plano + '</div></div>' +
-        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Associado Desde</div><div style="font-size:14px;font-weight:600">' + (desde || '\u2014') + '</div></div>' +
-        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Validade</div><div style="font-size:14px;font-weight:600">' + (validade || 'Administrador') + '</div></div>' +
-        '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;opacity:.6;margin-bottom:2px">Status</div><div style="font-size:14px;font-weight:600">' + badgeTxt + '</div></div>' +
-      '</div>' +
-      '<div style="text-align:center;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);position:relative;z-index:1">' +
-        '<div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;opacity:.7;margin-bottom:10px;font-weight:600">QR Code de Valida\u00e7\u00e3o</div>' +
-        (qrSrc ? '<img src="' + qrSrc + '" width="200" height="200" style="display:block;margin:0 auto;border-radius:8px;background:#fff;padding:8px">' : '<div id="qr-spa"></div>') +
-      '</div>' +
-    '</div>' +
-    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
-      '<button onclick="downloadCarteirinha()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:#E8701A;color:#fff">Baixar</button>' +
-      '<button onclick="shareCarteirinha()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text)">Compartilhar</button>' +
-    '</div>';
-
-  container.dataset.loaded = '1';
-  if (!qrSrc && typeof QRCode !== 'undefined') {
-    const el = document.getElementById('qr-spa');
-    if (el) new QRCode(el, { text: qrData, width: 200, height: 200, colorDark: '#1B2B6B', colorLight: '#ffffff' });
-  }
-}
-
-function downloadCarteirinha() {
-  const el = document.getElementById('carteirinha-card');
-  if (!el || typeof html2canvas === 'undefined') return;
-  html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null }).then(c => {
-    const a = document.createElement('a');
-    a.download = 'carteirinha-acic.png';
-    a.href = c.toDataURL('image/png');
-    a.click();
-  });
-}
-
-function shareCarteirinha() {
-  const el = document.getElementById('carteirinha-card');
-  if (!el) return;
-  if (navigator.share && typeof html2canvas !== 'undefined') {
-    html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null }).then(c => {
-      c.toBlob(blob => {
-        const file = new File([blob], 'carteirinha-acic.png', { type: 'image/png' });
-        navigator.share({ title: 'Carteirinha ACIC-DF', files: [file] }).catch(() => {});
-      });
-    });
-  } else downloadCarteirinha();
-}
-
-// ============================================================
-// COBRANCAS — SPA (sem page reload)
-// ============================================================
-async function loadCobrancas() {
-  const container = document.getElementById('cobrancas-content');
-  if (!container) return;
-
-  const token = getToken();
-  if (!token) {
-    container.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--text3)"><h3 style="color:var(--text)">Sess\u00e3o expirada</h3><p>Fa\u00e7a login novamente.</p></div>';
-    return;
-  }
-
-  container.innerHTML = '<div style="text-align:center;padding:40px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto"></div></div>';
-
-  try {
-    const res = await fetch(AUTH_URL + '?action=cobrancas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token })
-    });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.message || 'Erro');
-    _renderCobrancasSPA(json.data.cobrancas || []);
-  } catch(e) {
-    container.innerHTML =
-      '<div style="text-align:center;padding:48px 24px;color:var(--text3)">' +
-      '<h3 style="color:var(--text)">Erro ao carregar</h3><p>' + (e.message || 'Erro') + '</p>' +
-      '<button onclick="loadCobrancas()" style="margin-top:12px;padding:8px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer">Tentar novamente</button></div>';
-  }
-}
-
-function _renderCobrancasSPA(list) {
-  const container = document.getElementById('cobrancas-content');
-  const money = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
-  const fmtD = d => { if(!d)return'\u2014'; const p=d.split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d; };
-  const cls = c => {
-    if(c.status==='pago'||c.status==='paid')return'paid';
-    if(!c.data_vencimento)return'pending';
-    const t=new Date();t.setHours(0,0,0,0);
-    return new Date(c.data_vencimento+'T00:00:00')<t?'overdue':'pending';
-  };
-  const badge = c => c==='paid'?'Pago':c==='overdue'?'Vencido':'Pendente';
-  const colors = {paid:'#22c55e',pending:'#E8701A',overdue:'#ef4444'};
-
-  if (!list.length) {
-    container.innerHTML = '<div style="text-align:center;padding:48px 24px;color:var(--text3)"><h3 style="color:var(--text)">Nenhuma cobran\u00e7a</h3><p>Suas cobran\u00e7as aparecer\u00e3o aqui.</p></div>';
-    return;
-  }
-
-  const pagas = list.filter(c => cls(c)==='paid').length;
-  const venc = list.filter(c => cls(c)==='overdue').length;
-  const total = list.reduce((s,c) => s+Number(c.valor||0), 0);
-
-  let html = '<div style="background:linear-gradient(135deg,#1B2B6B 0%,#2d3f8a 100%);border-radius:16px;padding:24px 22px;color:#fff;margin-bottom:22px">' +
-    '<div style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;opacity:.85;margin-bottom:4px">Resumo Financeiro</div>' +
-    '<div style="font-size:28px;font-weight:800">' + money(total) + '</div>' +
-    '<div style="font-size:12px;opacity:.7;margin-top:2px">Total em cobran\u00e7as</div>' +
-    '<div style="display:flex;gap:18px;margin-top:16px"><div style="text-align:center"><div style="font-size:20px;font-weight:700">' + pagas + '</div><div style="font-size:11px;opacity:.7">Pagas</div></div>' +
-    '<div style="text-align:center"><div style="font-size:20px;font-weight:700">' + venc + '</div><div style="font-size:11px;opacity:.7">Vencidas</div></div></div></div>';
-
-  list.forEach(c => {
-    const st = cls(c);
-    const canPay = (st==='pending'||st==='overdue') && c.gateway_url;
-    const desc = c.descricao || c.plano_nome || 'Cobran\u00e7a ACIC-DF';
-    html += '<div style="background:var(--surface);border-radius:14px;padding:18px 20px;margin-bottom:12px;border-left:4px solid '+colors[st]+'">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">' +
-        '<div style="flex:1"><div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:4px">' + desc + '</div>' +
-        '<div style="font-size:12px;color:var(--text3)">Venc: ' + fmtD(c.data_vencimento) + ' <span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:6px;' +
-          (st==='paid'?'background:#dcfce7;color:#166534':st==='overdue'?'background:#fee2e2;color:#991b1b':'background:#fef3c7;color:#92400e') + '">' + badge(st) + '</span></div></div>' +
-        '<div style="font-size:18px;font-weight:700;color:var(--text)">' + money(c.valor) + '</div>' +
-      '</div>' +
-      (canPay ? '<div style="margin-top:12px"><a href="' + c.gateway_url + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;color:#fff;background:' + (st==='overdue'?'#ef4444':'#E8701A') + '">Pagar</a></div>' : '') +
-    '</div>';
-  });
-
-  container.innerHTML = html;
-}
-
-// EMOJI PICKER — Nativo (sem dependencias)
-// ============================================================
-const EMOJI_DATA = [
-  // Negocios & Financeiro
-  {e:'\u{1F4BC}',n:'maleta negocio'},     {e:'\u{1F4B0}',n:'dinheiro saco'},      {e:'\u{1F4B3}',n:'cartao credito'},
-  {e:'\u{1F4C8}',n:'grafico crescimento'}, {e:'\u{1F4C9}',n:'grafico queda'},      {e:'\u{1F4CA}',n:'grafico barras'},
-  {e:'\u{1F4B2}',n:'cifrao dolar'},        {e:'\u{1F3E6}',n:'banco predio'},       {e:'\u{1F3E2}',n:'escritorio predio'},
-  {e:'\u{1F4B5}',n:'nota dinheiro dolar'}, {e:'\u{1F4B8}',n:'dinheiro voando'},    {e:'\u{1F9FE}',n:'recibo nota'},
-  // Saude
-  {e:'\u{1FA7A}',n:'estetoscopio medico'}, {e:'\u{1F3E5}',n:'hospital predio'},    {e:'\u{1F48A}',n:'pilula remedio farmacia'},
-  {e:'\u{1F9AC}',n:'pulmao saude'},        {e:'\u{1F9B7}',n:'dente odonto'},       {e:'\u{1F489}',n:'seringa vacina'},
-  {e:'\u{2764}\u{FE0F}',n:'coracao vida'}, {e:'\u{1F9D1}\u{200D}\u{2695}\u{FE0F}',n:'medico profissional'},
-  {e:'\u{1FA79}',n:'curativo band aid'},   {e:'\u{2695}\u{FE0F}',n:'caduceu medicina'},
-  // Tecnologia
-  {e:'\u{1F4BB}',n:'notebook computador laptop'}, {e:'\u{1F5A5}\u{FE0F}',n:'desktop computador tela'},
-  {e:'\u{1F4F1}',n:'celular smartphone'},  {e:'\u{2699}\u{FE0F}',n:'engrenagem config'},
-  {e:'\u{1F527}',n:'chave ferramenta'},    {e:'\u{1F529}',n:'parafuso ferramenta'},
-  {e:'\u{1F50C}',n:'tomada eletrica'},     {e:'\u{1F4E1}',n:'antena satelite'},
-  {e:'\u{1F310}',n:'globo internet web'},  {e:'\u{1F916}',n:'robo automacao ia'},
-  {e:'\u{1F512}',n:'cadeado seguranca'},   {e:'\u{1F513}',n:'cadeado aberto'},
-  // Juridico & Seguro
-  {e:'\u{2696}\u{FE0F}',n:'balanca justica juridico'}, {e:'\u{1F4DC}',n:'pergaminho documento certificado'},
-  {e:'\u{1F6E1}\u{FE0F}',n:'escudo protecao seguro'},  {e:'\u{1F4DD}',n:'memo nota anotacao'},
-  {e:'\u{1F4CB}',n:'prancheta lista'},     {e:'\u{1F4D1}',n:'marcador pagina'},
-  {e:'\u{1F4C4}',n:'documento pagina'},    {e:'\u{1F4C3}',n:'documento curva'},
-  // Educacao
-  {e:'\u{1F393}',n:'chapeu formatura educacao'}, {e:'\u{1F4DA}',n:'livros estudo'},
-  {e:'\u{1F4D6}',n:'livro aberto leitura'},     {e:'\u{270F}\u{FE0F}',n:'lapis escrever'},
-  {e:'\u{1F3EB}',n:'escola predio'},        {e:'\u{1F9D1}\u{200D}\u{1F3EB}',n:'professor'},
-  // Viagem & Transporte
-  {e:'\u{2708}\u{FE0F}',n:'aviao viagem'},  {e:'\u{1F30D}',n:'globo terra mundo'},
-  {e:'\u{1F697}',n:'carro automovel'},       {e:'\u{1F3D6}\u{FE0F}',n:'praia ferias'},
-  {e:'\u{1F6C2}',n:'alfandega passaporte'},  {e:'\u{1F9F3}',n:'mala bagagem viagem'},
-  // Comunicacao
-  {e:'\u{1F4E7}',n:'email carta envelope'},  {e:'\u{1F4DE}',n:'telefone ligacao'},
-  {e:'\u{1F4AC}',n:'balao conversa chat'},   {e:'\u{1F4E2}',n:'megafone anuncio'},
-  {e:'\u{1F4E3}',n:'corneta comunicado'},    {e:'\u{1F514}',n:'sino notificacao'},
-  // Pessoas & Trabalho
-  {e:'\u{1F465}',n:'pessoas grupo equipe'},  {e:'\u{1F464}',n:'pessoa usuario'},
-  {e:'\u{1F91D}',n:'aperto mao parceria'},   {e:'\u{1F3AF}',n:'alvo meta objetivo'},
-  {e:'\u{1F4AA}',n:'forca musculo'},         {e:'\u{1F3C6}',n:'trofeu premio'},
-  // Alimentacao
-  {e:'\u{1F37D}\u{FE0F}',n:'prato talheres restaurante'}, {e:'\u{2615}',n:'cafe xicara'},
-  {e:'\u{1F6D2}',n:'carrinho compras'},      {e:'\u{1F6D2}',n:'mercado compras'},
-  // Casa & Construcao
-  {e:'\u{1F3E0}',n:'casa moradia'},          {e:'\u{1F3D7}\u{FE0F}',n:'construcao obra'},
-  {e:'\u{1F6AA}',n:'porta entrada'},         {e:'\u{1F3E1}',n:'casa jardim'},
-  // Abstrato & Simbolos
-  {e:'\u{2B50}',n:'estrela destaque favorito'}, {e:'\u{1F525}',n:'fogo popular trending'},
-  {e:'\u{2705}',n:'check ok confirmar'},     {e:'\u{274C}',n:'x cancelar erro'},
-  {e:'\u{26A0}\u{FE0F}',n:'alerta atencao'}, {e:'\u{2139}\u{FE0F}',n:'info informacao'},
-  {e:'\u{1F4A1}',n:'lampada ideia'},         {e:'\u{1F680}',n:'foguete lancamento'},
-  {e:'\u{1F4CC}',n:'pin fixar mapa'},        {e:'\u{1F4CD}',n:'pin local'},
-  {e:'\u{1F4CE}',n:'clips anexo'},           {e:'\u{1F4C5}',n:'calendario data'},
-  {e:'\u{1F4C6}',n:'calendario dia'},        {e:'\u{23F0}',n:'relogio alarme'},
-  {e:'\u{1F50D}',n:'lupa busca pesquisa'},   {e:'\u{1F50E}',n:'lupa direita busca'},
-  {e:'\u{1F4F0}',n:'jornal noticia imprensa'},{e:'\u{1F5C3}\u{FE0F}',n:'arquivo pasta caixa'},
-  {e:'\u{1F4C1}',n:'pasta arquivo folder'},  {e:'\u{1F4C2}',n:'pasta aberta'},
-  {e:'\u{1F3F7}\u{FE0F}',n:'etiqueta tag label'},{e:'\u{1F4E6}',n:'caixa pacote entrega'},
-  {e:'\u{1F504}',n:'setas ciclo renovar'},   {e:'\u{1F503}',n:'setas recarregar'},
-  // Natureza
-  {e:'\u{1F33F}',n:'folha natureza eco'},    {e:'\u{1F333}',n:'arvore natureza'},
-  {e:'\u{2600}\u{FE0F}',n:'sol energia solar'},{e:'\u{1F30E}',n:'terra americas globo'},
-  // Mais icones uteis
-  {e:'\u{1F4F7}',n:'camera foto'},           {e:'\u{1F3A8}',n:'paleta arte design'},
-  {e:'\u{1F3AC}',n:'claquete video cinema'}, {e:'\u{1F3B5}',n:'nota musica'},
-  {e:'\u{1F6BF}',n:'chuveiro banho'},        {e:'\u{1F48E}',n:'diamante premium'},
-  {e:'\u{1F451}',n:'coroa rei premium vip'}, {e:'\u{1F381}',n:'presente regalo'},
-  {e:'\u{1F389}',n:'festa confete celebrar'},{e:'\u{1F38A}',n:'confete bola festa'},
-  {e:'\u{1F4AB}',n:'tontura estrelas wow'},  {e:'\u{1F31F}',n:'estrela brilhante'},
-  {e:'\u{1F4AF}',n:'cem pontos perfeito'},   {e:'\u{1F44D}',n:'joinha like positivo'},
-];
-
-let _emojiPickerTarget = null;
-let _emojiPickerOpen = false;
-
-function openEmojiPicker(inputId) {
-  _emojiPickerTarget = document.getElementById(inputId);
-  let picker = document.getElementById('emoji-picker-panel');
-  if (!picker) {
-    picker = document.createElement('div');
-    picker.id = 'emoji-picker-panel';
-    picker.innerHTML =
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
-        '<input type="text" id="emoji-search" placeholder="Buscar... (ex: saude, dinheiro)" ' +
-          'style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px;outline:none" ' +
-          'oninput="filterEmojis(this.value)">' +
-        '<button onclick="closeEmojiPicker()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);padding:4px">&times;</button>' +
-      '</div>' +
-      '<div id="emoji-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:260px;overflow-y:auto;padding:4px"></div>';
-    Object.assign(picker.style, {
-      position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)',
-      zIndex:'9999', background:'var(--surface)', border:'1px solid var(--border)',
-      borderRadius:'14px', padding:'16px', width:'340px',
-      boxShadow:'0 12px 40px rgba(0,0,0,.25)'
-    });
-    document.body.appendChild(picker);
-  }
-  picker.style.display = 'block';
-  _emojiPickerOpen = true;
-  document.getElementById('emoji-search').value = '';
-  renderEmojiGrid(EMOJI_DATA);
-  setTimeout(function(){ document.getElementById('emoji-search').focus(); }, 50);
-}
-
-function closeEmojiPicker() {
-  const p = document.getElementById('emoji-picker-panel');
-  if (p) p.style.display = 'none';
-  _emojiPickerOpen = false;
-}
-
-function renderEmojiGrid(list) {
-  const grid = document.getElementById('emoji-grid');
-  if (!grid) return;
-  if (!list.length) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size:13px">Nenhum emoji encontrado</div>';
-    return;
-  }
-  grid.innerHTML = list.map(function(item) {
-    return '<button onclick="selectEmoji(\'' + item.e + '\')" title="' + item.n + '" ' +
-      'style="font-size:22px;padding:6px;border:none;background:none;cursor:pointer;border-radius:8px;transition:background .15s;line-height:1" ' +
-      'onmouseenter="this.style.background=\'var(--accent-soft)\'" onmouseleave="this.style.background=\'none\'">' +
-      item.e + '</button>';
-  }).join('');
-}
-
-function filterEmojis(q) {
-  if (!q) { renderEmojiGrid(EMOJI_DATA); return; }
-  q = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const filtered = EMOJI_DATA.filter(function(item) {
-    var name = item.n.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return name.indexOf(q) !== -1;
-  });
-  renderEmojiGrid(filtered);
-}
-
-function selectEmoji(emoji) {
-  if (_emojiPickerTarget) {
-    _emojiPickerTarget.value = emoji;
-    _emojiPickerTarget.dispatchEvent(new Event('input'));
-  }
-  closeEmojiPicker();
-}
-
-// Fechar picker ao clicar fora
-document.addEventListener('click', function(e) {
-  if (!_emojiPickerOpen) return;
-  const panel = document.getElementById('emoji-picker-panel');
-  if (panel && !panel.contains(e.target) && !e.target.closest('[onclick*="openEmojiPicker"]')) {
-    closeEmojiPicker();
-  }
-});
-
-// ============================================================
-// CATEGORIAS — CRUD (superadmin)
-// ============================================================
-let _categoriasAdminData = [];
-
-async function loadAdminCategorias() {
-  try {
-    _categoriasAdminData = await prodApi('categorias_admin', {}, 'GET');
-    renderCategoriasAdmin();
-  } catch(e) {
-    const el = document.getElementById('categorias-content');
-    if (el) el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Erro ao carregar categorias.</div>';
-  }
-}
-
-function renderCategoriasAdmin() {
-  const container = document.getElementById('categorias-content');
-  if (!container) return;
-
-  if (!_categoriasAdminData.length) {
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Nenhuma categoria cadastrada.</div>';
-    return;
-  }
-
-  let html = '<div style="display:grid;gap:8px">';
-  _categoriasAdminData.forEach(function(c) {
-    const ativo = c.ativo == 1;
-    const badge = ativo
-      ? '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">Ativa</span>'
-      : '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">Inativa</span>';
-    const nome = (c.nome || '').replace(/</g, '&lt;');
-    const slug = (c.slug || '').replace(/</g, '&lt;');
-    const icone = c.icone || '\u{1F4C1}';
-    const total = c.total_produtos || 0;
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;transition:var(--trans)">' +
-      '<div style="display:flex;align-items:center;gap:12px">' +
-        '<span style="font-size:20px">' + icone + '</span>' +
-        '<div>' +
-          '<div style="font-weight:600;font-size:14px;color:var(--text)">' + nome + '</div>' +
-          '<div style="font-size:11px;color:var(--text3)">' + total + ' produtos &middot; ' + slug + '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px">' +
-        badge +
-        '<button onclick="editarCategoria(' + c.id + ')" class="btn-table-action">Editar</button>' +
-        (ativo
-          ? '<button onclick="arquivarCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--text3)">Arquivar</button>' + (total == 0 ? '<button onclick="excluirCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--danger)">Excluir</button>' : '')
-          : '<button onclick="reativarCategoria(' + c.id + ')" class="btn-table-action" style="color:var(--accent)">Reativar</button>') +
-      '</div>' +
-    '</div>';
-  });
-  html += '</div>';
-  container.innerHTML = html;
-}
-
-function abrirFormCategoria(cat) {
-  const isEdit = !!cat;
-  const modal = document.getElementById('categoria-modal');
-  if (!modal) return;
-  document.getElementById('cat-id').value = isEdit ? cat.id : '';
-  document.getElementById('cat-nome').value = isEdit ? cat.nome : '';
-  document.getElementById('cat-icone').value = isEdit ? (cat.icone || '') : '';
-  document.getElementById('cat-ativo').checked = isEdit ? cat.ativo == 1 : true;
-  document.getElementById('categoria-modal-title').textContent = isEdit ? 'Editar Categoria' : 'Nova Categoria';
-  modal.classList.remove('hidden');
-}
-
-function fecharFormCategoria() {
-  document.getElementById('categoria-modal')?.classList.add('hidden');
-}
-
-async function salvarCategoria(e) {
-  if (e) e.preventDefault();
-  const id = document.getElementById('cat-id').value;
-  const nome = document.getElementById('cat-nome').value.trim();
-  const icone = document.getElementById('cat-icone').value.trim();
-  const ativo = document.getElementById('cat-ativo').checked ? 1 : 0;
-  if (!nome) { mostrarToast('\u26a0\ufe0f Aten\u00e7\u00e3o', 'Nome \u00e9 obrigat\u00f3rio.', 'aviso'); return; }
-  try {
-    if (id) {
-      await prodApi('categoria_editar', { id: parseInt(id), nome, icone, ativo });
-      mostrarToast('\u2705 Sucesso', 'Categoria atualizada.', 'sucesso');
-    } else {
-      await prodApi('categoria_criar', { nome, icone });
-      mostrarToast('\u2705 Sucesso', 'Categoria criada.', 'sucesso');
-    }
-    fecharFormCategoria();
-    categoriasData = [];
-    loadAdminCategorias();
-  } catch(err) {
-    mostrarToast('Erro', err.message || 'Falha ao salvar.', 'alerta');
-  }
-}
-
-function editarCategoria(id) {
-  const cat = _categoriasAdminData.find(c => c.id == id);
-  if (cat) abrirFormCategoria(cat);
-}
-
-async function arquivarCategoria(id) {
-  const cat = _categoriasAdminData.find(c => c.id == id);
-  const nome = cat ? cat.nome : '';
-  if (!confirm('Arquivar a categoria "' + nome + '"? Produtos n\u00e3o ser\u00e3o afetados.')) return;
-  try {
-    await prodApi('categoria_excluir', { id });
-    mostrarToast('\u2705', 'Categoria arquivada.', 'sucesso');
-    categoriasData = [];
-    loadAdminCategorias();
-  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
-}
-
-async function excluirCategoria(id) {
-  const cat = _categoriasAdminData.find(c => c.id == id);
-  const nome = cat ? cat.nome : '';
-  if (!confirm('EXCLUIR DEFINITIVAMENTE a categoria "' + nome + '"?\n\nEssa a\u00e7\u00e3o n\u00e3o pode ser desfeita.')) return;
-  try {
-    await prodApi('categoria_excluir', { id, definitivo: true });
-    mostrarToast('\u2705', 'Categoria exclu\u00edda.', 'sucesso');
-    categoriasData = [];
-    loadAdminCategorias();
-  } catch(e) { mostrarToast('Erro', e.message || 'Falha ao excluir.', 'alerta'); }
-}
-
-async function reativarCategoria(id) {
-  try {
-    await prodApi('categoria_editar', { id, ativo: 1 });
-    mostrarToast('\u2705', 'Categoria reativada.', 'sucesso');
-    categoriasData = [];
-    loadAdminCategorias();
-  } catch(e) { mostrarToast('Erro', e.message, 'alerta'); }
-}
-
-// ── showSection: registra admin sections ─────────────────
-const _adminSections = ['admin-metricas'];
-
-
-
-
-// ════════════════════════════════════════════════════════════
-// USUÁRIOS
-// ════════════════════════════════════════════════════════════
-let _usuariosData = [];
-
-async function carregarUsuarios() {
-  const tbody = document.getElementById('usuarios-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" class="table-empty"><div class="spinner" style="margin:0 auto;width:20px;height:20px"></div></td></tr>';
-  try {
-    _usuariosData = await adminApi('usuarios', {}, 'GET');
-    renderUsuarios(_usuariosData);
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="7" class="table-empty" style="color:var(--danger)">${e.message}</td></tr>`;
-  }
-}
-
-function filtrarUsuarios() {
-  const q = document.getElementById('usuarios-busca').value.toLowerCase();
-  const filtered = q
-    ? _usuariosData.filter(u => u.cpf_cnpj.includes(q) || (u.doc_fmt||'').includes(q) || (u.nome||'').toLowerCase().includes(q))
-    : _usuariosData;
-  renderUsuarios(filtered);
-}
-
-function renderUsuarios(lista) {
-  const tbody = document.getElementById('usuarios-tbody');
-  if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Nenhum usuário encontrado.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = lista.map(u => {
-    const isAdmin    = u.cpf_cnpj === '01057808121' || u.is_admin == 1;
-    const isSA       = u.cpf_cnpj === '01057808121';
-    const statusCls  = u.ativo ? 'badge active' : 'badge inactive';
-    const statusTxt  = u.ativo ? 'Ativo' : 'Bloqueado';
-    const acessoTxt  = u.ultimo_acesso ? fmtDate(u.ultimo_acesso) : '—';
-    const cadastroTxt= fmtDate(u.created_at);
-    const tipo       = u.tipo === 'empresa' ? 'Empresa' : 'Contribuinte';
-    const nomeExibir = u.nome || '';
-    const inicial    = (nomeExibir || u.doc_fmt || u.cpf_cnpj)[0]?.toUpperCase() || '?';
-    return `
-      <tr>
-        <td>
-          <div style="display:flex;align-items:center;gap:10px">
-            <div class="sb-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;border-radius:10px">${inicial}</div>
-            <div>
-              ${nomeExibir ? `<div style="font-weight:600;font-size:13px;color:var(--text)">${escHtml(nomeExibir)}</div>` : ''}
-              <div style="font-size:${nomeExibir?'11px':'13px'};color:${nomeExibir?'var(--text3)':'var(--text)'};font-weight:${nomeExibir?'400':'600'}">${u.doc_fmt||u.cpf_cnpj}</div>
-              ${isSA ? '<div style="font-size:10px;color:var(--accent);font-weight:700;letter-spacing:.5px">SUPERADMIN</div>' : u.is_admin==1 ? '<div style="font-size:10px;color:#378ADD;font-weight:700;letter-spacing:.5px">ADMIN</div>' : ''}
-              ${u.primeiro_acesso ? '<div style="font-size:10px;color:var(--text3)">Aguardando 1º acesso</div>' : ''}
-            </div>
-          </div>
-        </td>
-        <td style="font-size:12px;color:var(--text2)">${tipo}</td>
-        <td style="font-size:12px;color:var(--text2)">${cadastroTxt}</td>
-        <td style="font-size:12px;color:var(--text2)">${acessoTxt}</td>
-        <td style="font-size:13px;text-align:center">${u.total_sessoes||0}</td>
-        <td><span class="${statusCls}">${statusTxt}</span></td>
-        <td>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn-table-action" onclick="verDetalheUsuario(${u.id})">Ver</button>
-            ${!isAdmin ? `<button class="btn-table-action ${u.ativo?'danger':''}" onclick="toggleBloqueio(${u.id},'${u.doc_fmt||u.cpf_cnpj}',${u.ativo})">${u.ativo?'Bloquear':'Ativar'}</button>` : ''}
-            ${!isAdmin && !u.primeiro_acesso ? `<button class="btn-table-action" onclick="resetarSenha(${u.id},'${u.doc_fmt||u.cpf_cnpj}')">Resetar senha</button>` : ''}
-          </div>
-        </td>
-      </tr>`;
-  }).join('');
-}
-
-async function verDetalheUsuario(id) {
-  const modal   = document.getElementById('modal-usuario');
-  const content = document.getElementById('modal-usuario-content');
-  modal.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-  content.innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Carregando...</span></div>';
-  try {
-    const d    = await adminApi('usuario', { id }, 'GET');
-    const u    = d.usuario;
-    const hg   = d.crm_dados || d.usuario || {};
-    const logs = d.acessos  || [];
-
-    content.innerHTML = `
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
-        <div class="sb-avatar" style="width:48px;height:48px;font-size:20px;border-radius:12px">${u.cpf_cnpj[0]}</div>
-        <div>
-          <h3 style="font-size:18px;font-weight:700;margin:0">${hg.razao_social||hg.nome||u.cpf_cnpj}</h3>
-          <div style="font-size:13px;color:var(--text2);margin-top:2px">${u.tipo==='empresa'?'Empresa':'Contribuinte'} · ${u.doc_fmt||u.cpf_cnpj}</div>
-        </div>
-        <span class="badge ${u.ativo?'active':'inactive'}" style="margin-left:auto">${u.ativo?'Ativo':'Bloqueado'}</span>
-      </div>
-
-      <div class="empresa-fields" style="margin-bottom:20px">
-        ${fieldRow('E-mail', hg.email||'—')}
-        ${fieldRow('Telefone', hg.telefone||hg.celular||'—')}
-        ${fieldRow('Cadastrado em', fmtDate(u.created_at))}
-        ${fieldRow('Último acesso', u.ultimo_acesso?fmtDate(u.ultimo_acesso):'Nunca')}
-        ${fieldRow('Total sessões', u.total_sessoes||0)}
-        ${fieldRow('1º acesso pendente', u.primeiro_acesso?'Sim':'Não')}
-      </div>
-
-      ${logs.length ? `
-      <div style="margin-bottom:20px">
-        <div class="dash-card-title" style="margin-bottom:10px">Últimos acessos</div>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          ${logs.map(l=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)">
-            <span style="color:var(--text2)">${fmtDate(l.created_at)}</span>
-            <span style="color:var(--text3)">${l.ip||'—'}</span>
-          </div>`).join('')}
-        </div>
-      </div>` : ''}
-
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
-        ${!u.primeiro_acesso?`<button class="btn-primary" style="width:auto;padding:10px 18px;font-size:13px" onclick="resetarSenha(${u.id},'${u.cpf_cnpj}');fecharModalUsuario()">Resetar senha</button>`:''}
-        <button class="btn-primary" style="width:auto;padding:10px 18px;font-size:13px;background:${u.ativo?'var(--danger)':'var(--success)'}" onclick="toggleBloqueio(${u.id},'${u.cpf_cnpj}',${u.ativo});fecharModalUsuario()">${u.ativo?'Bloquear usuário':'Ativar usuário'}</button>
-        <button class="btn-logout" style="width:auto;padding:10px 18px;font-size:13px" onclick="fecharModalUsuario()">Fechar</button>
-      </div>`;
-  } catch(e) {
-    content.innerHTML = `<div style="color:var(--danger);padding:20px">${e.message}</div>`;
-  }
-}
-
-function fieldRow(label, value) {
-  return `<div class="field-group"><label>${label}</label><span>${value}</span></div>`;
-}
-
-function fmtDate(str) {
-  if (!str) return '—';
-  const d = new Date(str);
-  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-}
-
-function fecharModalUsuario() {
-  document.getElementById('modal-usuario').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-async function toggleBloqueio(id, doc, ativo) {
-  const acao = ativo ? 'bloquear' : 'ativar';
-  if (!confirm(`${ativo?'Bloquear':'Ativar'} o usuário ${doc}?`)) return;
-  try {
-    await adminApi('bloquear', { id });
-    carregarUsuarios();
-  } catch(e) { notify.erro(e.message); }
-}
-
-async function resetarSenha(id, doc) {
-  if (!confirm(`Resetar a senha de ${doc}? O usuário precisará criar uma nova senha no próximo acesso.`)) return;
-  try {
-    await adminApi('resetar_senha', { id });
-    mostrarToast('Senha resetada', 'O usuário criará nova senha no próximo acesso.', 'sucesso');
-    carregarUsuarios();
-  } catch(e) { notify.erro(e.message); }
-}
-
-// ════════════════════════════════════════════════════════════
-// MÉTRICAS
-// ════════════════════════════════════════════════════════════
-let _chartAcessos = null;
-
-async function carregarMetricas() {
-  const session = getSession() || {};
-  const role = session.role || session.tipo || '';
-  const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
-  const container = document.querySelector('#section-admin-metricas');
-  if (!container) return;
-
-  try {
-    if (isAdmin) {
-      // Superadmin/Gestor: metricas completas (usa HTML existente)
-      const m = await adminApi('metricas', {}, 'GET');
-      const el = id => document.getElementById(id);
-      if (el('met-total')) el('met-total').textContent = m.totais?.total_usuarios || 0;
-      if (el('met-sem-acesso')) el('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
-      if (el('met-views')) el('met-views').textContent = m.produtos?.total_views || 0;
-      if (el('met-clicks')) el('met-clicks').textContent = m.produtos?.total_clicks || 0;
-      renderGraficoAcessos(m.acessos_30d || []);
-      renderTopClicks(m.top_clicks || []);
-      renderSemAcesso(m.sem_acesso || []);
-
-    } else {
-      // Empresa/Colaborador/Dependente: metricas personalizadas
-      // Ocultar HTML admin e renderizar conteudo dinamico
-      const statsGrid = container.querySelector('.stats-grid');
-      const metGrid = container.querySelector('.metricas-grid');
-      const semAcesso = container.querySelector('.dash-card:last-child');
-      if (statsGrid) statsGrid.style.display = 'none';
-      if (metGrid) metGrid.style.display = 'none';
-      if (semAcesso) semAcesso.style.display = 'none';
-
-      // Container para metricas do perfil
-      let dynEl = document.getElementById('metricas-dinamico');
-      if (!dynEl) {
-        dynEl = document.createElement('div');
-        dynEl.id = 'metricas-dinamico';
-        const header = container.querySelector('.section-header');
-        if (header) header.after(dynEl);
-        else container.prepend(dynEl);
-      }
-
-      if (role === 'associado_empresa') {
-        // Empresa: vinculados + produtos acessados + cobrancas
+        // Empresa: cobrancas + produtos mais acessados + atividade
         dynEl.innerHTML = '<div style="text-align:center;padding:20px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto"></div></div>';
 
-        // Buscar dados
         const token = getToken();
-        let cobrancas = [];
+        let cobrancas = [], metricsData = null;
+
+        // Buscar cobrancas
         try {
           const res = await fetch(AUTH_URL + '?action=cobrancas', {
             method: 'POST',
@@ -3680,41 +2945,73 @@ async function carregarMetricas() {
           if (json.success) cobrancas = json.data.cobrancas || [];
         } catch(e) {}
 
+        // Buscar metricas de produtos (publico)
+        try {
+          metricsData = await prodApi('listar', { limit: 50 }, 'GET');
+        } catch(e) {}
+
+        const produtos = (metricsData?.produtos || []).sort((a,b) => (b.views + b.clicks) - (a.views + a.clicks));
+        const totalViews = produtos.reduce((s,p) => s + (p.views||0), 0);
+        const totalClicks = produtos.reduce((s,p) => s + (p.clicks||0), 0);
         const pagas = cobrancas.filter(c => c.status === 'pago').length;
         const pendentes = cobrancas.filter(c => c.status !== 'pago' && c.status !== 'cancelado').length;
-        const totalValor = cobrancas.reduce((s, c) => s + Number(c.valor || 0), 0);
+        const totalValor = cobrancas.reduce((s,c) => s + Number(c.valor||0), 0);
 
         dynEl.innerHTML =
-          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px">' +
-            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border,#e5e7eb)">' +
-              '<div style="font-size:11px;color:var(--text3,#94a3b8);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cobran\u00e7as Pagas</div>' +
-              '<div style="font-size:28px;font-weight:800;color:#22c55e">' + pagas + '</div>' +
+          // Cards resumo
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px">' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+              '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Cobran\u00e7as Pagas</div>' +
+              '<div style="font-size:26px;font-weight:800;color:#22c55e">' + pagas + '</div>' +
             '</div>' +
-            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border,#e5e7eb)">' +
-              '<div style="font-size:11px;color:var(--text3,#94a3b8);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cobran\u00e7as Pendentes</div>' +
-              '<div style="font-size:28px;font-weight:800;color:#E8701A">' + pendentes + '</div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+              '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Pendentes</div>' +
+              '<div style="font-size:26px;font-weight:800;color:#E8701A">' + pendentes + '</div>' +
             '</div>' +
-            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border,#e5e7eb)">' +
-              '<div style="font-size:11px;color:var(--text3,#94a3b8);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Total Faturado</div>' +
-              '<div style="font-size:28px;font-weight:800;color:var(--text,#1a1a1a)">R$ ' + totalValor.toFixed(2).replace('.',',') + '</div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+              '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Total Views</div>' +
+              '<div style="font-size:26px;font-weight:800;color:var(--text)">' + totalViews + '</div>' +
+            '</div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)">' +
+              '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Total Cliques</div>' +
+              '<div style="font-size:26px;font-weight:800;color:var(--text)">' + totalClicks + '</div>' +
             '</div>' +
           '</div>' +
-          '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border,#e5e7eb)">' +
-            '<div style="font-size:14px;font-weight:700;color:var(--text,#1a1a1a);margin-bottom:12px">Hist\u00f3rico de Cobran\u00e7as</div>' +
-            (cobrancas.length === 0
-              ? '<div style="text-align:center;padding:20px;color:var(--text3,#94a3b8)">Nenhuma cobran\u00e7a encontrada</div>'
-              : '<div style="display:grid;gap:8px">' + cobrancas.slice(0, 10).map(function(co) {
-                  const st = co.status === 'pago' ? '#22c55e' : co.status === 'pendente' ? '#E8701A' : '#ef4444';
-                  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:8px;background:var(--surface2,#f8f9fa)">' +
-                    '<div><div style="font-size:13px;font-weight:600;color:var(--text)">' + (co.descricao || co.plano_nome || 'Cobran\u00e7a') + '</div>' +
-                    '<div style="font-size:11px;color:var(--text3)">' + (co.data_vencimento || '') + '</div></div>' +
-                    '<div style="text-align:right"><div style="font-size:14px;font-weight:700;color:var(--text)">R$ ' + Number(co.valor||0).toFixed(2).replace('.',',') + '</div>' +
-                    '<div style="font-size:10px;font-weight:600;color:' + st + ';text-transform:uppercase">' + (co.status || '') + '</div></div></div>';
-                }).join('') + '</div>') +
+
+          // Produtos mais acessados
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border)">' +
+              '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px">Produtos Mais Acessados</div>' +
+              (produtos.length === 0
+                ? '<div style="text-align:center;padding:16px;color:var(--text3)">Nenhum produto</div>'
+                : '<div style="display:grid;gap:8px">' + produtos.slice(0,5).map(function(p, i) {
+                    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--surface2,#f8f9fa)">' +
+                      '<div style="width:24px;height:24px;border-radius:6px;background:' + (i===0?'#E8701A':i===1?'#1B2B6B':'var(--border)') + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">' + (i+1) + '</div>' +
+                      '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (p.nome||'') + '</div>' +
+                      '<div style="font-size:11px;color:var(--text3)">' + (p.categoria_nome||'') + '</div></div>' +
+                      '<div style="text-align:right;font-size:11px;color:var(--text3)">' + (p.views||0) + ' views<br>' + (p.clicks||0) + ' clicks</div>' +
+                    '</div>';
+                  }).join('') + '</div>') +
+            '</div>' +
+
+            // Historico cobrancas
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border)">' +
+              '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px">Hist\u00f3rico de Cobran\u00e7as</div>' +
+              (cobrancas.length === 0
+                ? '<div style="text-align:center;padding:16px;color:var(--text3)">Nenhuma cobran\u00e7a</div>'
+                : '<div style="display:grid;gap:8px">' + cobrancas.slice(0,5).map(function(co) {
+                    const st = co.status==='pago'?'#22c55e':co.status==='pendente'?'#E8701A':'#ef4444';
+                    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:var(--surface2,#f8f9fa)">' +
+                      '<div><div style="font-size:13px;font-weight:600;color:var(--text)">' + (co.descricao||co.plano_nome||'Cobran\u00e7a') + '</div>' +
+                      '<div style="font-size:11px;color:var(--text3)">' + (co.data_vencimento||'') + '</div></div>' +
+                      '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text)">R$ ' + Number(co.valor||0).toFixed(2).replace('.',',') + '</div>' +
+                      '<div style="font-size:10px;font-weight:600;color:' + st + ';text-transform:uppercase">' + (co.status||'') + '</div></div></div>';
+                  }).join('') + '</div>') +
+            '</div>' +
           '</div>';
 
       } else {
-        // Colaborador/Dependente: beneficios do plano
+        // Colaborador/Dependente// Colaborador/Dependente: beneficios do plano
         dynEl.innerHTML =
           '<div style="background:var(--surface,#fff);border-radius:12px;padding:24px;border:1px solid var(--border,#e5e7eb);text-align:center">' +
             '<div style="font-size:40px;margin-bottom:8px">\ud83d\udcca</div>' +
