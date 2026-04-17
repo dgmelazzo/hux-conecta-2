@@ -3025,6 +3025,96 @@ function renderDashboardPerfil(d) {
   }
 }
 
+
+
+async function carregarMetricas() {
+  const session = getSession() || {};
+  const role = session.role || session.tipo || '';
+  const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
+  const container = document.querySelector('#section-admin-metricas');
+  if (!container) return;
+
+  try {
+    if (isAdmin) {
+      const m = await adminApi('metricas', {}, 'GET');
+      const el = id => document.getElementById(id);
+      if (el('met-total')) el('met-total').textContent = m.totais?.total_usuarios || 0;
+      if (el('met-sem-acesso')) el('met-sem-acesso').textContent = m.sem_acesso?.length || 0;
+      if (el('met-views')) el('met-views').textContent = m.produtos?.total_views || 0;
+      if (el('met-clicks')) el('met-clicks').textContent = m.produtos?.total_clicks || 0;
+      renderGraficoAcessos(m.acessos_30d || []);
+      renderTopClicks(m.top_clicks || []);
+      renderSemAcesso(m.sem_acesso || []);
+    } else {
+      // Ocultar HTML admin
+      container.querySelectorAll('.stats-grid,.metricas-grid,.dash-card').forEach(el => el.style.display = 'none');
+
+      let dynEl = document.getElementById('metricas-dinamico');
+      if (!dynEl) {
+        dynEl = document.createElement('div');
+        dynEl.id = 'metricas-dinamico';
+        const sh = container.querySelector('.section-header');
+        if (sh) sh.after(dynEl); else container.prepend(dynEl);
+      }
+
+      if (role === 'associado_empresa') {
+        dynEl.innerHTML = '<div style="text-align:center;padding:20px"><div class="sp" style="width:24px;height:24px;border-width:2px;margin:0 auto"></div></div>';
+
+        const token = getToken();
+        let cobrancas = [];
+        try {
+          const res = await fetch(AUTH_URL + '?action=cobrancas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+          const json = await res.json();
+          if (json.success) cobrancas = json.data.cobrancas || [];
+        } catch(e) {}
+
+        let produtos = [];
+        try { produtos = (await prodApi('listar', { limit: 50 }, 'GET')).produtos || []; } catch(e) {}
+        produtos.sort((a,b) => (b.views+b.clicks) - (a.views+a.clicks));
+
+        const totalViews = produtos.reduce((s,p) => s + (p.views||0), 0);
+        const totalClicks = produtos.reduce((s,p) => s + (p.clicks||0), 0);
+        const pagas = cobrancas.filter(c => c.status === 'pago').length;
+        const pendentes = cobrancas.filter(c => c.status !== 'pago' && c.status !== 'cancelado').length;
+
+        dynEl.innerHTML =
+          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px">' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Cobran\u00e7as Pagas</div><div style="font-size:26px;font-weight:800;color:#22c55e">' + pagas + '</div></div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Pendentes</div><div style="font-size:26px;font-weight:800;color:#E8701A">' + pendentes + '</div></div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Total Views</div><div style="font-size:26px;font-weight:800;color:var(--text)">' + totalViews + '</div></div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:18px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Total Cliques</div><div style="font-size:26px;font-weight:800;color:var(--text)">' + totalClicks + '</div></div>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border)">' +
+              '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px">Produtos Mais Acessados</div>' +
+              (produtos.length === 0 ? '<div style="text-align:center;padding:16px;color:var(--text3)">Nenhum produto</div>'
+              : '<div style="display:grid;gap:8px">' + produtos.slice(0,5).map(function(p,i) {
+                  var bg = i===0?'#E8701A':i===1?'#1B2B6B':'var(--border)';
+                  return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--surface2,#f8f9fa)"><div style="width:24px;height:24px;border-radius:6px;background:'+bg+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">'+(i+1)+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.nome||'')+'</div><div style="font-size:11px;color:var(--text3)">'+(p.categoria_nome||'')+'</div></div><div style="text-align:right;font-size:11px;color:var(--text3)">'+(p.views||0)+' views<br>'+(p.clicks||0)+' clicks</div></div>';
+                }).join('') + '</div>') +
+            '</div>' +
+            '<div style="background:var(--surface,#fff);border-radius:12px;padding:20px;border:1px solid var(--border)">' +
+              '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px">Hist\u00f3rico de Cobran\u00e7as</div>' +
+              (cobrancas.length === 0 ? '<div style="text-align:center;padding:16px;color:var(--text3)">Nenhuma cobran\u00e7a</div>'
+              : '<div style="display:grid;gap:8px">' + cobrancas.slice(0,5).map(function(co) {
+                  var st = co.status==='pago'?'#22c55e':co.status==='pendente'?'#E8701A':'#ef4444';
+                  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:var(--surface2,#f8f9fa)"><div><div style="font-size:13px;font-weight:600;color:var(--text)">'+(co.descricao||co.plano_nome||'Cobran\u00e7a')+'</div><div style="font-size:11px;color:var(--text3)">'+(co.data_vencimento||'')+'</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text)">R$ '+Number(co.valor||0).toFixed(2).replace('.',',')+'</div><div style="font-size:10px;font-weight:600;color:'+st+';text-transform:uppercase">'+(co.status||'')+'</div></div></div>';
+                }).join('') + '</div>') +
+            '</div>' +
+          '</div>';
+      } else {
+        dynEl.innerHTML = '<div style="background:var(--surface,#fff);border-radius:12px;padding:24px;border:1px solid var(--border);text-align:center"><div style="font-size:40px;margin-bottom:8px">\ud83d\udcca</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px">Suas M\u00e9tricas</div><div style="font-size:13px;color:var(--text3)">Explore o cat\u00e1logo para ver produtos e benef\u00edcios.</div></div>';
+      }
+    }
+  } catch(e) {
+    console.error('Metricas:', e.message);
+  }
+}
+
 function renderGraficoAcessos(dados) {
   const ctx = document.getElementById('chart-acessos');
   if (!ctx || typeof Chart === 'undefined') return;
