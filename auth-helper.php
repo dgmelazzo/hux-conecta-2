@@ -45,12 +45,18 @@ function validateCrmToken(?string $token = null): ?array {
     if (empty($inner['valid']) && empty($inner['nome'])) return null;
 
     $result = [
+        'id' => $inner['sub'] ?? $inner['id'] ?? $inner['associado_id'] ?? 0,
+        'sub' => $inner['sub'] ?? $inner['id'] ?? 0,
+        'associado_id' => $inner['associado_id'] ?? $inner['sub'] ?? null,
         'nome' => $inner['nome'] ?? '',
+        'email' => $inner['email'] ?? '',
         'role' => $inner['role'] ?? '',
         'is_admin' => (bool)($inner['is_admin'] ?? false),
         'is_superadmin' => (bool)($inner['is_superadmin'] ?? false),
-        'documento' => $inner['documento'] ?? '',
-        'plano' => $inner['plano'] ?? '',
+        'documento' => $inner['documento'] ?? $inner['cpf'] ?? $inner['cnpj'] ?? '',
+        'cpf_cnpj' => $inner['documento'] ?? $inner['cpf'] ?? $inner['cnpj'] ?? '',
+        'plano' => $inner['plano'] ?? $inner['plano_nome'] ?? '',
+        'tenant_id' => $inner['tenant_id'] ?? 1,
         'token' => $inner['token'] ?? $token,
     ];
 

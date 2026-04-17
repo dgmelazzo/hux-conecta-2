@@ -1450,7 +1450,23 @@ function showPortal() {
     }
   }
   // Sidebar dinamico baseado em permissoes
-  const _modulos = getSession()?.modulos || [];
+  let _modulos = getSession()?.modulos || [];
+  if (_modulos.length === 0 && getToken()) {
+    // Sem modulos na sessao — buscar do CRM
+    try {
+      const _permRes = await fetch(_baseUrl + '/auth.php?action=permissoes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: getToken() })
+      });
+      const _permJson = await _permRes.json();
+      if (_permJson.success && _permJson.data?.modulos) {
+        _modulos = _permJson.data.modulos;
+        const _s = getSession() || {};
+        _s.modulos = _modulos;
+        setSession(_s);
+      }
+    } catch(e) {}
+  }
   if (_modulos.length > 0) {
     aplicarModulosSidebar(_modulos);
   } else if (window._userRole === 'associado_empresa') {
