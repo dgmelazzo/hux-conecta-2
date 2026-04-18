@@ -1093,6 +1093,26 @@ function abrirFormSub(sub, produtoId) {
   document.getElementById('fsub-id').value          = sub?.id || '';
   document.getElementById('fsub-produto-id').value  = sub?.produto_id || produtoId || produtoEditando?.id || '';
   document.getElementById('fsub-nome').value         = sub?.nome || '';
+  // Inicializar Quill para subproduto se nao existe
+  if (typeof Quill !== 'undefined' && !window._quillSubEditor) {
+    window._quillSubEditor = new Quill('#fsub-descricao-editor', {
+      theme: 'snow',
+      placeholder: 'Detalhes do subproduto/plano...',
+      modules: { toolbar: [
+        ['bold','italic','underline'],
+        [{'list':'ordered'},{'list':'bullet'}],
+        ['link'],
+        ['clean']
+      ]}
+    });
+    window._quillSubEditor.on('text-change', () => {
+      document.getElementById('fsub-descricao').value = window._quillSubEditor.root.innerHTML;
+    });
+  }
+  // Popular Quill com conteudo existente
+  if (window._quillSubEditor) {
+    window._quillSubEditor.root.innerHTML = sub?.descricao || '';
+  }
   document.getElementById('fsub-descricao').value    = sub?.descricao || '';
   document.getElementById('fsub-preco').value        = sub?.preco || '';
   document.getElementById('fsub-cobranca').value     = sub?.tipo_cobranca || 'unico';
@@ -2731,8 +2751,8 @@ function applyTheme(theme, save = true) {
   if (save) localStorage.setItem('acic_theme', theme);
 
   // Troca logo conforme tema
-  const logoLight = 'uploads/logo-light-320.png?v=2';
-  const logoDark  = 'uploads/logo-dark-320.png?v=2';
+  const logoLight = 'uploads/logo-light-320.png?v=3';
+  const logoDark  = 'uploads/logo-dark-320.png?v=3';
   const loginLogo   = document.getElementById('login-logo');
   const sidebarLogo = document.getElementById('sidebar-logo');
   if (loginLogo)   loginLogo.src   = theme === 'light' ? logoLight : logoDark;

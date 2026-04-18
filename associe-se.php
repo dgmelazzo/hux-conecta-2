@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Associe-se — ACIC Conecta</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -22,13 +24,13 @@
         body { font-family: 'Montserrat', -apple-system, sans-serif; background: var(--bg); color: var(--gray-900); line-height: 1.6; -webkit-font-smoothing: antialiased; }
 
         /* NAV — sticky clean */
-        .nav { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 0 32px; height: 72px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .nav-logo img { height: 44px; }
-        .nav-login { color: var(--white); background: var(--blue); text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 24px; border-radius: 8px; transition: all 0.2s; letter-spacing: 0.3px; }
-        .nav-login:hover { background: var(--blue-dark); transform: translateY(-1px); }
+        .acs-nav { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 0 32px; height: 72px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .acs-nav-logo img { height: 44px; }
+        .acs-nav-login { color: var(--white); background: var(--blue); text-decoration: none; font-size: 13px; font-weight: 700; padding: 10px 24px; border-radius: 8px; transition: all 0.2s; letter-spacing: 0.3px; }
+        .acs-nav-login:hover { background: var(--blue-dark); transform: translateY(-1px); }
 
         /* CONTAINER */
-        .container { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; }
+        .acs-container { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; }
 
         /* HERO — gradiente com mais presenca */
         .hero { background: linear-gradient(135deg, var(--blue) 0%, #2d4a9a 60%, #3b5cc6 100%); border-radius: 0 0 24px 24px; padding: 48px 32px 40px; color: #fff; text-align: center; margin: 0 -20px 32px; position: relative; overflow: hidden; }
@@ -38,7 +40,7 @@
         .hero p { font-size: 16px; color: rgba(255,255,255,.8); margin-bottom: 32px; position: relative; z-index: 1; }
 
         /* PROGRESS BAR — sobre o hero */
-        .progress-bar { display: flex; align-items: center; justify-content: center; gap: 0; max-width: 500px; margin: 0 auto; position: relative; z-index: 1; }
+        .acs-progress-bar { display: flex; align-items: center; justify-content: center; gap: 0; max-width: 500px; margin: 0 auto; position: relative; z-index: 1; }
         .step-wrapper { display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .step-circle { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.12); color: rgba(255,255,255,.5); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; transition: all 0.3s; border: 2px solid transparent; }
         .step-circle.active { background: var(--orange); color: #fff; border-color: rgba(255,255,255,.3); box-shadow: 0 0 20px rgba(232,112,26,.4); }
@@ -55,9 +57,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
         /* SECTIONS — cards brancos */
-        .section { background: var(--white); border-radius: var(--radius); padding: 32px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid var(--gray-100); }
-        .section-title { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 24px; }
-        .section-title .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .acs-section { background: var(--white); border-radius: var(--radius); padding: 32px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid var(--gray-100); }
+        .acs-section-title { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 700; color: var(--gray-900); margin-bottom: 24px; }
+        .acs-section-title .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 
         /* PLANOS — grid premium */
         .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
@@ -112,7 +114,7 @@
         .field-hint { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
 
         /* Better section spacing */
-        .section + .section { margin-top: 0; }
+        .section + .acs-section { margin-top: 0; }
 
         /* Checkbox LGPD */
         .lgpd-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; color: var(--gray-700); line-height: 1.6; padding: 16px; background: var(--gray-50); border-radius: var(--radius-sm); border: 1px solid var(--gray-200); margin-bottom: 16px; }
@@ -176,10 +178,10 @@
 
         /* RESPONSIVE */
         @media (max-width: 640px) {
-            .container { padding: 0 16px 60px; }
+            .acs-container { padding: 0 16px 60px; }
             .hero { padding: 32px 20px; margin: 0 -16px 24px; }
             .hero h1 { font-size: 24px; }
-            .section { padding: 24px 18px; }
+            .acs-section { padding: 24px 18px; }
             .form-row, .form-row.triple { grid-template-columns: 1fr; }
             .plans-grid { grid-template-columns: 1fr; }
             .step-connector { min-width: 16px; }
@@ -188,30 +190,101 @@
             .step-nav { flex-direction: column-reverse; gap: 12px; }
             .btn-next { width: 100%; }
             .btn-back { justify-content: center; }
-            .nav { padding: 0 16px; height: 60px; }
-            .nav-logo img { height: 32px; }
+            .acs-nav { padding: 0 16px; height: 60px; }
+            .acs-nav-logo img { height: 32px; }
         }
+    
+    /* Bootstrap overrides for associe-se */
+    .form-group label { font-size: 12px; font-weight: 700; color: var(--gray-700); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; display: block; }
+    .form-group label .required { color: var(--orange); font-weight: 800; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 12px 16px; border: 1.5px solid var(--gray-200); border-radius: 10px;
+      font-family: inherit; font-size: 14px; color: var(--gray-900); background: #fff;
+      transition: all 0.2s; outline: none; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .form-group input:hover, .form-group select:hover { border-color: var(--gray-300); }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,112,26,.12); background: #fff;
+    }
+    .form-group input:read-only { background: var(--gray-100); color: var(--gray-500); cursor: not-allowed; }
+    .form-group input::placeholder { color: var(--gray-300); }
+    .form-group select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+    }
+
+    /* Botoes modernos */
+    .btn-next { background: var(--orange); color: #fff; border: none; padding: 14px 32px; border-radius: 10px;
+      font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(232,112,26,.25); }
+    .btn-next:hover { background: var(--orange-hover); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(232,112,26,.3); }
+    .btn-back { background: none; border: none; color: var(--gray-500); font-size: 14px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; transition: all .2s; }
+    .btn-back:hover { color: var(--gray-700); }
+
+    /* Plan cards */
+    .plan-card { border-radius: 14px; transition: all 0.25s; }
+    .plan-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+    .plan-card.selected { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,112,26,.15), 0 8px 24px rgba(232,112,26,.1); }
+    .plan-select-btn { border-radius: 10px; font-weight: 700; transition: all 0.2s; }
+
+    /* Section cards */
+    .acs-section { border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+
+    /* Step circles */
+    .step-circle.active { box-shadow: 0 0 20px rgba(232,112,26,.4), 0 0 0 3px rgba(232,112,26,.15); }
+
+    /* Progress connector */
+    .step-connector.done { background: var(--green); }
+
+    /* LGPD */
+    .lgpd-check { border-radius: 10px; }
+
+    /* Step nav */
+    .step-nav { border-top: 1px solid var(--gray-100); padding-top: 20px; }
+
+    /* Confirmation */
+    .confirmation .check-icon { font-size: 56px; }
+    .btn-portal { border-radius: 10px; font-weight: 700; box-shadow: 0 2px 8px rgba(232,112,26,.25); }
+    .btn-portal:hover { box-shadow: 0 4px 16px rgba(232,112,26,.3); transform: translateY(-1px); }
+
+    /* Hero gradient */
+    .hero { border-radius: 16px; overflow: hidden; }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+
+    
+    /* Reset Bootstrap conflicts */
+    body { margin: 0 !important; padding: 0 !important; }
+    .acs-container { max-width: 900px; margin: 0 auto; padding: 0 20px 80px; }
+    .acs-nav { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 0 32px; height: 72px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .acs-section { background: var(--white); border-radius: 14px; padding: 32px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); border: 1px solid var(--gray-100); }
+
     </style>
 <body>
 
 <!-- NAV -->
-<nav class="nav">
-    <a href="/" class="nav-logo"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:40px"></a>
+<nav class="acs-nav">
+    <a href="/" class="acs-nav-logo"><img src="/conecta/uploads/logo-light-320.png" alt="ACIC Conecta" style="height:40px"></a>
     <div style="display:flex;align-items:center;gap:16px">
-      <span style="font-size:12px;color:var(--gray-500);display:none" id="nav-help-text">Dúvidas? (61) 3371-2165</span>
-      <a href="/" class="nav-login">Já sou associado</a>
+      <span style="font-size:12px;color:var(--gray-500)" class="d-none d-md-inline"><i class="bi bi-telephone"></i> (61) 3371-2165</span>
+      <a href="/" class="acs-nav-login"><i class="bi bi-box-arrow-in-right"></i> Já sou associado</a>
     </div>
 </nav>
 
 <!-- MAIN -->
-<div class="container">
+<div class="acs-container">
 
     <!-- HERO -->
     <div class="hero" style="background:linear-gradient(135deg,#1B2B6B 0%,#2d4a9a 100%);border-radius:16px;padding:32px 28px;color:#fff;margin-bottom:24px">
         <h1 style="color:#fff">Associe-se à ACIC-DF</h1>
         <p style="color:rgba(255,255,255,.8)">Faça parte da maior rede de comércio do Distrito Federal</p>
 
-        <div class="progress-bar" id="progress-bar">
+        <div class="acs-progress-bar" id="progress-bar">
             <div class="step-wrapper">
                 <div class="step-circle active" id="step-circle-1" data-step="1">1</div>
                 <div class="step-label active" id="step-label-1">Plano</div>
@@ -236,9 +309,9 @@
 
     <!-- ============ STEP 1: PLANO ============ -->
     <div class="wizard-step active" id="wizard-step-1">
-        <div class="section">
-            <div class="section-title">
-                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);">📋</div>
+        <div class="acs-section">
+            <div class="acs-section-title">
+                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);"><i class="bi bi-list-check"></i></div>
                 Escolha seu plano
             </div>
             <div class="plans-grid" id="plans-grid">
@@ -252,9 +325,9 @@
 
     <!-- ============ STEP 2: DADOS DA EMPRESA ============ -->
     <div class="wizard-step" id="wizard-step-2">
-        <div class="section">
-            <div class="section-title">
-                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);">🏢</div>
+        <div class="acs-section">
+            <div class="acs-section-title">
+                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);"><i class="bi bi-building"></i></div>
                 Dados da empresa
             </div>
 
@@ -316,9 +389,9 @@
             </div>
         </div>
 
-        <div class="section">
-            <div class="section-title">
-                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);">📍</div>
+        <div class="acs-section">
+            <div class="acs-section-title">
+                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);"><i class="bi bi-geo-alt"></i></div>
                 Endereço
             </div>
 
@@ -360,17 +433,17 @@
             </div>
 
             <div class="step-nav">
-                <button type="button" class="btn-back" onclick="goToStep(1)">&#8592; Voltar</button>
-                <button type="button" class="btn-next" onclick="validateAndGoStep3()">Continuar &#8594;</button>
+                <button type="button" class="btn-back" onclick="goToStep(1)"><i class="bi bi-arrow-left"></i> <span>Voltar</span></button>
+                <button type="button" class="btn-next" onclick="validateAndGoStep3()"><span>Continuar</span> <i class="bi bi-arrow-right"></i></button>
             </div>
         </div>
     </div>
 
     <!-- ============ STEP 3: RESPONSÁVEL LEGAL ============ -->
     <div class="wizard-step" id="wizard-step-3">
-        <div class="section">
-            <div class="section-title">
-                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);">👤</div>
+        <div class="acs-section">
+            <div class="acs-section-title">
+                <div class="icon" style="background:rgba(27,43,107,.08);color:var(--blue);"><i class="bi bi-person-check"></i></div>
                 Responsável Legal
             </div>
             <p style="font-size:14px;color:var(--gray-500);margin:-16px 0 24px;">
@@ -423,17 +496,17 @@
                     </label>
                 </div>
                 <div class="step-nav">
-                    <button type="button" class="btn-back" onclick="goToStep(2)">&larr; Voltar</button>
-                    <button type="button" class="btn-next" onclick="validateAndGoStep4()">Continuar &rarr;</button>
+                    <button type="button" class="btn-back" onclick="goToStep(2)"><i class="bi bi-arrow-left"></i> <span>Voltar</span></button>
+                    <button type="button" class="btn-next" onclick="validateAndGoStep4()"><span>Continuar</span> <i class="bi bi-arrow-right"></i></button>
                 </div>
         </div>
     </div>
 
     <!-- ============ STEP 4: PAGAMENTO ============ -->
     <div class="wizard-step" id="wizard-step-4">
-        <div class="section">
-            <div class="section-title">
-                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);">💳</div>
+        <div class="acs-section">
+            <div class="acs-section-title">
+                <div class="icon" style="background:rgba(232,112,26,.1);color:var(--orange);"><i class="bi bi-credit-card"></i></div>
                 Pagamento
             </div>
 
@@ -463,7 +536,7 @@
             </div>
 
             <div class="step-nav">
-                <button type="button" class="btn-back" onclick="goToStep(3)">&#8592; Voltar</button>
+                <button type="button" class="btn-back" onclick="goToStep(3)"><i class="bi bi-arrow-left"></i> <span>Voltar</span></button>
                 <button type="button" class="btn-next" id="btn-submit" onclick="submitForm()">Finalizar inscrição &#8594;</button>
             </div>
         </div>
@@ -471,7 +544,7 @@
 
     <!-- ============ STEP 5: CONFIRMAÇÃO ============ -->
     <div class="wizard-step" id="wizard-step-5">
-        <div class="section">
+        <div class="acs-section">
             <div class="confirmation" id="confirmation-content">
                 <div class="check-icon">✅</div>
                 <h2>Inscrição realizada!</h2>
@@ -1049,5 +1122,6 @@
 
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
