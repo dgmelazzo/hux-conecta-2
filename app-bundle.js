@@ -2751,8 +2751,8 @@ function applyTheme(theme, save = true) {
   if (save) localStorage.setItem('acic_theme', theme);
 
   // Troca logo conforme tema
-  const logoLight = 'uploads/logo-light-320.png?v=2';
-  const logoDark  = 'uploads/logo-dark-320.png?v=2';
+  const logoLight = 'uploads/logo-light-320.png?v=3';
+  const logoDark  = 'uploads/logo-dark-320.png?v=3';
   const loginLogo   = document.getElementById('login-logo');
   const sidebarLogo = document.getElementById('sidebar-logo');
   if (loginLogo)   loginLogo.src   = theme === 'light' ? logoLight : logoDark;
