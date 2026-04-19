@@ -156,6 +156,34 @@ if ($action === 'login-email') {
 }
 
 // ============================================================
+// ACTION: token-info — valida JWT de primeiro-acesso e retorna dados
+// ============================================================
+if ($action === 'token-info') {
+    $token = $input['token'] ?? '';
+    if (!$token) err(400, 'Token obrigatorio');
+    $resp = crmApi('POST', '/auth/primeiro-acesso-token', ['token' => $token]);
+    if (!$resp['_ok']) err($resp['_http'] ?: 401, $resp['error'] ?? 'Link inválido ou expirado');
+    $data = $resp['data']['data'] ?? $resp['data'] ?? $resp;
+    unset($data['_ok'], $data['_http']);
+    ok($data);
+}
+
+// ============================================================
+// ACTION: token-set — define senha via JWT de primeiro-acesso (seguro)
+// ============================================================
+if ($action === 'token-set') {
+    $token = $input['token'] ?? '';
+    $senha = $input['senha'] ?? $input['password'] ?? '';
+    if (!$token) err(400, 'Token obrigatorio');
+    if (strlen($senha) < 8) err(400, 'Senha minima 8 caracteres');
+    $resp = crmApi('POST', '/auth/primeiro-acesso-via-token', ['token' => $token, 'senha' => $senha]);
+    if (!$resp['_ok']) err($resp['_http'] ?: 500, $resp['error'] ?? 'Erro ao definir senha');
+    $data = $resp['data']['data'] ?? $resp['data'] ?? $resp;
+    unset($data['_ok'], $data['_http']);
+    ok($data);
+}
+
+// ============================================================
 // ACTION: first — primeiro acesso, define senha via CRM
 // ============================================================
 if ($action === 'first') {
