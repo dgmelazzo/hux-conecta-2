@@ -594,15 +594,24 @@ async function abrirProduto(slug) {
   if (!modal) return;
 
   modal.classList.remove('hidden');
+  modal.classList.add('active');
   document.body.style.overflow = 'hidden';
-  document.getElementById('produto-modal-body').innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Carregando...</span></div>';
+  const body = document.getElementById('produto-modal-body');
+  if (body) body.innerHTML = '<div class="loading-state" style="padding:48px;text-align:center"><div class="spinner" style="width:28px;height:28px;border-width:3px;margin:0 auto 12px"></div><span style="color:var(--text3);font-size:13px">Carregando produto…</span></div>';
 
   try {
     const p = await prodApi('detalhe', { slug }, 'GET');
-    trackEvento(p.id, 'view');
-    document.getElementById('produto-modal-body').innerHTML = renderModalProduto(p);
+    if (!p) throw new Error('Produto não retornado');
+    try { trackEvento(p.id, 'view'); } catch(e) {}
+    if (body) body.innerHTML = renderModalProduto(p);
   } catch (e) {
-    document.getElementById('produto-modal-body').innerHTML = '<div class="empty-state"><p>Produto não encontrado.</p></div>';
+    if (body) body.innerHTML = `
+      <div class="empty-state" style="padding:48px;text-align:center">
+        <i class="bi bi-exclamation-circle" style="font-size:32px;color:var(--text3);margin-bottom:12px;display:block"></i>
+        <p style="margin:0 0 4px;font-weight:600">Produto não encontrado</p>
+        <p style="margin:0;font-size:12px;color:var(--text3)">${e?.message || 'Tente novamente em alguns segundos.'}</p>
+        <button onclick="fecharProdutoModal()" style="margin-top:16px;background:var(--accent);color:#fff;border:none;padding:8px 20px;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">Fechar</button>
+      </div>`;
   }
 }
 
@@ -748,7 +757,8 @@ function montarLinkWhatsApp(numero, nomeProduto, nomeSubproduto, nomeEmpresa) {
 
 function fecharProdutoModal(e) {
   if (e && e.target !== document.getElementById('produto-modal')) return;
-  document.getElementById('produto-modal')?.classList.add('hidden');
+  const modal = document.getElementById('produto-modal');
+  if (modal) { modal.classList.add('hidden'); modal.classList.remove('active'); }
   document.body.style.overflow = '';
 }
 
@@ -764,9 +774,9 @@ async function carregarCategoriasFiltro() {
       <button class="filter-tag active" onclick="filtrarPorCategoria('', this)" style="display:inline-flex;align-items:center;gap:6px">
         <span style="font-size:14px">\u{1F4CB}</span> Todos
       </button>
-      ${categoriasData.filter(c => c.total_produtos > 0).map(c =>
-        `<button class="filter-tag" onclick="filtrarPorCategoria('${c.slug}', this)" style="display:inline-flex;align-items:center;gap:6px">
-          <span style="font-size:14px">${c.icone || '\u{1F4C1}'}</span> ${c.nome} <small style="opacity:.6">(${c.total_produtos})</small>
+      ${categoriasData.map(c =>
+        `<button class="filter-tag" onclick="filtrarPorCategoria('${c.slug}', this)" data-slug="${c.slug}" style="display:inline-flex;align-items:center;gap:6px">
+          <span style="font-size:14px">${c.icone || '\u{1F4C1}'}</span> ${c.nome} <small style="opacity:.6">(${c.total_produtos||0})</small>
         </button>`
       ).join('')}
     `;
