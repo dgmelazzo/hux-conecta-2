@@ -285,40 +285,51 @@ async function apiGetAssociado() {
     };
   }
 
-  if (session?.tipo === 'empresa') {
-    const raw   = data.data || data;
-    const attrs = raw.attributes || raw;
-    return mapEmpresa(attrs, raw.id);
-  } else {
-    const raw   = data.data?.[0] || data.data || data;
-    const attrs = raw.attributes || raw;
-    return mapContribuinte(attrs, raw.id);
+  // Novo formato CRM: data.associado (sempre presente p/ usuário logado) + data.empresa (colab/dep)
+  // Para colab/dep: mostrar dados da empresa-mãe na tela "Minha Empresa"
+  const role = session?.role || session?.tipo || '';
+  const isColabOrDep = role === 'colaborador' || role === 'dependente';
+  const baseAssoc = data.associado || data.data || data;
+  const fonte = isColabOrDep && data.empresa ? data.empresa : baseAssoc;
+  if (isColabOrDep) {
+    return mapEmpresa(fonte, fonte.id, baseAssoc, role);
   }
+  return mapEmpresa(fonte, fonte.id);
 }
 
-function mapEmpresa(attrs, id) {
+function mapEmpresa(a, id, perfilColab = null, role = null) {
+  // a = dados da empresa (CRM associados row)
+  const fmtEnd = (a) => {
+    const partes = [a.logradouro, a.numero ? 'nº ' + a.numero : '', a.complemento].filter(Boolean);
+    return partes.length ? partes.join(', ') : '—';
+  };
   return {
     id,
     tipo:           'empresa',
-    razaoSocial:    attrs.razao_social          || attrs.nome || '—',
-    nomeFantasia:   attrs.nome                  || '—',
-    cnpj:           attrs.cnpj                 || attrs.cpf_cnpj || '—',
-    email:          attrs.email                || '—',
-    telefone:       attrs.telefone             || attrs.celular || '—',
-    site:           attrs.site                 || '—',
-    status:         attrs.associado ? 'ativo' : 'inativo',
-    statusTexto:    attrs.status               || (attrs.associado ? 'Ativo' : 'Inativo'),
-    dataAssociacao: attrs.associado_data_registro || null,
-    registro:       attrs.associado_registro   || '—',
-    categoria:      attrs.categoria            || attrs.porte || '—',
-    porte:          attrs.porte                || '—',
-    numEmpregados:  attrs.num_empregados       || '—',
-    logradouro:     attrs.endereco             || '—',
-    complemento:    attrs.complemento          || '',
-    bairro:         attrs.bairro               || '—',
-    cidade:         attrs.cidade               || '—',
-    uf:             attrs.uf                   || '—',
-    cep:            attrs.cep                  || '—',
+    razaoSocial:    a.razao_social || a.nome_responsavel || '—',
+    nomeFantasia:   a.nome_fantasia || a.razao_social || '—',
+    cnpj:           a.cnpj || a.cpf || '—',
+    email:          a.email || '—',
+    telefone:       a.telefone || a.whatsapp || '—',
+    whatsapp:       a.whatsapp || a.telefone || '—',
+    site:           a.site || '—',
+    status:         a.status || 'inativo',
+    statusTexto:    statusLabel(a.status) || (a.status === 'ativo' ? 'Ativo' : 'Inativo'),
+    dataAssociacao: a.data_associacao || null,
+    dataVencimento: a.data_vencimento || null,
+    registro:       a.registro || a.id || '—',
+    categoria:      a.categoria || '—',
+    porte:          a.porte || '—',
+    numEmpregados:  a.num_funcionarios || '—',
+    logradouro:     fmtEnd(a),
+    complemento:    a.complemento || '',
+    bairro:         a.bairro || '—',
+    cidade:         a.cidade || '—',
+    uf:             a.uf || '—',
+    cep:            a.cep || '—',
+    // Dados do próprio colab/dep (se aplicável)
+    perfilColab:    perfilColab,
+    role:           role,
   };
 }
 
