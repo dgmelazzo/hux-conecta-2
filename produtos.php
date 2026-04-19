@@ -51,12 +51,9 @@ function requireAuth() {
 }
 
 function hgGet($path) {
-    $ch=curl_init(HIGESTOR_URL.$path);
-    curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>8,
-        CURLOPT_HTTPHEADER=>['Auth-Token: '.HIGESTOR_TOKEN,'Content-Type: application/json']]);
-    $res=curl_exec($ch); $code=curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
-    if($code!==200) return null;
-    return json_decode($res,true);
+    // HiGestor aposentado — função mantida como no-op para compat.
+    // Usar conecta_users.crm_dados JSON para dados de associado.
+    return null;
 }
 
 // ── SETUP TABELAS ────────────────────────────────────────────
@@ -312,13 +309,35 @@ switch($action){
         break;
 
     case 'buscar_associado':
+        // Delegado para admin.php?action=buscar_associado (fonte única: conecta_users)
         requireAdmin();
-        $q=$_GET['q']??(input()['q']??'');
-        if(strlen($q)<2) err(400,'Mínimo 2 caracteres.');
-        $raw=hgGet('/empresas?filter[razao_social]='.urlencode($q));
-        $lista=$raw['data']??(is_array($raw)?$raw:[]);
-        $res=[];
-        foreach(array_slice($lista,0,20) as $item){ $a=$item['attributes']??$item; if(!empty($a['associado'])) $res[]=['id'=>$item['id']??'','razao_social'=>$a['razao_social']??'','nome'=>$a['nome']??'','cnpj'=>$a['cnpj']??'']; }
+        $q = $_GET['q'] ?? (input()['q'] ?? '');
+        if (strlen($q) < 2) err(400, 'Mínimo 2 caracteres.');
+        $st = getDB()->prepare("
+            SELECT u.id, u.cpf_cnpj,
+                   COALESCE(
+                     JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.razao_social')),
+                     JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia')),
+                     JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome')),
+                     ''
+                   ) AS nome
+            FROM conecta_users u
+            WHERE u.ativo = 1 AND (
+              u.cpf_cnpj LIKE :q
+              OR LOWER(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.razao_social'))) LIKE LOWER(:q)
+              OR LOWER(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia'))) LIKE LOWER(:q)
+              OR LOWER(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome'))) LIKE LOWER(:q)
+            )
+            ORDER BY nome ASC
+            LIMIT 20
+        ");
+        $st->execute([':q' => '%' . $q . '%']);
+        $res = array_map(fn($r) => [
+            'id' => $r['id'],
+            'razao_social' => $r['nome'],
+            'nome' => $r['nome'],
+            'cnpj' => $r['cpf_cnpj'],
+        ], $st->fetchAll(PDO::FETCH_ASSOC));
         ok($res);
         break;
 

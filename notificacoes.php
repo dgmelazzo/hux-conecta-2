@@ -283,31 +283,17 @@ switch ($action) {
         err(400, 'Ação inválida.');
 }
 
-// ── Busca e-mail do associado ────────────────────────────────
+// ── Busca e-mail do associado (fonte: crm_dados JSON) ────────
 function buscarEmailAssociado($cpfCnpj, $userId) {
-    // Tenta buscar e-mail da sessão/HiGestor
-    $db   = getDB();
-    $user = $db->prepare('SELECT tipo, higestor_id FROM conecta_users WHERE id = ?');
-    $user->execute([$userId]);
-    $u = $user->fetch(PDO::FETCH_ASSOC);
-    if (!$u || !$u['higestor_id']) return null;
-
-    $ep  = $u['tipo'] === 'empresa'
-        ? '/empresas/' . $u['higestor_id']
-        : '/contribuintes/' . $u['higestor_id'];
-
-    $ch = curl_init(HIGESTOR_URL . $ep);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 8,
-        CURLOPT_HTTPHEADER     => ['Auth-Token: ' . HIGESTOR_TOKEN, 'Content-Type: application/json'],
-    ]);
-    $res  = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($code !== 200 || !$res) return null;
-    $data  = json_decode($res, true);
-    $attrs = $data['data']['attributes'] ?? $data['data'][0]['attributes'] ?? [];
-    return $attrs['email'] ?? null;
+    $db = getDB();
+    $st = $db->prepare("
+        SELECT JSON_UNQUOTE(JSON_EXTRACT(crm_dados, '$.email')) AS email
+        FROM conecta_users
+        WHERE id = ? AND ativo = 1
+        LIMIT 1
+    ");
+    $st->execute([$userId]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    $email = $row['email'] ?? null;
+    return ($email && $email !== 'null' && filter_var($email, FILTER_VALIDATE_EMAIL)) ? $email : null;
 }
