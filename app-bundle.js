@@ -2133,6 +2133,8 @@ window.carouselGoTo = carouselGoTo;
 window.abrirProduto = abrirProduto;
 window.openBenefitModal = openBenefitModal;
 window.fecharProdutoModal = typeof fecharProdutoModal !== 'undefined' ? fecharProdutoModal : function(){};
+window.limparBusca = limparBusca;
+window.navegarSugestoes = navegarSugestoes;
 
 // ============================================================
 // LINKS IMPORTANTES
@@ -4307,32 +4309,83 @@ function atualizarContadorDest() {
 // ── Busca de destinatários — AJAX com debounce ──────────────
 let _destDebounceTimer = null;
 
+function _destHighlight(text, q) {
+  if (!text || !q) return escHtml(text || '');
+  const safe = escHtml(text);
+  const pattern = escHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return safe.replace(new RegExp(pattern, 'gi'), m => `<span class="dest-sugestao-mark">${m}</span>`);
+}
+
+function _destClearBtnToggle() {
+  const btn = document.getElementById('dest-clear');
+  const inp = document.getElementById('dest-busca');
+  if (!btn || !inp) return;
+  btn.style.display = inp.value ? 'flex' : 'none';
+}
+
+function limparBusca() {
+  const inp = document.getElementById('dest-busca');
+  if (inp) inp.value = '';
+  document.getElementById('dest-sugestoes').style.display = 'none';
+  _destClearBtnToggle();
+  inp?.focus();
+}
+
+function navegarSugestoes(e) {
+  const items = document.querySelectorAll('.dest-sugestao-item');
+  if (!items.length) return;
+  const active = document.querySelector('.dest-sugestao-item.active');
+  let idx = active ? Array.from(items).indexOf(active) : -1;
+  if (e.key === 'ArrowDown') { e.preventDefault(); idx = (idx + 1) % items.length; }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); idx = (idx - 1 + items.length) % items.length; }
+  else if (e.key === 'Enter' && active) { e.preventDefault(); active.click(); return; }
+  else if (e.key === 'Escape') { document.getElementById('dest-sugestoes').style.display = 'none'; return; }
+  else return;
+  items.forEach(i => i.classList.remove('active'));
+  items[idx].classList.add('active');
+  items[idx].scrollIntoView({ block: 'nearest' });
+}
+
 function buscarDestinatarios(q) {
   const lista = document.getElementById('dest-lista');
   const wrap  = document.getElementById('dest-sugestoes');
-  if (!q.trim()) { wrap.style.display = 'none'; return; }
+  const hint  = document.getElementById('dest-hint');
+  _destClearBtnToggle();
 
-  // Atalho: digitar "todos" mostra opção de broadcast
+  // Vazio — some dropdown
+  if (!q.trim()) { wrap.style.display = 'none'; if (hint) hint.style.display = 'flex'; return; }
+  if (hint) hint.style.display = 'none';
+
+  // Atalho: "todos" mostra opção broadcast
   const termo = q.toLowerCase().trim();
   if ('todos os associados'.includes(termo) || termo === 'todos') {
     const jaTodos = _comDestinatarios.some(d => d.todos);
     if (!jaTodos) {
-      lista.innerHTML = `<div class="dest-sugestao-item" onclick="adicionarTodosViaAjax()">
-        <div class="dest-sugestao-avatar" style="background:var(--accent)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div>
-          <div style="font-weight:600">Todos os associados</div>
-          <div style="font-size:11px;color:var(--text3)">Enviar para toda a base</div>
-        </div>
-      </div>`;
+      lista.innerHTML = `
+        <div class="dest-sugestao-header">Atalho</div>
+        <div class="dest-sugestao-item" onclick="adicionarTodosViaAjax()">
+          <div class="dest-sugestao-avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="dest-sugestao-body">
+            <div class="dest-sugestao-nome">Todos os associados</div>
+            <div class="dest-sugestao-meta">Enviar comunicado para toda a base ativa</div>
+          </div>
+        </div>`;
       wrap.style.display = 'block';
       return;
     }
   }
 
-  // Mostra loading imediato
-  lista.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3);display:flex;align-items:center;gap:8px"><div class="spinner" style="width:14px;height:14px;flex-shrink:0"></div>Buscando...</div>';
+  // Feedback: mínimo de 2 caracteres
+  if (q.trim().length < 2) {
+    lista.innerHTML = `<div class="dest-sugestao-hint">Digite pelo menos <strong>2 caracteres</strong> para buscar</div>`;
+    wrap.style.display = 'block';
+    return;
+  }
+
+  // Loading
+  lista.innerHTML = `<div class="dest-sugestao-loading"><div class="spinner" style="width:14px;height:14px;flex-shrink:0"></div>Buscando…</div>`;
   wrap.style.display = 'block';
 
   // Debounce 300ms
@@ -4349,30 +4402,52 @@ function buscarDestinatarios(q) {
       const resultados = (data.data || []).filter(u => !jaAdicionados.has(String(u.id)));
 
       if (!resultados.length) {
-        lista.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--text3)">Nenhum associado encontrado</div>';
+        lista.innerHTML = `
+          <div class="dest-sugestao-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Nenhum associado encontrado para "<strong>${escHtml(q)}</strong>"
+          </div>`;
       } else {
-        lista.innerHTML = resultados.map(u => {
+        const headerLabel = resultados.length === 1
+          ? '1 resultado'
+          : `${resultados.length} resultados${data.data.length > resultados.length ? ' (alguns já selecionados)' : ''}`;
+        lista.innerHTML = `<div class="dest-sugestao-header">${headerLabel}</div>` + resultados.map(u => {
           const nomeRazao = u.nome || '';
           const doc       = u.doc_fmt || u.cpf_cnpj;
-          const inicial   = (nomeRazao || doc)[0]?.toUpperCase() || '?';
-          const tipo      = u.tipo === 'empresa' || (u.cpf_cnpj?.length > 11) ? 'Empresa' : 'Contribuinte';
+          const email     = u.email || '';
+          const isEmpresa = (u.cpf_cnpj || '').length > 11;
+          const inicial   = ((nomeRazao || doc)[0] || '?').toUpperCase();
           const labelPrincipal = nomeRazao || doc;
-          const labelSec       = nomeRazao ? doc : tipo;
-          return `<div class="dest-sugestao-item" onclick="adicionarDest(${u.id},'${escHtml(nomeRazao || doc)}')">
+          return `<div class="dest-sugestao-item" onclick="adicionarDest(${u.id},'${escHtml(nomeRazao || doc).replace(/'/g, "\\'")}')">
             <div class="dest-sugestao-avatar">${inicial}</div>
-            <div>
-              <div style="font-weight:600">${escHtml(labelPrincipal)}</div>
-              <div style="font-size:11px;color:var(--text3)">${escHtml(labelSec)}</div>
+            <div class="dest-sugestao-body">
+              <div class="dest-sugestao-nome">${_destHighlight(labelPrincipal, q)}</div>
+              <div class="dest-sugestao-meta">
+                <span class="dest-sugestao-badge${isEmpresa ? '' : ' cpf'}">${isEmpresa ? 'CNPJ' : 'CPF'}</span>
+                <span>${_destHighlight(doc, q)}</span>
+                ${email ? `<span>·</span><span>${_destHighlight(email, q)}</span>` : ''}
+              </div>
             </div>
           </div>`;
         }).join('');
       }
       wrap.style.display = 'block';
     } catch(e) {
-      lista.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:var(--danger)">Erro ao buscar. Tente novamente.</div>';
+      lista.innerHTML = `<div class="dest-sugestao-empty" style="color:var(--danger)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Erro ao buscar. Tente novamente.
+      </div>`;
     }
   }, 300);
 }
+
+// Fecha dropdown clicando fora
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('dest-sugestoes');
+  const tags = document.getElementById('dest-tags-wrap');
+  if (!wrap || !tags) return;
+  if (!wrap.contains(e.target) && !tags.contains(e.target)) wrap.style.display = 'none';
+});
 
 function mostrarSugestoes() {
   const q = document.getElementById('dest-busca')?.value || '';

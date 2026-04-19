@@ -281,6 +281,26 @@ html[data-theme="light"] .sidebar-logo-img{filter:none}
 .benefit-tag{font-size:11px;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px}
 .benefit-cta{font-size:12px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:5px}
 
+/* ── BUSCA DESTINATÁRIOS (Comunicados) ── */
+#dest-tags-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,112,26,.12)}
+.dest-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.03);max-height:320px;overflow-y:auto;z-index:200;animation:fadeIn .15s ease}
+.dest-sugestao-item{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;transition:background .12s;border-left:3px solid transparent}
+.dest-sugestao-item:hover,.dest-sugestao-item.active{background:var(--surface2);border-left-color:var(--accent)}
+.dest-sugestao-item + .dest-sugestao-item{border-top:1px solid var(--border)}
+.dest-sugestao-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent) 0%,var(--accent-dark,#C85D15) 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;letter-spacing:.5px}
+.dest-sugestao-body{flex:1;min-width:0}
+.dest-sugestao-nome{font-weight:600;color:var(--text);font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dest-sugestao-meta{font-size:11px;color:var(--text3);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;gap:8px;align-items:center;margin-top:2px}
+.dest-sugestao-badge{display:inline-block;padding:1px 7px;border-radius:99px;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:rgba(232,112,26,.15);color:var(--accent)}
+.dest-sugestao-badge.cpf{background:rgba(59,130,246,.15);color:#3B82F6}
+.dest-sugestao-mark{background:rgba(232,112,26,.2);color:var(--text);font-weight:700;border-radius:3px;padding:0 2px}
+.dest-sugestao-empty{padding:24px 16px;text-align:center;color:var(--text3);font-size:13px}
+.dest-sugestao-empty svg{width:32px;height:32px;margin:0 auto 8px;display:block;opacity:.4}
+.dest-sugestao-header{padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);background:var(--surface2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1}
+.dest-sugestao-loading{padding:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text3);justify-content:center}
+.dest-sugestao-hint{padding:14px 16px;text-align:center;color:var(--text3);font-size:12px;line-height:1.5}
+.dest-sugestao-hint strong{color:var(--accent)}
+
 /* ── MODAIS ── */
 .modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
 html[data-theme="light"] .modal-overlay{background:rgba(15,33,55,.45)}
