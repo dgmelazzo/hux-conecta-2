@@ -1226,6 +1226,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Primeiro-acesso via JWT: ?primeiro-acesso=JWT (link enviado por email)
+  const paParam = params.get('primeiro-acesso');
+  if (paParam) {
+    history.replaceState({}, '', window.location.pathname);
+    abrirPrimeiroAcessoJwt(paParam);
+    return;
+  }
+
   // Convite via URL: ?convite=TOKEN
   const conviteParam = params.get('convite');
   if (conviteParam) {
@@ -1678,6 +1686,12 @@ async function handleCheckDoc(e) {
     if (pill)    pill.textContent = doc;
     if (pillNovo) pillNovo.textContent = doc;
 
+    if (result.requires_email_invite) {
+      // Colab/dep sem senha — bloquear definição via CPF puro
+      const nomeCurto = result.nome ? result.nome.split(' ')[0] : '';
+      showError((nomeCurto ? `Olá ${nomeCurto}, ` : '') + 'verifique seu email — a empresa que te cadastrou enviou um link para você definir sua senha. Caso não tenha recebido, peça à empresa para reenviar.');
+      return;
+    }
     if (result.primeiro_acesso) {
       // Primeiro acesso — vai para tela de definir senha
       document.getElementById('login-title').textContent = 'Primeiro acesso';
@@ -3133,6 +3147,134 @@ async function salvarTrocarSenhaConecta(ev){
   return false;
 }
 window.salvarTrocarSenhaConecta = salvarTrocarSenhaConecta;
+
+// ============================================================
+// PRIMEIRO ACESSO via JWT (link enviado por email)
+// ============================================================
+async function abrirPrimeiroAcessoJwt(jwt){
+  // Esconde tudo
+  document.querySelectorAll('.portal-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('login-screen')?.classList.remove('active');
+  document.getElementById('portal-screen')?.classList.remove('active');
+  hideAuthLoading();
+
+  // Cria container fullscreen
+  let host = document.getElementById('cn-pa-host');
+  if (!host){
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="cn-pa-host" style="position:fixed;inset:0;background:linear-gradient(135deg,#1B2B6B 0%,#2A3F8F 100%);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto"></div>
+    `);
+    host = document.getElementById('cn-pa-host');
+  }
+  host.innerHTML = `
+    <div class="card border-0 shadow-lg" style="max-width:440px;width:100%">
+      <div class="card-body p-4 text-center">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted small mt-3 mb-0">Validando seu convite...</p>
+      </div>
+    </div>`;
+
+  // Valida token via Conecta proxy
+  let info;
+  try {
+    const r = await fetch(_baseUrl + '/auth.php?action=token-info', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({token: jwt})
+    });
+    const j = await r.json();
+    if (!r.ok || j.success === false){
+      host.innerHTML = `
+        <div class="card border-0 shadow-lg" style="max-width:440px;width:100%">
+          <div class="card-body p-4 text-center">
+            <i class="bi bi-x-circle-fill text-danger" style="font-size:48px"></i>
+            <h5 class="fw-bold text-dark mt-3 mb-2">Link inválido ou expirado</h5>
+            <p class="text-muted small mb-3">${j.message || 'Solicite à empresa um novo convite por email.'}</p>
+            <button class="btn btn-primary" onclick="location.href='/'">Voltar para login</button>
+          </div>
+        </div>`;
+      return;
+    }
+    info = j.data;
+  } catch(e){
+    host.innerHTML = '<div class="card p-4 text-center"><p class="text-danger small">Erro de conexão. Tente novamente.</p></div>';
+    return;
+  }
+
+  // Form Bootstrap 5
+  host.innerHTML = `
+    <div class="card border-0 shadow-lg" style="max-width:480px;width:100%">
+      <div class="card-body p-4 p-md-5">
+        <div class="text-center mb-4">
+          <img src="/conecta/uploads/logo-dark-320.png?v=2" alt="ACIC" style="height:40px;margin-bottom:12px" onerror="this.style.display='none'">
+          <h4 class="fw-bold text-dark mb-1">Bem-vindo, ${info.nome || 'Associado'}!</h4>
+          <p class="text-muted small mb-0">Defina sua senha para acessar o Conecta.</p>
+        </div>
+        <form onsubmit="return submitPrimeiroAcessoJwt(event, '${jwt}')" autocomplete="off">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Documento</label>
+            <input class="form-control bg-light" readonly value="${info.documento || ''}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nova senha <span class="text-danger">*</span> <small class="text-muted fw-normal">(mín. 8 caracteres)</small></label>
+            <input type="password" name="senha" class="form-control" required minlength="8" autofocus>
+          </div>
+          <div class="mb-4">
+            <label class="form-label small fw-semibold">Confirme a senha <span class="text-danger">*</span></label>
+            <input type="password" name="conf" class="form-control" required minlength="8">
+          </div>
+          <button type="submit" class="btn btn-warning fw-bold w-100 py-2"><i class="bi bi-shield-check me-2"></i>Criar senha e entrar</button>
+        </form>
+      </div>
+    </div>`;
+}
+window.abrirPrimeiroAcessoJwt = abrirPrimeiroAcessoJwt;
+
+async function submitPrimeiroAcessoJwt(ev, jwt){
+  ev.preventDefault();
+  const f = ev.target;
+  const senha = f.querySelector('[name=senha]').value;
+  const conf  = f.querySelector('[name=conf]').value;
+  if (senha.length < 8){ alert('Senha deve ter pelo menos 8 caracteres'); return false; }
+  if (senha !== conf){ alert('Senhas não conferem'); return false; }
+  const btn = f.querySelector('button[type=submit]');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
+  try {
+    const r = await fetch(_baseUrl + '/auth.php?action=token-set', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({token: jwt, senha})
+    });
+    const j = await r.json();
+    if (!r.ok || j.success === false){
+      alert(j.message || 'Erro ao definir senha');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-shield-check me-2"></i>Criar senha e entrar';
+      return false;
+    }
+    // Login automático com o token retornado
+    const data = j.data || {};
+    if (data.token) {
+      setToken(data.token);
+      setSession({
+        tipo: data.role || 'colaborador',
+        role: data.role || 'colaborador',
+        nome: data.user?.nome || data.nome || '',
+        cpf:  data.user?.cpf || data.documento || '',
+        cpf_cnpj: data.user?.cpf || data.documento || '',
+        is_admin: false,
+      });
+    }
+    // Remove o overlay e mostra o portal
+    document.getElementById('cn-pa-host')?.remove();
+    location.href = '/'; // recarrega para inicializar tudo limpo
+  } catch(e){
+    alert('Erro de conexão');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-shield-check me-2"></i>Criar senha e entrar';
+  }
+  return false;
+}
+window.submitPrimeiroAcessoJwt = submitPrimeiroAcessoJwt;
 
 // Toast simples Bootstrap (Conecta)
 function toastConecta(msg, type){
