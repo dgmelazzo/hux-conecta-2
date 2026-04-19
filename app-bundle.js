@@ -2974,7 +2974,7 @@ function renderDashboardPerfil(d) {
   const session = getSession() || {};
   const role = session.role || session.tipo || 'associado_empresa';
   const isAdmin = session.is_admin || role === 'superadmin' || role === 'gestor';
-  const nome = d.nomeFantasia !== '\u2014' ? d.nomeFantasia : (d.razaoSocial || session.nome || 'Associado');
+  const nome = session.nome || (d.nomeFantasia !== '\u2014' ? d.nomeFantasia : (d.razaoSocial || 'Associado'));
   const heroEl = document.getElementById('dash-hero-perfil');
   if (heroEl) heroEl.innerHTML = '';
 
@@ -2992,7 +2992,165 @@ function renderDashboardPerfil(d) {
   });
   const greet = document.getElementById('dash-greeting');
   if (greet && greet.closest('.section-header')) greet.closest('.section-header').style.display = 'none';
+
+  // Hero personalizado para colab/dep (Bootstrap 5)
+  if (heroEl && (role === 'colaborador' || role === 'dependente')) {
+    const tipoLabel = role === 'colaborador' ? 'Colaborador' : 'Dependente';
+    const tipoIcon  = role === 'colaborador' ? 'bi-person-badge' : 'bi-person-heart';
+    const empresaNome = d.razaoSocial && d.razaoSocial !== '\u2014' ? d.razaoSocial : (d.nomeFantasia || 'Empresa vinculada');
+    const docFmt = (typeof formatCPF === 'function' && session.cpf_cnpj) ? formatCPF(session.cpf_cnpj) : (session.cpf_cnpj || '');
+    heroEl.innerHTML = `
+      <div class="card border-0 shadow-sm mb-3" style="background:linear-gradient(135deg,#1B2B6B 0%,#2A3F8F 100%);color:#fff;overflow:hidden">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start gap-3 flex-wrap">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:64px;height:64px;background:rgba(255,255,255,.15);font-size:28px;font-weight:800">${(nome||'?').charAt(0).toUpperCase()}</div>
+            <div class="flex-grow-1">
+              <span class="badge bg-warning text-dark mb-2"><i class="bi ${tipoIcon} me-1"></i>${tipoLabel}</span>
+              <h2 class="h4 mb-1 text-white">Olá, ${nome}!</h2>
+              <p class="small mb-0 text-white-50"><i class="bi bi-building me-1"></i>Vinculado a <strong>${empresaNome}</strong>${docFmt ? ' &middot; CPF ' + docFmt : ''}</p>
+            </div>
+          </div>
+          <hr class="border-white opacity-25 my-3">
+          <div class="row g-2">
+            <div class="col-12 col-md-${role === 'colaborador' ? '4' : '6'}">
+              <button class="btn btn-warning fw-bold w-100" onclick="goSection('catalogo')"><i class="bi bi-grid me-2"></i>Ver Catálogo</button>
+            </div>
+            ${role === 'colaborador' ? `
+            <div class="col-12 col-md-4">
+              <button class="btn btn-outline-light w-100" onclick="goSection('carteirinha')"><i class="bi bi-credit-card-2-front me-2"></i>Minha Carteirinha</button>
+            </div>` : ''}
+            <div class="col-12 col-md-${role === 'colaborador' ? '4' : '6'}">
+              <button class="btn btn-outline-light w-100" onclick="abrirTrocarSenhaConecta()"><i class="bi bi-shield-lock me-2"></i>Trocar Senha</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+          <h6 class="card-title fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>Sobre seu acesso</h6>
+          <p class="small text-muted mb-2">Como ${tipoLabel.toLowerCase()}, você pode:</p>
+          <ul class="small mb-0">
+            <li>Explorar produtos e benefícios exclusivos no catálogo</li>
+            ${role === 'colaborador' ? '<li>Apresentar sua carteirinha digital nos estabelecimentos parceiros</li>' : ''}
+            <li>Adquirir produtos e serviços com condições especiais</li>
+          </ul>
+        </div>
+      </div>
+    `;
+  }
 }
+
+// Helper: trocar de seção via botão (usa a função de navegação existente do Conecta)
+function goSection(sec){
+  const fnNames = ['goTo','navTo','showSection','irPara','navegar'];
+  for (const fn of fnNames) { if (typeof window[fn] === 'function') { try { window[fn](sec); return; } catch(e){} } }
+  // fallback: clica no botão da sidebar
+  const btn = document.getElementById('nav-'+sec);
+  if (btn) btn.click();
+}
+window.goSection = goSection;
+
+// Modal Bootstrap pra trocar senha (Conecta)
+function abrirTrocarSenhaConecta(){
+  let m = document.getElementById('cn-senha-modal');
+  if (!m){
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="modal fade" id="cn-senha-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content border-0 shadow">
+            <form onsubmit="return salvarTrocarSenhaConecta(event)" autocomplete="off">
+              <div class="modal-header" style="background:#1B2B6B;color:#fff">
+                <h6 class="modal-title fw-bold"><i class="bi bi-shield-lock me-2"></i>Trocar Senha</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold">Senha atual <span class="text-danger">*</span></label>
+                  <input type="password" name="atual" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold">Nova senha <span class="text-danger">*</span> <small class="text-muted fw-normal">(mín. 8 caracteres)</small></label>
+                  <input type="password" name="nova" class="form-control" required minlength="8">
+                </div>
+                <div class="mb-0">
+                  <label class="form-label small fw-semibold">Confirme a nova senha <span class="text-danger">*</span></label>
+                  <input type="password" name="conf" class="form-control" required minlength="8">
+                </div>
+              </div>
+              <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-warning fw-bold"><i class="bi bi-shield-check me-1"></i>Trocar senha</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `);
+    m = document.getElementById('cn-senha-modal');
+  }
+  m.querySelector('form').reset();
+  bootstrap.Modal.getOrCreateInstance(m).show();
+}
+window.abrirTrocarSenhaConecta = abrirTrocarSenhaConecta;
+
+async function salvarTrocarSenhaConecta(ev){
+  ev.preventDefault();
+  const f = ev.target;
+  const atual = f.querySelector('[name=atual]').value;
+  const nova  = f.querySelector('[name=nova]').value;
+  const conf  = f.querySelector('[name=conf]').value;
+  if (nova.length < 8){ toastConecta('A nova senha deve ter pelo menos 8 caracteres','warn'); return false; }
+  if (nova !== conf){ toastConecta('As senhas não conferem','warn'); return false; }
+  const session = getSession() || {};
+  const doc = (session.cpf_cnpj || session.cpf || '').replace(/\D/g,'');
+  const btn = f.querySelector('button[type=submit]');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
+  try {
+    // Valida senha atual via login
+    const validate = await fetch(_baseUrl + '/auth.php?action=login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({cpf_cnpj: doc, password: atual})
+    });
+    const vj = await validate.json().catch(()=>({}));
+    if (!validate.ok || vj.success === false){ toastConecta(vj.message || 'Senha atual incorreta','err'); return false; }
+    // Define nova via primeiro-acesso (sobrescreve o hash)
+    const upd = await fetch(_baseUrl + '/auth.php?action=first', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({cpf_cnpj: doc, password: nova})
+    });
+    const uj = await upd.json().catch(()=>({}));
+    if (upd.ok && uj.success !== false){
+      toastConecta('Senha atualizada!','success');
+      bootstrap.Modal.getInstance(document.getElementById('cn-senha-modal')).hide();
+    } else {
+      toastConecta(uj.message || 'Erro ao atualizar senha','err');
+    }
+  } catch(e){
+    toastConecta('Erro de conexão','err');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-shield-check me-1"></i>Trocar senha';
+  }
+  return false;
+}
+window.salvarTrocarSenhaConecta = salvarTrocarSenhaConecta;
+
+// Toast simples Bootstrap (Conecta)
+function toastConecta(msg, type){
+  let cont = document.getElementById('cn-toast-cont');
+  if (!cont){
+    document.body.insertAdjacentHTML('beforeend','<div id="cn-toast-cont" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999"></div>');
+    cont = document.getElementById('cn-toast-cont');
+  }
+  const colors = {err:'bg-danger text-white', success:'bg-success text-white', warn:'bg-warning text-dark'};
+  const icon   = type === 'err' ? 'bi-exclamation-circle' : type === 'warn' ? 'bi-exclamation-triangle' : 'bi-check-circle';
+  const id = 'tc-'+Date.now();
+  cont.insertAdjacentHTML('beforeend', `<div id="${id}" class="toast align-items-center border-0 ${colors[type]||'bg-dark text-white'}" role="alert"><div class="d-flex"><div class="toast-body d-flex align-items-center gap-2"><i class="bi ${icon}"></i> ${msg}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`);
+  const el = document.getElementById(id);
+  const t = new bootstrap.Toast(el, {delay:3500});
+  t.show();
+  el.addEventListener('hidden.bs.toast', () => el.remove());
+}
+window.toastConecta = toastConecta;
 
 
 
