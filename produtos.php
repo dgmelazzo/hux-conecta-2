@@ -224,7 +224,13 @@ switch($action){
         break;
 
     case 'categorias':
-        $st=getDB()->query("SELECT c.*,COUNT(p.id) AS total_produtos FROM conecta_categorias c LEFT JOIN conecta_produtos p ON p.categoria_id=c.id AND p.status='ativo' WHERE c.ativo=1 GROUP BY c.id ORDER BY c.ordem,c.nome");
+        // Mostra categorias ATIVAS ou que têm pelo menos 1 produto ativo (evita produtos órfãos invisíveis)
+        $st=getDB()->query("SELECT c.*, COUNT(p.id) AS total_produtos
+                            FROM conecta_categorias c
+                            LEFT JOIN conecta_produtos p ON p.categoria_id=c.id AND p.status='ativo'
+                            WHERE c.ativo=1 OR EXISTS (SELECT 1 FROM conecta_produtos pp WHERE pp.categoria_id=c.id AND pp.status='ativo')
+                            GROUP BY c.id
+                            ORDER BY c.ordem, c.nome");
         ok($st->fetchAll(PDO::FETCH_ASSOC));
         break;
 
