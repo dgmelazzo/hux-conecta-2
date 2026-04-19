@@ -283,14 +283,21 @@ switch ($action) {
         ok(['id'=>$in['id'],'ativo'=>$novoStatus,'label'=>$novoStatus?'Ativo':'Bloqueado']);
         break;
 
-    // ── Resetar senha (força novo primeiro acesso) ──
+    // ── Resetar senha (DEPRECADO — reset deve passar pelo CRM) ──
     case 'resetar_senha':
+        // Brecha: este caminho permitia resetar senha sem auth do CRM.
+        // O reset agora deve ser feito via /associados/me/colaboradores/{id}/reenviar-convite (CRM)
+        // que gera novo JWT e envia email. Mantemos só o invalidate de sessão local.
         $in = input();
         if (empty($in['id'])) err(400,'ID obrigatório.');
         $db = getDB();
-        $db->prepare('UPDATE conecta_users SET password=NULL, primeiro_acesso=1 WHERE id=?')->execute([$in['id']]);
+        // NÃO mexe em password — apenas invalida sessões locais (forçando re-login via CRM)
         $db->prepare('DELETE FROM conecta_sessions WHERE user_id=?')->execute([$in['id']]);
-        ok(['reset'=>true,'message'=>'Usuário precisará redefinir a senha no próximo acesso.']);
+        ok([
+          'reset'=>true,
+          'message'=>'Sessões locais invalidadas. Para reenviar convite, use o CRM (Meu Perfil > Colaboradores).',
+          'note'=>'reset_senha_via_crm_apenas',
+        ]);
         break;
 
     // ── Dashboard de métricas ──
