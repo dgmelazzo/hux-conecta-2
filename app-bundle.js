@@ -2130,6 +2130,9 @@ function carouselGoTo(idx) {
 
 window.carouselNav = carouselNav;
 window.carouselGoTo = carouselGoTo;
+window.abrirProduto = abrirProduto;
+window.openBenefitModal = openBenefitModal;
+window.fecharProdutoModal = typeof fecharProdutoModal !== 'undefined' ? fecharProdutoModal : function(){};
 
 // ============================================================
 // LINKS IMPORTANTES

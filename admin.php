@@ -187,6 +187,46 @@ switch ($action) {
         ok($usuarios);
         break;
 
+    // ── Busca por associado (autocomplete em comunicados) ──
+    case 'buscar_associado':
+        $q = trim($_GET['q'] ?? '');
+        if (strlen($q) < 2) err(400, 'Termo muito curto.');
+        $db = getDB();
+        $stmt = $db->prepare("
+            SELECT u.id, u.cpf_cnpj, u.tipo,
+                   COALESCE(
+                     JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.razao_social')),
+                     JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia')),
+                     JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome')),
+                     ''
+                   ) AS nome,
+                   JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.email')) AS email
+            FROM conecta_users u
+            WHERE u.ativo = 1 AND (
+              u.cpf_cnpj LIKE :q
+              OR LOWER(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.razao_social'))) LIKE LOWER(:q)
+              OR LOWER(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome_fantasia'))) LIKE LOWER(:q)
+              OR LOWER(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.nome'))) LIKE LOWER(:q)
+              OR LOWER(JSON_UNQUOTE(JSON_EXTRACT(u.crm_dados, '$.email'))) LIKE LOWER(:q)
+            )
+            ORDER BY nome ASC
+            LIMIT 15
+        ");
+        $stmt->execute([':q' => '%' . $q . '%']);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($results as &$u) {
+            $doc = $u['cpf_cnpj'];
+            if (strlen($doc) === 11) {
+                $u['doc_fmt'] = preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $doc);
+            } elseif (strlen($doc) === 14) {
+                $u['doc_fmt'] = preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $doc);
+            } else {
+                $u['doc_fmt'] = $doc;
+            }
+        }
+        ok($results);
+        break;
+
     // ── Detalhe do usuário + dados HiGestor ──
     case 'usuario':
         $id = (int)($_GET['id'] ?? 0);
