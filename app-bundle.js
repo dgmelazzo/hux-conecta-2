@@ -5084,6 +5084,52 @@ document.getElementById('capa-preview-box')?.addEventListener('mouseleave', func
       tags:['empresa','dados','cnpj'],
       roles:['colaborador','dependente','associado_empresa'],
       conteudo:'<ol><li>Menu <strong>Minha Empresa</strong>.</li><li>Para editar dados, acesse o <strong>CRM</strong> (apenas o representante legal da empresa pode alterar).</li></ol>'
+    },
+    // ═══ Artigos para admins (superadmin/gestor) ═══
+    {
+      id:'admin-produtos',
+      titulo:'Cadastrar produtos no catálogo',
+      icone:'bi-box-seam',
+      resumo:'Adicionar novos produtos/benefícios ao Conecta.',
+      tags:['produto','catalogo','admin','cadastro'],
+      roles:['superadmin','gestor'],
+      conteudo:'<ol><li>No menu, acesse <strong>Produtos</strong>.</li><li>Clique em <strong>+ Novo produto</strong>.</li><li>Preencha nome, categoria, descrição (com editor rich text), marca e parceiro.</li><li>Adicione imagens — a primeira será a capa.</li><li>Configure subprodutos (planos) se o produto tiver variações.</li><li>Defina link de venda (URL externa do parceiro ou formulário interno).</li><li>Marque <em>Destaque</em> para aparecer no carrossel do dashboard.</li></ol><div class="alert alert-info small mb-0"><i class="bi bi-info-circle me-1"></i>Só categorias com pelo menos 1 produto ativo aparecem no filtro do catálogo público.</div>'
+    },
+    {
+      id:'admin-categorias',
+      titulo:'Gerenciar categorias',
+      icone:'bi-tag',
+      resumo:'Criar, editar e ordenar categorias do catálogo.',
+      tags:['categoria','admin','ordem'],
+      roles:['superadmin','gestor'],
+      conteudo:'<ol><li>Menu <strong>Categorias</strong>.</li><li>Crie com nome, emoji/ícone e ordem de exibição.</li><li>Marque <em>ativo</em> para aparecer no catálogo (também aparece se inativa mas tiver produtos ativos).</li></ol>'
+    },
+    {
+      id:'admin-parceiros',
+      titulo:'Cadastrar parceiros',
+      icone:'bi-handshake',
+      resumo:'Fornecedores de produtos/serviços do Conecta.',
+      tags:['parceiro','fornecedor','admin'],
+      roles:['superadmin','gestor'],
+      conteudo:'<ol><li>Menu <strong>Parceiros</strong>.</li><li>Informe nome, CNPJ, contato, logo e site.</li><li>Para split de pagamento automático via Asaas, configure a <em>wallet</em> do parceiro (feito no CRM).</li><li>Depois, associe o parceiro ao produto durante cadastro do produto.</li></ol>'
+    },
+    {
+      id:'admin-comunicados',
+      titulo:'Enviar comunicado',
+      icone:'bi-chat-dots',
+      resumo:'Disparar mensagens para associados.',
+      tags:['comunicado','email','whatsapp','admin'],
+      roles:['superadmin','gestor'],
+      conteudo:'<ol><li>Menu <strong>Comunicados</strong>.</li><li>Use a busca de destinatários (mínimo 2 caracteres) para selecionar os associados — busca por CPF, CNPJ, nome ou email.</li><li>Escolha canal (email e/ou WhatsApp) e envie.</li></ol>'
+    },
+    {
+      id:'admin-metricas',
+      titulo:'Ler métricas do Conecta',
+      icone:'bi-graph-up',
+      resumo:'Engajamento do catálogo e uso do portal.',
+      tags:['metricas','admin','dashboard','kpi'],
+      roles:['superadmin','gestor','associado_empresa'],
+      conteudo:'<ol><li>Menu <strong>Métricas</strong>.</li><li>Veja total de usuários, produtos, views e clicks.</li><li>Top 5 produtos mais vistos e mais clicados.</li><li>Evolução temporal de acessos.</li></ol><div class="alert alert-info small mb-0"><i class="bi bi-info-circle me-1"></i>Os indicadores exibidos dependem das permissões configuradas pelo superadmin.</div>'
     }
   ];
 
@@ -5102,15 +5148,20 @@ document.getElementById('capa-preview-box')?.addEventListener('mouseleave', func
     const grid = document.getElementById('cn-ajuda-grid');
     if (!grid) return;
     const q = (filtro||'').trim().toLowerCase();
-    const artigos = ARTIGOS.filter(rolePermitida).filter(a => {
+    // Se o role não casa com nenhum artigo, mostra TODOS (admin, convidado, role desconhecido)
+    let base = ARTIGOS.filter(rolePermitida);
+    let mostrouTodos = false;
+    if (!base.length) { base = ARTIGOS; mostrouTodos = true; }
+    const artigos = base.filter(a => {
       if (!q) return true;
       return a.titulo.toLowerCase().includes(q) || a.tags.join(' ').includes(q) || a.resumo.toLowerCase().includes(q);
     });
     if (!artigos.length){
-      grid.innerHTML = '<div class="col-12"><div class="alert alert-info mb-0 text-center"><i class="bi bi-info-circle me-2"></i>Nenhum guia encontrado.</div></div>';
+      grid.innerHTML = '<div class="col-12"><div class="alert alert-info mb-0 text-center"><i class="bi bi-info-circle me-2"></i>Nenhum guia encontrado para <strong>' + q + '</strong>.</div></div>';
       return;
     }
-    grid.innerHTML = artigos.map(a => {
+    const prefixo = mostrouTodos && !q ? '<div class="col-12"><div class="alert alert-light small mb-0"><i class="bi bi-info-circle me-1"></i>Mostrando todos os guias disponíveis.</div></div>' : '';
+    grid.innerHTML = prefixo + artigos.map(a => {
       return `<div class="col-12 col-md-6">
         <div class="card border-0 shadow-sm h-100" style="cursor:pointer;transition:all .2s" onclick="abrirAjudaArtigo('${a.id}')" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform=''">
           <div class="card-body p-3">
