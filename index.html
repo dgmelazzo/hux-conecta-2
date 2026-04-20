@@ -1217,47 +1217,66 @@
 
 <!-- Botão flutuante de Ajuda -->
 <button id="cn-ajuda-fab" onclick="abrirAjudaConecta()" title="Ajuda" aria-label="Abrir ajuda"
-  style="position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;border:none;background:#E8701A;color:#fff;box-shadow:0 6px 20px rgba(232,112,26,.45);cursor:pointer;z-index:1050;font-size:22px;display:flex;align-items:center;justify-content:center">
+  style="position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;border:none;background:var(--accent);color:#fff;box-shadow:0 6px 20px var(--accent-soft);cursor:pointer;z-index:1050;font-size:22px;display:flex;align-items:center;justify-content:center">
   <i class="bi bi-question-circle"></i>
 </button>
 
-<!-- Modal de Ajuda -->
-<div class="modal fade" id="cn-ajuda-modal" tabindex="-1">
+<!-- Modal de Ajuda — respeita tema dark/light do Conecta -->
+<div class="modal fade cn-help-modal" id="cn-ajuda-modal" tabindex="-1">
   <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header" style="background:#1B2B6B;color:#fff">
-        <h6 class="modal-title fw-bold"><i class="bi bi-question-circle me-2"></i>Central de Ajuda</h6>
+    <div class="modal-content border-0 shadow" style="background:var(--surface);color:var(--text);border-radius:var(--radius)">
+      <div class="modal-header" style="background:var(--accent);color:#fff;border:0;border-radius:var(--radius) var(--radius) 0 0">
+        <h5 class="modal-title fw-bold" style="font-size:16px"><i class="bi bi-question-circle me-2"></i>Central de Ajuda</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="background:var(--surface);color:var(--text)">
         <div class="input-group mb-3">
-          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-          <input type="search" id="cn-ajuda-busca" class="form-control" placeholder="Busque por tópico...">
+          <span class="input-group-text" style="background:var(--surface2);border-color:var(--border);color:var(--text2)"><i class="bi bi-search"></i></span>
+          <input type="search" id="cn-ajuda-busca" class="form-control" placeholder="Busque por tópico..." style="background:var(--surface2);border-color:var(--border);color:var(--text)">
         </div>
         <div id="cn-ajuda-grid" class="row g-3"></div>
       </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fechar</button>
+      <div class="modal-footer" style="border-top:1px solid var(--border);background:var(--surface2)">
+        <button type="button" class="btn" data-bs-dismiss="modal" style="background:var(--surface);color:var(--text2);border:1px solid var(--border)">Fechar</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Modal de artigo de Ajuda -->
-<div class="modal fade" id="cn-ajuda-artigo" tabindex="-1">
+<div class="modal fade cn-help-modal" id="cn-ajuda-artigo" tabindex="-1">
   <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header" style="background:#1B2B6B;color:#fff">
-        <h6 class="modal-title fw-bold" id="cn-ajuda-artigo-title"></h6>
+    <div class="modal-content border-0 shadow" style="background:var(--surface);color:var(--text);border-radius:var(--radius)">
+      <div class="modal-header" style="background:var(--accent);color:#fff;border:0;border-radius:var(--radius) var(--radius) 0 0">
+        <h5 class="modal-title fw-bold" id="cn-ajuda-artigo-title" style="font-size:16px"></h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="cn-ajuda-artigo-body"></div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-warning fw-bold" data-bs-dismiss="modal">Entendi</button>
+      <div class="modal-body cn-help-body" id="cn-ajuda-artigo-body" style="background:var(--surface);color:var(--text)"></div>
+      <div class="modal-footer" style="border-top:1px solid var(--border);background:var(--surface2)">
+        <button type="button" class="btn fw-bold" data-bs-dismiss="modal" style="background:var(--accent);color:#fff;border:0">Entendi</button>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Estilos da Central de Ajuda (respeitam dark/light) -->
+<style>
+.cn-help-modal .form-control:focus{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent)}
+.cn-help-modal .help-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);transition:all .2s;cursor:pointer}
+.cn-help-modal .help-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08)}
+.cn-help-modal .help-card-title{color:var(--text);font-size:14px;font-weight:700;line-height:1.3;margin:0}
+.cn-help-modal .help-card-sub{color:var(--text2);font-size:12px;margin:4px 0 0}
+.cn-help-modal .help-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--accent-soft);color:var(--accent);font-size:18px}
+.cn-help-body{font-size:14px;line-height:1.6}
+.cn-help-body ol,.cn-help-body ul{padding-left:20px}
+.cn-help-body li{margin-bottom:8px;color:var(--text)}
+.cn-help-body strong{color:var(--text)}
+.cn-help-body code{background:var(--surface2);color:var(--accent);padding:2px 6px;border-radius:4px;font-size:12px}
+.cn-help-body pre{background:var(--surface2);color:var(--text);padding:10px;border-radius:6px;font-size:12px;overflow-x:auto}
+.cn-help-body .alert{border-radius:8px;padding:10px 14px;margin-top:14px}
+.cn-help-body .alert-info{background:var(--accent-soft);color:var(--text);border:1px solid var(--accent-border)}
+.cn-help-body .alert-warning{background:rgba(245,158,11,.1);color:var(--text);border:1px solid rgba(245,158,11,.3)}
+</style>
 
 </body>
 </html>

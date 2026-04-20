@@ -304,72 +304,42 @@ switch ($action) {
     case 'metricas':
         $db = getDB();
 
-        // Totais gerais via CRM (source of truth)
-        $crmDb = new PDO('mysql:host='.DB_HOST.';dbname=conecta_crm;charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
-        $totais = $crmDb->query("
-            SELECT
-                COUNT(*) AS total_usuarios,
-                SUM(status='ativo') AS usuarios_ativos,
-                SUM(status IN ('cancelado','suspenso')) AS usuarios_bloqueados,
-                0 AS aguardando_acesso,
-                SUM(categoria='empresa') AS empresas,
-                SUM(categoria='colaborador') AS contribuintes
-            FROM associados WHERE tenant_id = 1
-        ")->fetch(PDO::FETCH_ASSOC);
+        // Totais gerais via CRM (source of truth) — fallback se sem acesso cross-DB
+        // TODO refator: chamar API CRM via HTTP em vez de cross-DB direto
+        $totais = ['total_usuarios'=>0,'usuarios_ativos'=>0,'usuarios_bloqueados'=>0,'aguardando_acesso'=>0,'empresas'=>0,'contribuintes'=>0,'_indisponivel'=>true];
+        try {
+            $crmDb = new PDO('mysql:host='.DB_HOST.';dbname=conecta_crm;charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
+            $totais = $crmDb->query("
+                SELECT
+                    COUNT(*) AS total_usuarios,
+                    SUM(status='ativo') AS usuarios_ativos,
+                    SUM(status IN ('cancelado','suspenso')) AS usuarios_bloqueados,
+                    0 AS aguardando_acesso,
+                    SUM(categoria='empresa') AS empresas,
+                    SUM(categoria='colaborador') AS contribuintes
+                FROM associados WHERE tenant_id = 1
+            ")->fetch(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            error_log('[METRICAS] CRM cross-DB sem acesso: '.$e->getMessage());
+        }
 
-        // Total de produtos e views/clicks
-        $produtos = $db->query("
-            SELECT
-                COUNT(*) AS total_produtos,
-                SUM(status='ativo') AS produtos_ativos,
-                SUM(views) AS total_views,
-                SUM(clicks) AS total_clicks
-            FROM conecta_produtos
-        ")->fetch(PDO::FETCH_ASSOC);
+        // Helper inline pra blindar queries opcionais
+        $tryQuery = function($sql, $fetchAll = false) use ($db) {
+            try {
+                $st = $db->query($sql);
+                return $fetchAll ? $st->fetchAll(PDO::FETCH_ASSOC) : $st->fetch(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e) {
+                error_log('[METRICAS] '.$e->getMessage());
+                return $fetchAll ? [] : null;
+            }
+        };
 
-        // Top 5 produtos mais vistos
-        $top_views = $db->query("
-            SELECT nome, categoria_id, views, clicks, slug
-            FROM conecta_produtos
-            WHERE status='ativo'
-            ORDER BY views DESC LIMIT 5
-        ")->fetchAll(PDO::FETCH_ASSOC);
-
-        // Top 5 produtos com mais cliques
-        $top_clicks = $db->query("
-            SELECT p.nome, c.nome AS categoria, p.views, p.clicks, p.slug
-            FROM conecta_produtos p
-            LEFT JOIN conecta_categorias c ON c.id = p.categoria_id
-            WHERE p.status='ativo'
-            ORDER BY p.clicks DESC LIMIT 5
-        ")->fetchAll(PDO::FETCH_ASSOC);
-
-        // Acessos últimos 30 dias (por dia)
-        $acessos_30d = $db->query("
-            SELECT DATE(created_at) AS dia, COUNT(*) AS total
-            FROM conecta_sessions
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-            GROUP BY DATE(created_at)
-            ORDER BY dia ASC
-        ")->fetchAll(PDO::FETCH_ASSOC);
-
-        // Usuários que nunca acessaram (primeiro_acesso ainda = 1 OU sem sessão)
-        $sem_acesso = $db->query("
-            SELECT u.cpf_cnpj, u.tipo, u.higestor_id, u.created_at
-            FROM conecta_users u
-            LEFT JOIN conecta_sessions s ON s.user_id = u.id
-            WHERE s.id IS NULL OR u.primeiro_acesso = 1
-            GROUP BY u.id
-            ORDER BY u.created_at DESC
-            LIMIT 20
-        ")->fetchAll(PDO::FETCH_ASSOC);
-
-        // Eventos de tracking por tipo
-        $tracking = $db->query("
-            SELECT tipo_evento, COUNT(*) AS total
-            FROM conecta_tracking
-            GROUP BY tipo_evento
-        ")->fetchAll(PDO::FETCH_ASSOC);
+        $produtos    = $tryQuery("SELECT COUNT(*) AS total_produtos, SUM(status='ativo') AS produtos_ativos, SUM(views) AS total_views, SUM(clicks) AS total_clicks FROM conecta_produtos") ?: ['total_produtos'=>0,'produtos_ativos'=>0,'total_views'=>0,'total_clicks'=>0];
+        $top_views   = $tryQuery("SELECT nome, categoria_id, views, clicks, slug FROM conecta_produtos WHERE status='ativo' ORDER BY views DESC LIMIT 5", true);
+        $top_clicks  = $tryQuery("SELECT p.nome, c.nome AS categoria, p.views, p.clicks, p.slug FROM conecta_produtos p LEFT JOIN conecta_categorias c ON c.id = p.categoria_id WHERE p.status='ativo' ORDER BY p.clicks DESC LIMIT 5", true);
+        $acessos_30d = $tryQuery("SELECT DATE(created_at) AS dia, COUNT(*) AS total FROM conecta_sessions WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY DATE(created_at) ORDER BY dia ASC", true);
+        $sem_acesso  = $tryQuery("SELECT u.cpf_cnpj, u.tipo, u.higestor_id, u.created_at FROM conecta_users u LEFT JOIN conecta_sessions s ON s.user_id = u.id WHERE s.id IS NULL OR u.primeiro_acesso = 1 GROUP BY u.id ORDER BY u.created_at DESC LIMIT 20", true);
+        $tracking    = $tryQuery("SELECT tipo_evento, COUNT(*) AS total FROM conecta_tracking GROUP BY tipo_evento", true);
 
         ok([
             'totais'      => $totais,
