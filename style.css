@@ -88,7 +88,7 @@ body { background: var(--bg) !important; color: var(--text) !important; font-fam
 .login-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}
 .login-hero-overlay{position:absolute;inset:0;background:rgba(6,12,24,.70)}
 html[data-theme="light"] .login-hero-overlay{background:rgba(6,12,24,.52)}
-#login-conectores{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:.9}
+#login-conectores{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:1}
 @media (prefers-reduced-motion:reduce){#login-conectores{display:none}}
 .login-hero-badge{position:absolute;top:24px;left:24px;z-index:20;background:rgba(232,100,10,.2);border:1px solid rgba(232,100,10,.5);border-radius:6px;padding:5px 12px;font-size:10px;color:#E8640A;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
 .login-photo-credit{position:absolute;bottom:14px;right:18px;z-index:20;font-size:10px;color:rgba(255,255,255,.35)}
