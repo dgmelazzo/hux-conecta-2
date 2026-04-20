@@ -3038,14 +3038,14 @@ function renderDashboardPerfil(d) {
           <hr class="border-white opacity-25 my-3">
           <div class="row g-2">
             <div class="col-12 col-md-${role === 'colaborador' ? '4' : '6'}">
-              <button class="btn btn-warning fw-bold w-100" onclick="goSection('catalogo')"><i class="bi bi-grid me-2"></i>Ver Catálogo</button>
+              <button class="btn btn-warning fw-bold w-100" onclick="goSection('catalogo')"><i class="bi bi-grid me-2"></i>Ver Catálogo <span onclick="event.stopPropagation();abrirAjudaArtigo('catalogo-buscar')" class="ms-1" style="opacity:.8;cursor:help" title="Como usar?"><i class="bi bi-question-circle"></i></span></button>
             </div>
             ${role === 'colaborador' ? `
             <div class="col-12 col-md-4">
-              <button class="btn btn-outline-light w-100" onclick="goSection('carteirinha')"><i class="bi bi-credit-card-2-front me-2"></i>Minha Carteirinha</button>
+              <button class="btn btn-outline-light w-100" onclick="goSection('carteirinha')"><i class="bi bi-credit-card-2-front me-2"></i>Minha Carteirinha <span onclick="event.stopPropagation();abrirAjudaArtigo('carteirinha')" class="ms-1" style="opacity:.8;cursor:help" title="Como usar?"><i class="bi bi-question-circle"></i></span></button>
             </div>` : ''}
             <div class="col-12 col-md-${role === 'colaborador' ? '4' : '6'}">
-              <button class="btn btn-outline-light w-100" onclick="abrirTrocarSenhaConecta()"><i class="bi bi-shield-lock me-2"></i>Trocar Senha</button>
+              <button class="btn btn-outline-light w-100" onclick="abrirTrocarSenhaConecta()"><i class="bi bi-shield-lock me-2"></i>Trocar Senha <span onclick="event.stopPropagation();abrirAjudaArtigo('trocar-senha')" class="ms-1" style="opacity:.8;cursor:help" title="Como usar?"><i class="bi bi-question-circle"></i></span></button>
             </div>
           </div>
         </div>
@@ -5016,3 +5016,157 @@ document.getElementById('capa-preview-box')?.addEventListener('mouseleave', func
   const overlay = document.getElementById('capa-hover-overlay');
   if (overlay) overlay.style.display = 'none';
 });
+
+// ============================================================
+// AJUDA — Central de guias e tutoriais (Conecta)
+// ============================================================
+(function(){
+  const ARTIGOS = [
+    {
+      id:'catalogo-buscar',
+      titulo:'Como buscar no catálogo',
+      icone:'bi-search',
+      resumo:'Encontrar produtos e benefícios rapidamente.',
+      tags:['catalogo','buscar','filtro','categoria'],
+      roles:['colaborador','dependente','associado_empresa'],
+      conteudo:'<ol><li>No menu lateral, clique em <strong>Catálogo</strong>.</li><li>Use a barra de busca no topo para pesquisar por nome, marca ou categoria.</li><li>Filtre por categoria clicando nos cartões no topo. O filtro só mostra categorias que têm produtos ativos.</li><li>Clique em um produto para ver detalhes, subprodutos e o link da loja parceira.</li></ol>'
+    },
+    {
+      id:'comprar-produto',
+      titulo:'Comprar um produto',
+      icone:'bi-cart-check',
+      resumo:'Adquirir um produto ou serviço com desconto.',
+      tags:['comprar','desconto','parceiro'],
+      roles:['colaborador','dependente','associado_empresa'],
+      conteudo:'<ol><li>Abra o produto no catálogo.</li><li>Se houver subprodutos (planos), escolha o que se adequa ao seu perfil.</li><li>Clique em <strong>Ir para o parceiro</strong> — você será redirecionado com a condição ACIC-DF aplicada.</li><li>Apresente sua carteirinha digital se o parceiro pedir identificação.</li></ol><div class="alert alert-info small mb-0"><i class="bi bi-info-circle me-1"></i>Algumas condições exigem contato direto com o parceiro. O produto informa o canal correto.</div>'
+    },
+    {
+      id:'carteirinha',
+      titulo:'Apresentar sua carteirinha',
+      icone:'bi-credit-card-2-front',
+      resumo:'Baixar ou compartilhar sua carteirinha digital.',
+      tags:['carteirinha','identidade','qr'],
+      roles:['colaborador','associado_empresa'],
+      conteudo:'<ol><li>No menu lateral, clique em <strong>Carteirinha</strong>.</li><li>Seu cartão digital aparece com QR Code de validação.</li><li>Use <strong>Baixar</strong> para salvar como imagem, ou <strong>Compartilhar</strong> para enviar por WhatsApp.</li></ol><div class="alert alert-info small mb-0"><i class="bi bi-info-circle me-1"></i>Dependentes não têm carteirinha individual — use a do titular.</div>'
+    },
+    {
+      id:'trocar-senha',
+      titulo:'Trocar minha senha',
+      icone:'bi-shield-lock',
+      resumo:'Definir uma nova senha de acesso.',
+      tags:['senha','password','seguranca'],
+      roles:['colaborador','dependente','associado_empresa'],
+      conteudo:'<ol><li>No <strong>Dashboard</strong>, clique em <strong>Trocar Senha</strong> no hero.</li><li>Informe senha atual e nova (mínimo 8 caracteres).</li><li>Confirme a nova senha e salve.</li></ol><div class="alert alert-info small mb-0"><i class="bi bi-info-circle me-1"></i>A senha é a mesma no Conecta e no CRM.</div>'
+    },
+    {
+      id:'primeiro-acesso',
+      titulo:'Não recebi o e-mail de convite',
+      icone:'bi-envelope-exclamation',
+      resumo:'Como reclamar acesso quando o link não chegou.',
+      tags:['email','convite','primeiro-acesso','senha'],
+      roles:['colaborador','dependente','associado_empresa'],
+      conteudo:'<ol><li>Procure o e-mail "ACIC-DF te convidou para o Portal" na caixa de entrada e <strong>spam</strong>.</li><li>Se não achou, peça à empresa que te cadastrou para acessar o <strong>CRM → Meu Perfil → Colaboradores</strong> e clicar em <strong>Reenviar convite</strong>.</li><li>O link expira em 7 dias. Se expirou, peça um novo.</li></ol><div class="alert alert-warning small mb-0"><i class="bi bi-shield-lock me-1"></i>Por segurança, o primeiro acesso só é possível pelo link do e-mail. Não é possível criar senha usando apenas CPF.</div>'
+    },
+    {
+      id:'beneficios-plano',
+      titulo:'Ver benefícios do meu plano',
+      icone:'bi-star',
+      resumo:'Produtos e taxas incluídos na associação.',
+      tags:['plano','beneficios','combo','taxa'],
+      roles:['associado_empresa'],
+      conteudo:'<ol><li>Menu <strong>Minha Empresa</strong> mostra seu plano ativo.</li><li>Os produtos do plano aparecem em destaque no dashboard e no catálogo.</li><li>Colaboradores e dependentes cadastrados também aproveitam os benefícios.</li></ol>'
+    },
+    {
+      id:'empresa-dados',
+      titulo:'Ver dados da minha empresa',
+      icone:'bi-building',
+      resumo:'Razão social, CNPJ, endereço e plano.',
+      tags:['empresa','dados','cnpj'],
+      roles:['colaborador','dependente','associado_empresa'],
+      conteudo:'<ol><li>Menu <strong>Minha Empresa</strong>.</li><li>Para editar dados, acesse o <strong>CRM</strong> (apenas o representante legal da empresa pode alterar).</li></ol>'
+    }
+  ];
+
+  function rolePermitida(a){
+    const s = (typeof getSession === 'function' ? getSession() : null) || {};
+    const role = s.role || s.tipo || 'colaborador';
+    return a.roles.includes(role);
+  }
+
+  function iconeColor(a){
+    const m = {'catalogo-buscar':'#1B2B6B','comprar-produto':'#059669','carteirinha':'#E8701A','trocar-senha':'#7C3AED','primeiro-acesso':'#DC2626','beneficios-plano':'#E8701A','empresa-dados':'#1B2B6B'};
+    return m[a.id] || '#1B2B6B';
+  }
+
+  function renderAjudaConecta(filtro){
+    const grid = document.getElementById('cn-ajuda-grid');
+    if (!grid) return;
+    const q = (filtro||'').trim().toLowerCase();
+    const artigos = ARTIGOS.filter(rolePermitida).filter(a => {
+      if (!q) return true;
+      return a.titulo.toLowerCase().includes(q) || a.tags.join(' ').includes(q) || a.resumo.toLowerCase().includes(q);
+    });
+    if (!artigos.length){
+      grid.innerHTML = '<div class="col-12"><div class="alert alert-info mb-0 text-center"><i class="bi bi-info-circle me-2"></i>Nenhum guia encontrado.</div></div>';
+      return;
+    }
+    grid.innerHTML = artigos.map(a => {
+      return `<div class="col-12 col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="cursor:pointer;transition:all .2s" onclick="abrirAjudaArtigo('${a.id}')" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform=''">
+          <div class="card-body p-3">
+            <div class="d-flex align-items-start gap-2 mb-1">
+              <div class="rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;background:${iconeColor(a)}15">
+                <i class="bi ${a.icone}" style="color:${iconeColor(a)};font-size:18px"></i>
+              </div>
+              <h6 class="card-title fw-bold text-dark mb-0" style="font-size:14px;line-height:1.3">${a.titulo}</h6>
+            </div>
+            <p class="text-muted small mb-0" style="font-size:12px">${a.resumo}</p>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function abrirAjudaConecta(slug){
+    renderAjudaConecta('');
+    const busca = document.getElementById('cn-ajuda-busca');
+    if (busca) {
+      busca.value = '';
+      busca.oninput = (e) => renderAjudaConecta(e.target.value);
+    }
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('cn-ajuda-modal')).show();
+    if (slug) setTimeout(() => abrirAjudaArtigo(slug), 150);
+  }
+
+  function abrirAjudaArtigo(id){
+    const a = ARTIGOS.find(x => x.id === id);
+    if (!a) return;
+    document.getElementById('cn-ajuda-artigo-title').innerHTML = '<i class="bi ' + a.icone + ' me-2"></i>' + a.titulo;
+    document.getElementById('cn-ajuda-artigo-body').innerHTML = a.conteudo;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('cn-ajuda-artigo')).show();
+  }
+
+  // Deep link: ?ajuda=slug abre direto o artigo
+  document.addEventListener('DOMContentLoaded', () => {
+    const slug = new URLSearchParams(window.location.search).get('ajuda');
+    if (slug) {
+      setTimeout(() => {
+        abrirAjudaConecta(slug);
+        history.replaceState({}, '', window.location.pathname);
+      }, 800);
+    }
+    // FAB só aparece quando logado
+    const fab = document.getElementById('cn-ajuda-fab');
+    if (fab) {
+      const check = () => {
+        const logged = !!(typeof getToken === 'function' && getToken());
+        fab.style.display = logged ? 'flex' : 'none';
+      };
+      check();
+      setInterval(check, 2000);
+    }
+  });
+
+  window.abrirAjudaConecta = abrirAjudaConecta;
+  window.abrirAjudaArtigo  = abrirAjudaArtigo;
+})();
