@@ -1697,6 +1697,19 @@ async function handleCheckDoc(e) {
     if (pill)    pill.textContent = doc;
     if (pillNovo) pillNovo.textContent = doc;
 
+    // CPF/CNPJ não cadastrado — não cair em "Digite sua senha"
+    if (result.existe === false) {
+      const el = document.getElementById('login-error');
+      const msgEl = document.getElementById('login-error-msg');
+      if (msgEl) msgEl.innerHTML = 'Este CPF/CNPJ não está cadastrado na ACIC-DF. <a href="https://acicdf.org.br/associe-se" target="_blank" style="color:var(--accent);text-decoration:underline;font-weight:600">Quer se associar?</a>';
+      if (el) el.classList.remove('hidden');
+      return;
+    }
+    // Empresa bloqueada por inadimplência
+    if (result.bloqueado) {
+      showError(result.motivo || 'Acesso bloqueado: empresa com pendências. Entre em contato com a ACIC-DF.');
+      return;
+    }
     if (result.requires_email_invite) {
       // Colab/dep sem senha — bloquear definição via CPF puro
       const nomeCurto = result.nome ? result.nome.split(' ')[0] : '';
