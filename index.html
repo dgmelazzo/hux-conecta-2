@@ -1241,7 +1241,7 @@
   // Densidade adaptativa (mobile reduz)
   function nodeCount(){
     const isMobile = W < 600;
-    return isMobile ? 12 : 22;
+    return isMobile ? 26 : 55;
   }
 
   let nodes = [];
@@ -1249,23 +1249,28 @@
     const n = nodeCount();
     nodes = [];
     for (let i = 0; i < n; i++){
-      const isAccent = Math.random() < 0.20; // ~20% laranja, resto branco
+      const isAccent = Math.random() < 0.40; // ~40% laranja, resto branco
+      const isHub = Math.random() < 0.10;     // ~10% hubs maiores que pulsam
       nodes.push({
         x: Math.random() * W,
         y: Math.random() * H,
-        vx: (Math.random() - 0.5) * 0.25,
-        vy: (Math.random() - 0.5) * 0.25,
-        r: 1.5 + Math.random() * 1.5,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        r: isHub ? (3.2 + Math.random() * 1.4) : (1.8 + Math.random() * 1.6),
         accent: isAccent,
+        hub: isHub,
+        phase: Math.random() * Math.PI * 2, // pulso individual
       });
     }
   }
 
   // Distância máx pra desenhar linha
-  const LINK_DIST = 140;
+  const LINK_DIST = 190;
+  let frame = 0;
 
   function step(){
     if (!running) return;
+    frame++;
     ctx.clearRect(0, 0, W, H);
 
     // Atualiza posições
@@ -1283,13 +1288,13 @@
         const dx = a.x - b.x, dy = a.y - b.y;
         const dist = Math.hypot(dx, dy);
         if (dist < LINK_DIST){
-          const alpha = (1 - dist / LINK_DIST) * 0.35;
+          const alpha = (1 - dist / LINK_DIST) * 0.55;
           // Linha laranja se algum nó é accent, senão branco
           const orange = a.accent || b.accent;
           ctx.strokeStyle = orange
             ? 'rgba(232,100,10,' + alpha.toFixed(3) + ')'
             : 'rgba(255,255,255,' + alpha.toFixed(3) + ')';
-          ctx.lineWidth = 0.8;
+          ctx.lineWidth = orange ? 1.1 : 0.9;
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
@@ -1298,18 +1303,21 @@
       }
     }
 
-    // Nós
+    // Nós (hubs pulsam)
+    const pulse = (Math.sin(frame * 0.04) + 1) / 2; // 0..1
     for (const n of nodes){
+      const sizeMult = n.hub ? (1 + 0.35 * Math.sin(frame * 0.05 + n.phase)) : 1;
+      const r = n.r * sizeMult;
       ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
       if (n.accent){
-        ctx.fillStyle = 'rgba(232,100,10,0.85)';
-        ctx.shadowColor = 'rgba(232,100,10,0.5)';
-        ctx.shadowBlur = 8;
+        ctx.fillStyle = 'rgba(232,100,10,0.95)';
+        ctx.shadowColor = 'rgba(232,100,10,0.7)';
+        ctx.shadowBlur = n.hub ? 18 : 12;
       } else {
-        ctx.fillStyle = 'rgba(255,255,255,0.65)';
-        ctx.shadowColor = 'rgba(255,255,255,0.3)';
-        ctx.shadowBlur = 4;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.shadowColor = 'rgba(255,255,255,0.5)';
+        ctx.shadowBlur = n.hub ? 10 : 6;
       }
       ctx.fill();
       ctx.shadowBlur = 0;
