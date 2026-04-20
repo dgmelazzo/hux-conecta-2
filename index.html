@@ -55,6 +55,7 @@
   <div class="login-hero">
     <img class="login-hero-img" src="/conecta/uploads/bg-ceilandia.jpg" alt="Caixa d'água de Ceilândia — DF"/>
     <div class="login-hero-overlay"></div>
+    <canvas id="login-conectores" aria-hidden="true"></canvas>
     <div class="login-hero-badge">Ceilândia · DF</div>
   </div>
   <span class="login-photo-credit">Foto: Reservatório Elevado · Ceilândia DF (Wikimedia Commons, CC BY-SA)</span>
@@ -1214,6 +1215,153 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="app-bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Animação de conectores no fundo do login -->
+<script>
+(function(){
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) return;
+
+  const cv = document.getElementById('login-conectores');
+  if (!cv) return;
+
+  const ctx = cv.getContext('2d');
+  let W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let rafId = null, running = false;
+
+  function resize(){
+    const rect = cv.getBoundingClientRect();
+    W = rect.width;
+    H = rect.height;
+    cv.width  = W * dpr;
+    cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  // Densidade adaptativa (mobile reduz)
+  function nodeCount(){
+    const isMobile = W < 600;
+    return isMobile ? 12 : 22;
+  }
+
+  let nodes = [];
+  function spawn(){
+    const n = nodeCount();
+    nodes = [];
+    for (let i = 0; i < n; i++){
+      const isAccent = Math.random() < 0.20; // ~20% laranja, resto branco
+      nodes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r: 1.5 + Math.random() * 1.5,
+        accent: isAccent,
+      });
+    }
+  }
+
+  // Distância máx pra desenhar linha
+  const LINK_DIST = 140;
+
+  function step(){
+    if (!running) return;
+    ctx.clearRect(0, 0, W, H);
+
+    // Atualiza posições
+    for (const n of nodes){
+      n.x += n.vx;
+      n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+    }
+
+    // Linhas (entre nós próximos)
+    for (let i = 0; i < nodes.length; i++){
+      for (let j = i + 1; j < nodes.length; j++){
+        const a = nodes[i], b = nodes[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < LINK_DIST){
+          const alpha = (1 - dist / LINK_DIST) * 0.35;
+          // Linha laranja se algum nó é accent, senão branco
+          const orange = a.accent || b.accent;
+          ctx.strokeStyle = orange
+            ? 'rgba(232,100,10,' + alpha.toFixed(3) + ')'
+            : 'rgba(255,255,255,' + alpha.toFixed(3) + ')';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Nós
+    for (const n of nodes){
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      if (n.accent){
+        ctx.fillStyle = 'rgba(232,100,10,0.85)';
+        ctx.shadowColor = 'rgba(232,100,10,0.5)';
+        ctx.shadowBlur = 8;
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,0.65)';
+        ctx.shadowColor = 'rgba(255,255,255,0.3)';
+        ctx.shadowBlur = 4;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    rafId = requestAnimationFrame(step);
+  }
+
+  function start(){
+    if (running) return;
+    running = true;
+    step();
+  }
+  function stop(){
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
+  // Pausa quando aba não está visível
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop(); else start();
+  });
+
+  // Para quando login some (após login)
+  const obs = new MutationObserver(() => {
+    const screen = document.getElementById('login-screen');
+    if (!screen) return;
+    const ativo = screen.classList.contains('active') && !document.documentElement.classList.contains('has-token');
+    if (ativo) start(); else stop();
+  });
+
+  function init(){
+    resize();
+    spawn();
+    window.addEventListener('resize', () => { resize(); spawn(); });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    obs.observe(document.getElementById('login-screen'), { attributes: true, attributeFilter: ['class'] });
+    // Roda imediatamente se a tela de login estiver ativa
+    const screen = document.getElementById('login-screen');
+    if (screen && screen.classList.contains('active') && !document.documentElement.classList.contains('has-token')){
+      start();
+    }
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
 
 <!-- Botão flutuante de Ajuda -->
 <button id="cn-ajuda-fab" onclick="abrirAjudaConecta()" title="Ajuda" aria-label="Abrir ajuda"
