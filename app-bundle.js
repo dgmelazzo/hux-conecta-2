@@ -5157,21 +5157,19 @@ document.getElementById('capa-preview-box')?.addEventListener('mouseleave', func
       return a.titulo.toLowerCase().includes(q) || a.tags.join(' ').includes(q) || a.resumo.toLowerCase().includes(q);
     });
     if (!artigos.length){
-      grid.innerHTML = '<div class="col-12"><div class="alert alert-info mb-0 text-center"><i class="bi bi-info-circle me-2"></i>Nenhum guia encontrado para <strong>' + q + '</strong>.</div></div>';
+      grid.innerHTML = '<div class="col-12"><div class="text-center py-4" style="color:var(--text2)"><i class="bi bi-search me-2"></i>Nenhum guia encontrado para <strong style="color:var(--text)">' + q + '</strong>.</div></div>';
       return;
     }
-    const prefixo = mostrouTodos && !q ? '<div class="col-12"><div class="alert alert-light small mb-0"><i class="bi bi-info-circle me-1"></i>Mostrando todos os guias disponíveis.</div></div>' : '';
+    const prefixo = mostrouTodos && !q ? '<div class="col-12"><div class="small mb-0 px-2 py-1" style="color:var(--text2)"><i class="bi bi-info-circle me-1"></i>Mostrando todos os guias disponíveis.</div></div>' : '';
     grid.innerHTML = prefixo + artigos.map(a => {
       return `<div class="col-12 col-md-6">
-        <div class="card border-0 shadow-sm h-100" style="cursor:pointer;transition:all .2s" onclick="abrirAjudaArtigo('${a.id}')" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform=''">
-          <div class="card-body p-3">
-            <div class="d-flex align-items-start gap-2 mb-1">
-              <div class="rounded d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;background:${iconeColor(a)}15">
-                <i class="bi ${a.icone}" style="color:${iconeColor(a)};font-size:18px"></i>
-              </div>
-              <h6 class="card-title fw-bold text-dark mb-0" style="font-size:14px;line-height:1.3">${a.titulo}</h6>
+        <div class="help-card p-3 h-100" onclick="abrirAjudaArtigo('${a.id}')">
+          <div class="d-flex align-items-start gap-2 mb-1">
+            <div class="help-icon"><i class="bi ${a.icone}"></i></div>
+            <div class="flex-grow-1">
+              <h6 class="help-card-title">${a.titulo}</h6>
+              <p class="help-card-sub">${a.resumo}</p>
             </div>
-            <p class="text-muted small mb-0" style="font-size:12px">${a.resumo}</p>
           </div>
         </div>
       </div>`;
