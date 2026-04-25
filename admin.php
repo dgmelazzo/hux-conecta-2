@@ -68,7 +68,7 @@ function requireSuperAdmin() {
 function crmGet($path) {
     $ch = curl_init(CRM_API_URL.$path);
     curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>10,
-        CURLOPT_HTTPHEADER=>['X-Conecta-Secret: '.CRM_BRIDGE_SECRET,'Content-Type: application/json']]);
+        CURLOPT_HTTPHEADER=>['X-Conecta-Secret: '.CONECTA_BRIDGE_SECRET,'Content-Type: application/json']]);
     $res=curl_exec($ch); $code=curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
     if($code!==200) return null;
     return json_decode($res,true);

@@ -71,6 +71,17 @@ function crmApi(string $method, string $endpoint, array $data = [], ?string $tok
 function ok($data) { echo json_encode(['success' => true, 'data' => $data]); exit; }
 function err($code, $msg) { http_response_code($code); echo json_encode(['success' => false, 'message' => $msg]); exit; }
 
+function getDB(): PDO {
+    static $pdo;
+    if ($pdo) return $pdo;
+    $pdo = new PDO(
+        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
+        DB_USER, DB_PASS,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+    return $pdo;
+}
+
 // ============================================================
 // ACTION: check — verifica se documento existe no CRM
 // ============================================================
@@ -318,6 +329,44 @@ if ($action === 'validate-sso') {
     $data['tipo']     = $data['role'] ?? 'associado_empresa';
     $data['is_admin'] = (bool)($data['is_admin'] ?? false);
     ok($data);
+}
+
+// ============================================================
+// ACTION: register_from_crm — provisiona usuário vindo do CRM
+// Idempotente: cpf_cnpj já existente retorna registro atual.
+// ============================================================
+if ($action === 'register_from_crm') {
+    $secret = $_SERVER['HTTP_X_CONECTA_BRIDGE_SECRET'] ?? '';
+    if (!$secret || !hash_equals(CONECTA_BRIDGE_SECRET, $secret)) {
+        err(401, 'Unauthorized');
+    }
+
+    $doc  = preg_replace('/\D/', '', $input['cpf_cnpj'] ?? '');
+    $tipo = $input['tipo'] ?? 'empresa';
+    if (strlen($doc) < 11) err(400, 'cpf_cnpj obrigatorio');
+
+    try {
+        $db = getDB();
+
+        $st = $db->prepare('SELECT id FROM conecta_users WHERE cpf_cnpj = ? LIMIT 1');
+        $st->execute([$doc]);
+        $existing = $st->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            ok(['conecta_user_id' => (int)$existing['id'], 'already_existed' => true]);
+        }
+
+        $db->prepare(
+            'INSERT INTO conecta_users (cpf_cnpj, tipo, higestor_id, primeiro_acesso, ativo, created_at)
+             VALUES (?, ?, \'\', 1, 1, NOW())'
+        )->execute([$doc, $tipo]);
+
+        ok(['conecta_user_id' => (int)$db->lastInsertId(), 'already_existed' => false]);
+
+    } catch (\Throwable $e) {
+        error_log('[register_from_crm] ' . $e->getMessage());
+        err(500, 'Erro interno ao provisionar usuario');
+    }
 }
 
 // Acao desconhecida
