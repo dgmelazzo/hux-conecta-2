@@ -1519,6 +1519,17 @@ function showPortal() {
   if (window._userRole === 'associado_empresa') {
     showPerfilEmpresa();
   }
+
+  // Item 6 — botão "Acessar CRM" no rodapé do sidebar (só associado_empresa)
+  const btnCrm = document.getElementById("btn-acessar-crm");
+  if (btnCrm) {
+    if (_userRole === "associado_empresa") {
+      const isHml = location.hostname.includes("hml.");
+      btnCrm.href = isHml ? "https://hml.crm.acicdf.org.br" : "https://crm.acicdf.org.br";
+    } else {
+      btnCrm.style.display = "none";
+    }
+  }
   const btnLink = document.getElementById('btn-novo-link');
   if (btnLink) btnLink.style.display = 'none';
   const tag = document.getElementById('topbar-tag');
