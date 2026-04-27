@@ -1,0 +1,57 @@
+# Dependências (reinstaláveis)
+node_modules/
+vendor/
+.venv/
+__pycache__/
+
+# Builds (regeneráveis)
+dist/
+build/
+.vite/
+.next/
+.cache/
+
+# Git (Claude Code já sabe ler git via comandos)
+.git/
+
+# Backups (lixo histórico)
+*.bak
+*.bak.*
+*.old
+*.swp
+*~
+
+# Dados (não é código)
+uploads/
+public/uploads/
+storage/uploads/
+storage/logs/
+storage/framework/cache/
+*.sql
+*.sql.gz
+*.dump
+*.csv
+*.xlsx
+
+# Logs
+*.log
+logs/
+
+# Arquivos compactados
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Temporários
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Segredos (nunca ler por erro)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
