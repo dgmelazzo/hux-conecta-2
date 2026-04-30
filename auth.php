@@ -328,6 +328,9 @@ if ($action === 'validate-sso') {
     unset($data['_ok'], $data['_http']);
     $data['tipo']     = $data['role'] ?? 'associado_empresa';
     $data['is_admin'] = (bool)($data['is_admin'] ?? false);
+    // Repassa o JWT CRM original como token do cliente: validateCrmToken() em
+    // auth-helper.php revalida em requests subsequentes (produtos, upload, etc).
+    if (empty($data['token'])) $data['token'] = $ssoToken;
     ok($data);
 }
 

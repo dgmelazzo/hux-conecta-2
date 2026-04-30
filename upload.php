@@ -22,16 +22,13 @@ function getDB() {
     return $pdo;
 }
 
-// Verifica se é admin
+// Verifica se é admin — alinhado com auth-helper.php (padrão de produtos.php/admin.php).
+// Aceita JWT CRM tanto de login direto no Conecta quanto de SSO via abrirPortal() do CRM.
 function requireAdmin() {
-    $db  = getDB();
-    $tok = str_replace('Bearer ','',trim($_SERVER['HTTP_AUTHORIZATION'] ?? ($_POST['token'] ?? '')));
-    if (!$tok) err(401,'Token ausente.');
-    $st  = $db->prepare('SELECT u.cpf_cnpj FROM conecta_sessions s JOIN conecta_users u ON u.id=s.user_id WHERE s.token=? AND s.expires_at>NOW() AND u.ativo=1');
-    $st->execute([$tok]);
-    $row = $st->fetch(PDO::FETCH_ASSOC);
-    if (!$row) err(401,'Sessão inválida.');
-    if (preg_replace('/\D/','',$row['cpf_cnpj']) !== preg_replace('/\D/','',ADMIN_DOC)) err(403,'Acesso restrito.');
+    require_once __DIR__ . '/auth-helper.php';
+    $user = validateCrmToken();
+    if (!$user) err(401, 'Sessão inválida.');
+    if (!$user['is_admin']) err(403, 'Acesso restrito.');
 }
 
 requireAdmin();
