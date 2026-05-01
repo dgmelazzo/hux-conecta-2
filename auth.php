@@ -308,9 +308,14 @@ if ($action === 'permissoes') {
 }
 
 // ============================================================
-// ACTION: logout — noop (JWT stateless)
+// ACTION: logout — limpa cache local + revoga JWT no CRM
 // ============================================================
 if ($action === 'logout') {
+    if ($bearer) {
+        $cacheKey = '/tmp/crm_token_' . hash('sha256', $bearer);
+        if (file_exists($cacheKey)) @unlink($cacheKey);
+        @crmApi('POST', '/auth/logout', [], $bearer);
+    }
     ok(['logged_out' => true]);
 }
 
