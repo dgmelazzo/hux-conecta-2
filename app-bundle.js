@@ -1525,7 +1525,13 @@ function showPortal() {
   if (btnCrm) {
     if (_userRole === "associado_empresa") {
       const isHml = location.hostname.includes("hml.");
-      btnCrm.href = isHml ? "https://hml.crm.acicdf.org.br" : "https://crm.acicdf.org.br";
+      const crmBase = isHml ? "https://hml.crm.acicdf.org.br" : "https://crm.acicdf.org.br";
+      const cToken = sessionStorage.getItem("acic_conecta_token") || localStorage.getItem("acic_conecta_token") || "";
+      if (cToken) {
+        btnCrm.href = crmBase + "/api/sso?conecta_token=" + encodeURIComponent(cToken);
+      } else {
+        btnCrm.href = crmBase + "/login";
+      }
     } else {
       btnCrm.style.display = "none";
     }
