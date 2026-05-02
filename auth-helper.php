@@ -42,7 +42,7 @@ function validateCrmToken(?string $token = null): ?array {
     $data = json_decode($resp, true);
     $inner = $data['data']['data'] ?? $data['data'] ?? $data;
 
-    if (empty($inner['valid']) && empty($inner['nome'])) return null;
+    if (empty($inner['valid'])) return null;
 
     $result = [
         'id' => $inner['sub'] ?? $inner['id'] ?? $inner['associado_id'] ?? 0,
